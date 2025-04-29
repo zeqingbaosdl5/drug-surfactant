@@ -1,8 +1,7 @@
 import pandas as pd
+import numpy as np
 from ax.service.ax_client import AxClient, ObjectiveProperties
 import matplotlib.pyplot as plt
-
-
 from ax.modelbridge.factory import Models
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 
@@ -37,21 +36,14 @@ def optimizer_init():
 
     # create the design space and objective space
     ax_client.create_experiment(
-        parameters=[
 
-            {"name": "r1", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r2", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r3", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r4", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r5", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r6", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r7", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r8", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r9", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r10", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r11", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "r12", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"}],
+        name="drug_surfactant",
 
+        parameters = [
+            {"name": f"r{i}", "type": "range", "bounds": [0, 20], "value_type": "int"} for i in range(1, 13)] + 
+
+            [{"name": "surfactant_conc", "type": "range", "bounds": [1, 500], "value_type": "int"},
+             {"name": "drug_conc",       "type": "range", "bounds": [1, 500], "value_type": "int"}],
 
         objectives={
             'complexity': ObjectiveProperties(minimize=True, threshold=5),
@@ -59,11 +51,11 @@ def optimizer_init():
             'performance': ObjectiveProperties(minimize=False),
         },
 
-
         parameter_constraints=[
-    #        "c1 + c2 + c3 + c4 + c5 + c6 + c7 + c8 + c9 + c10 + c11 + c12 <= 8.0",  # example of a sum constraint, which may be redundant/unintended if composition_constraint is also selected
-    #        "r1 + r2 + r3 + r4 + r5 + r6 + r7 + r8 + r9 + r10 + r11 + r12 <= 1.0",  # example of a sum constraint, which may be redundant/unintended if composition_constraint is also selected
+            "r1 + r2 + r3 + r4 + r5 + r6 + r7 + r8 + r9 + r10 + r11 + r12 >= 1", 
         ],
     )
 
     return ax_client
+
+
