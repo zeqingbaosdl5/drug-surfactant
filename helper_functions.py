@@ -63,6 +63,7 @@ def optimizer_init():
 def design_to_conc(df):
 
     df_conc = pd.DataFrame()
+    df_conc['trial_index'] = df['trial_index']
     df_conc['surfactant_conc'] = df['surfactant_conc']
     df_conc['drug_conc'] = df['drug_conc']
     total_ratios = [f's{i}' for i in range(1, 13)]
@@ -78,6 +79,7 @@ def conc_to_vol_helper(conc, total_volume, stock_conc):
 def conc_to_vol(df, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume): # in mg/mL or mL
 
     df_vol = pd.DataFrame()
+    df_vol['trial_index'] = df['trial_index']
     df_vol['drug'] = df['drug_conc'].apply(lambda conc: conc_to_vol_helper(conc, total_volume=drug_total_volume, stock_conc=drug_stock_conc))
     s_cols = [f"s{i}" for i in range(1, 13) if f"s{i}" in df.columns]
     for s_col in s_cols:
@@ -85,7 +87,7 @@ def conc_to_vol(df, drug_stock_conc, drug_total_volume, surfactant_stock_conc, s
     df_vol['dmso'] = drug_total_volume - df_vol['drug']
 
     df_vol['water'] = surfactant_total_volume - df_vol[s_cols].sum(axis=1)
-    df_vol = df_vol * 1000 # convert to uL
+    df_vol.loc[:, df_vol.columns != 'trial_index'] *= 1000 # convert to uL
 
     return df_vol
 
