@@ -39,7 +39,6 @@ def optimizer_init():
     ax_client.create_experiment(
 
         name="drug_surfactant",
-
         parameters = [
             {"name": f"s{i}", "type": "range", "bounds": [0, 20], "value_type": "int"} for i in range(1, 13)] + 
 
