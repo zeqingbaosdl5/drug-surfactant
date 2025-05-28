@@ -21,7 +21,7 @@ def optimizer_init():
         steps=[
             GenerationStep(
                 model=Models.SOBOL,
-                num_trials=8,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
+                num_trials=16,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
                 model_kwargs={"seed": 0},
             ),
             GenerationStep(
@@ -43,7 +43,7 @@ def optimizer_init():
             {"name": f"s{i}", "type": "range", "bounds": [0, 20], "value_type": "int"} for i in range(1, 13)] + 
 
             [{"name": "surfactant_conc", "type": "range", "bounds": [1, 50], "value_type": "int"},
-             {"name": "drug_conc",       "type": "range", "bounds": [1, 50], "value_type": "int"}],
+             {"name": "drug_conc",       "type": "range", "bounds": [1,25], "value_type": "int"}],
 
         objectives={
             'complexity': ObjectiveProperties(minimize=True, threshold=5),
