@@ -215,9 +215,41 @@ def run_optimizer(current_iteration, n_trials=8):
     ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '.json')
     return pd.DataFrame(trials_data), ax_client
 
-def generate_protocol(df_vol, iteration):
 
+def generate_protocol(df_vol, iteration, plate_well, deepplat_well):
     n = iteration
+
+    # Input file (template)
+    input_path = otflex_template_file_path
+
+    # Output file (update name as needed)
+    output_path = otflex_output_file_path + str(n) + '.py'
+
+
+    with open(input_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+        found_plate = False
+        found_deep = False
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+        if not found_plate and stripped.startswith("next_plate_well") and "'E1'" in stripped:
+            indent = line[:len(line) - len(line.lstrip())]
+            lines[i] = f"{indent}next_plate_well = '{plate_well}'\n"
+            found_plate = True
+        elif not found_deep and stripped.startswith("next_deepplate_well") and "'D3'" in stripped:
+            indent = line[:len(line) - len(line.lstrip())]
+            lines[i] = f"{indent}next_deepplate_well = '{deepplat_well}'\n"
+            found_deep = True
+
+        if found_plate and found_deep:
+            break
+
+    # Write modified lines to the output file
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.writelines(lines)
+
+
     df_vol_list = []
     for idx, row in df_vol.iterrows():
         df_vol_row = {'': str(idx)}  
@@ -225,12 +257,6 @@ def generate_protocol(df_vol, iteration):
         df_vol_list.append(df_vol_row)
 
     df_vol_list
-
-    # Input file (template)
-    input_path = otflex_template_file_path
-
-    # Output file (update name as needed)
-    output_path = otflex_output_file_path + str(n) + '.py'
 
     # Format your df_vol_list
     data_string = pformat(df_vol_list, indent=4, width=120)
@@ -261,11 +287,20 @@ def generate_protocol(df_vol, iteration):
                 end_idx = k
                 break
 
+    # Extract indent prefix AFTER finding start_idx
+    if start_idx is not None:
+        indent_prefix = lines[start_idx][:len(lines[start_idx]) - len(lines[start_idx].lstrip())]
+    else:
+        indent_prefix = "    "
+
     # Replace block and write new file
     if start_idx is not None and end_idx is not None:
-        replacement = ["#" * 136 + "\n"]
-        replacement += [f"data = {data_string}\n"]
-        replacement += ["#" * 136 + "\n"]
+        hash_line = indent_prefix + "#" * 136 + "\n"
+        data_lines = data_string.split('\n')
+        first_line = indent_prefix + "    " + "data = " + data_lines[0].lstrip() + "\n"
+        rest_lines = '\n'.join(indent_prefix + line for line in data_lines[1:]) + "\n"
+        data_line = first_line + rest_lines
+        replacement = [hash_line, data_line, hash_line]
         new_lines = lines[:start_idx] + replacement + lines[end_idx:]
 
         # Only create directory if needed
