@@ -7,9 +7,9 @@ from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrateg
 import subprocess
 
 
-optimizer_file_path = 'optimizer/optimizer_'
-raw_data_file_path = 'raw_data/raw_absorbance_'
-results_file_path = 'result/result_'
+optimizer_file_path = '../optimizer/optimizer_'
+raw_data_file_path = '../raw_data/raw_absorbance_'
+#results_file_path = 'result/result_'
 
 
 def virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12):
