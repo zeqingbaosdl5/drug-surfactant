@@ -4,6 +4,7 @@ from ax.service.ax_client import AxClient, ObjectiveProperties
 import matplotlib.pyplot as plt
 from ax.modelbridge.factory import Models
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
+from pprint import pformat
 import subprocess
 import os
 import re
@@ -11,6 +12,8 @@ import re
 
 optimizer_file_path = 'optimizer/optimizer_'
 raw_data_file_path = 'raw_data/raw_absorbance_'
+otflex_template_file_path = '../drug_surfactant_otflex_template.py'
+otflex_output_file_path = 'protocol/otflex_'
 #results_file_path = 'result/result_'
 
 
@@ -212,6 +215,71 @@ def run_optimizer(current_iteration, n_trials=8):
     ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '.json')
     return pd.DataFrame(trials_data), ax_client
 
+def generate_protocol(df_vol, iteration):
+
+    n = iteration
+    df_vol_list = []
+    for idx, row in df_vol.iterrows():
+        df_vol_row = {'': str(idx)}  
+        df_vol_row.update({col: str(row[col]) for col in df_vol.columns})
+        df_vol_list.append(df_vol_row)
+
+    df_vol_list
+
+    # Input file (template)
+    input_path = otflex_template_file_path
+
+    # Output file (update name as needed)
+    output_path = otflex_output_file_path + str(n) + '.py'
+
+    # Format your df_vol_list
+    data_string = pformat(df_vol_list, indent=4, width=120)
+
+    # Check that the input file exists
+    if not os.path.isfile(input_path):
+        raise FileNotFoundError(f"Target file does not exist: {input_path}")
+
+    # Read the original file
+    with open(input_path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+
+    # Locate the data block
+    start_idx = None
+    end_idx = None
+
+    for i, line in enumerate(lines):
+        if "# to be rewritten according to the exp design" in line:
+            for j in range(i + 1, len(lines)):
+                if lines[j].strip().startswith("#") and "data = [" in lines[j + 1]:
+                    start_idx = j
+                    break
+            break
+
+    if start_idx is not None:
+        for k in range(start_idx + 1, len(lines)):
+            if lines[k].strip().startswith("#") and k > start_idx + 1:
+                end_idx = k
+                break
+
+    # Replace block and write new file
+    if start_idx is not None and end_idx is not None:
+        replacement = ["#" * 136 + "\n"]
+        replacement += [f"data = {data_string}\n"]
+        replacement += ["#" * 136 + "\n"]
+        new_lines = lines[:start_idx] + replacement + lines[end_idx:]
+
+        # Only create directory if needed
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
+
+        # Write to new output file
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.writelines(new_lines)
+
+        print(f"✅ Successfully wrote to: {output_path}")
+    else:
+        print("❌ Could not locate the block to replace.")
 
 def load_data_to_optimizer(iteration, norm_results):
     
