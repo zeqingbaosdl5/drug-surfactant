@@ -228,9 +228,10 @@ def generate_protocol(df_vol, iteration, plate_well, deepplat_well):
 
     with open(input_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
-        found_plate = False
-        found_deep = False
 
+    # Replace plate wells in lines (modify in place)
+    found_plate = False
+    found_deep = False
     for i, line in enumerate(lines):
         stripped = line.strip()
         if not found_plate and stripped.startswith("next_plate_well") and "'E1'" in stripped:
@@ -241,13 +242,8 @@ def generate_protocol(df_vol, iteration, plate_well, deepplat_well):
             indent = line[:len(line) - len(line.lstrip())]
             lines[i] = f"{indent}next_deepplate_well = '{deepplat_well}'\n"
             found_deep = True
-
         if found_plate and found_deep:
             break
-
-    # Write modified lines to the output file
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.writelines(lines)
 
 
     df_vol_list = []
@@ -264,10 +260,6 @@ def generate_protocol(df_vol, iteration, plate_well, deepplat_well):
     # Check that the input file exists
     if not os.path.isfile(input_path):
         raise FileNotFoundError(f"Target file does not exist: {input_path}")
-
-    # Read the original file
-    with open(input_path, "r", encoding="utf-8") as f:
-        lines = f.readlines()
 
     # Locate the data block
     start_idx = None

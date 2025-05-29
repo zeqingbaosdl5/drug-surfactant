@@ -47,11 +47,11 @@ def run(protocol: protocol_api.ProtocolContext):
     
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location="D1")
-    next_plate_well = 'E1'
+    next_plate_well = 'A1'
 
     # load deep well plate in deck slot D2
     deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
-    next_deepplate_well = 'D3'
+    next_deepplate_well = 'A1'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
