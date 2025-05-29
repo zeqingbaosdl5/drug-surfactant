@@ -5,10 +5,12 @@ import matplotlib.pyplot as plt
 from ax.modelbridge.factory import Models
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 import subprocess
+import os
+import re
 
 
-optimizer_file_path = '../optimizer/optimizer_'
-raw_data_file_path = '../raw_data/raw_absorbance_'
+optimizer_file_path = 'optimizer/optimizer_'
+raw_data_file_path = 'raw_data/raw_absorbance_'
 #results_file_path = 'result/result_'
 
 
@@ -187,7 +189,7 @@ def run_optimizer(current_iteration, n_trials=8):
     if current_iteration == 0:
         ax_client = AxClient.load_from_json_file(optimizer_file_path + '00' + '.json')
     else:
-        ax_client = AxClient.load_from_json_file(optimizer_file_path + str(current_iteration-1) + '.json')
+        ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded.json')
 
     trials, _ = ax_client.get_next_trials(n_trials)
 
@@ -231,7 +233,17 @@ def load_data_to_optimizer(iteration, norm_results):
 
     return ax_client
 
+def get_iteration_number():
 
+    current_dir = os.getcwd()
+
+    folder_name = os.path.basename(current_dir)
+
+    match = re.search(r"iteration_(\d+)", folder_name)
+    if match:
+        return int(match.group(1))
+    else:
+        raise ValueError("Wrong file")
 
 def upload_file_to_robot(local_file_path, remote_file_name):
 
