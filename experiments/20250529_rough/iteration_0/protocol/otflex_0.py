@@ -47,11 +47,11 @@ def run(protocol: protocol_api.ProtocolContext):
     
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location="D1")
-    next_plate_well = 'A1'
+    next_plate_well = 'F1'
 
     # load deep well plate in deck slot D2
     deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
-    next_deepplate_well = 'A1'
+    next_deepplate_well = 'F1'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -303,8 +303,8 @@ def run(protocol: protocol_api.ProtocolContext):
         return current_exp_well, next_plate_well
 
 
-    #for i in range(len(data):
-    for i in [8,9,10]: 
+    for i in range(len(data)):
+    #for i in [8,9,10]: 
     #use either the first or 2nd line, 1st line does range to first 8, 2nd line does the ones only listed in the brackets
         row_of_data = data[i]
 

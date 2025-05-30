@@ -31,7 +31,7 @@ def optimizer_init():
         steps=[
             GenerationStep(
                 model=Models.SOBOL,
-                num_trials=16,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
+                num_trials=6,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
                 model_kwargs={"seed": 0},
             ),
             GenerationStep(

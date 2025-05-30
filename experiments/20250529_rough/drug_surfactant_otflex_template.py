@@ -473,8 +473,8 @@ def run(protocol: protocol_api.ProtocolContext):
         return current_exp_well, next_plate_well
 
 
-    #for i in range(len(data):
-    for i in [8,9,10]: 
+    for i in range(len(data)):
+    #for i in [8,9,10]: 
     #use either the first or 2nd line, 1st line does range to first 8, 2nd line does the ones only listed in the brackets
         row_of_data = data[i]
 
