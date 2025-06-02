@@ -4,7 +4,7 @@ from ax.service.ax_client import AxClient, ObjectiveProperties
 import matplotlib.pyplot as plt
 from ax.modelbridge.factory import Models
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
-from pprint import pformat
+import json
 import subprocess
 import os
 import re
@@ -254,17 +254,14 @@ def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
         if found_plate and found_deep:
             break
 
-
     df_vol_list = []
     for idx, row in df_vol.iterrows():
         df_vol_row = {'': str(idx)}  
         df_vol_row.update({col: str(row[col]) for col in df_vol.columns})
         df_vol_list.append(df_vol_row)
 
-    df_vol_list
-
     # Format your df_vol_list
-    data_string = pformat(df_vol_list, indent=4, width=120)
+    data_string = json.dumps(df_vol_list, indent=4)
 
     # Check that the input file exists
     if not os.path.isfile(input_path):
