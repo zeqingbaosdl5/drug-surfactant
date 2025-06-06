@@ -160,7 +160,7 @@ def build_results(iteration, df_conc, df_absorbance):
     results['drug_conc'] = df_conc['drug_conc']
 
     # 4. success from df_absorbance
-    results['success'] = df_absorbance['success']
+    results['success'] = df_absorbance['success'] if 'success' in df_absorbance.columns else 0
 
     # 5. micelle_drug_conc = drug_conc / 10 * success
     results['micelle_drug_conc'] = (results['drug_conc'] / 10) * results['success']
