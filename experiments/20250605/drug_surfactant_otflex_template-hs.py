@@ -49,12 +49,14 @@ def run(protocol: protocol_api.ProtocolContext):
     water = water_res['A1']
     
     # load well plate in deck slot D1
-    plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location="D1")
-    next_plate_well = 'E1'
+    plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
+    #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
+    next_plate_well = 'D6'
 
     # load deep well plate in deck slot D2
-    deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
-    next_deepplate_well = 'D3'
+    #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
+    deepplate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D2')
+    next_deepplate_well = 'D6'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -120,6 +122,7 @@ def run(protocol: protocol_api.ProtocolContext):
         #protocol.move_labware(labware, new_location, use_gripper=True)
     
     def hs(labware_to_shake, time, speed, orignial_location):
+    #def hs(time, speed):
 
         hs_mod.open_labware_latch()
         protocol.move_labware(labware=labware_to_shake, new_location=hs_adapter, use_gripper=True)
@@ -136,12 +139,12 @@ def run(protocol: protocol_api.ProtocolContext):
 ################################################################################################################################################
     data = [{'': '0',
   'trial_index': '0',
-  'drug': '0.0',
+  'drug': '120',
   's1': '0.0',
   's2': '0.0',
   's3': '0.0',
   's4': '0.0',
-  's5': '0.0',
+  's5': '10.0',
   's6': '0.0',
   's7': '0.0',
   's8': '0.0',
@@ -149,267 +152,11 @@ def run(protocol: protocol_api.ProtocolContext):
   's10': '0.0',
   's11': '0.0',
   's12': '0.0',
-  'dmso': '120.0',
-  'water': '1000.0'},
- {'': '1',
-  'trial_index': '1',
-  'drug': '39.9999999984',
-  's1': '0.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '80.00000000159999',
-  'water': '1000.0'},
- {'': '2',
-  'trial_index': '2',
-  'drug': '80.000000016',
-  's1': '0.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '39.999999984',
-  'water': '1000.0'},
- {'': '3',
-  'trial_index': '3',
-  'drug': '120.0',
-  's1': '0.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0.0',
-  'water': '1000.0'},
- {'': '4',
-  'trial_index': '4',
-  'drug': '0.0',
-  's1': '333.3333334',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '120.0',
-  'water': '666.6666666'},
- {'': '5',
-  'trial_index': '5',
-  'drug': '39.9999999984',
-  's1': '333.3333334',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '80.00000000159999',
-  'water': '666.6666666'},
- {'': '6',
-  'trial_index': '6',
-  'drug': '80.000000016',
-  's1': '333.3333334',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '39.999999984',
-  'water': '666.6666666'},
- {'': '7',
-  'trial_index': '7',
-  'drug': '120.0',
-  's1': '333.3333334',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0.0',
-  'water': '666.6666666'},
- {'': '8',
-  'trial_index': '8',
-  'drug': '0.0',
-  's1': '666.6666666000001',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '120.0',
-  'water': '333.33333339999996'},
- {'': '9',
-  'trial_index': '9',
-  'drug': '39.9999999984',
-  's1': '666.6666666000001',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '80.00000000159999',
-  'water': '333.33333339999996'},
- {'': '10',
-  'trial_index': '10',
-  'drug': '80.000000016',
-  's1': '666.6666666000001',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '39.999999984',
-  'water': '333.33333339999996'},
- {'': '11',
-  'trial_index': '11',
-  'drug': '120.0',
-  's1': '666.6666666000001',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0.0',
-  'water': '333.33333339999996'},
- {'': '12',
-  'trial_index': '12',
-  'drug': '0.0',
-  's1': '1000.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '120.0',
-  'water': '0.0'},
- {'': '13',
-  'trial_index': '13',
-  'drug': '39.9999999984',
-  's1': '1000.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '80.00000000159999',
-  'water': '0.0'},
- {'': '14',
-  'trial_index': '14',
-  'drug': '80.000000016',
-  's1': '1000.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '39.999999984',
-  'water': '0.0'},
- {'': '15',
-  'trial_index': '15',
-  'drug': '120.0',
-  's1': '1000.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0.0',
-  'water': '0.0'}]
+  'dmso': '0',
+  'water': '990.0'},
+ ]
 
 ################################################################################################################################################
-   
-
     
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
 
@@ -431,38 +178,36 @@ def run(protocol: protocol_api.ProtocolContext):
                 pipette.blow_out(deepplate[next_deepplate_well])
                 pipette.touch_tip(deepplate[next_deepplate_well], v_offset=-11)
 
-                if item in surfactant_list and n == len(surfactant_list) - 1:
-                    last_surf_tip = pipette  
-                elif item in drug_list and n == len(drug_list) - 1:
-                    last_drug_tip = pipette  
-                else:
-                    pipette.drop_tip()  
+                #if item in surfactant_list and n == len(surfactant_list) - 1:
+                #    last_surf_tip = pipette  
+                #elif item in drug_list and n == len(drug_list) - 1:
+                 #   last_drug_tip = pipette  
+                #else:
+                pipette.drop_tip()  
 
 
         current_deepplate_well = next_deepplate_well
         next_deepplate_well = next_well(next_deepplate_well)
 
-        if n == len(surfactant_list)-1 and last_surf_tip is not None:
-
-
-            last_surf_tip.flow_rate.dispense = 50
-            last_surf_tip.mix(5, 100, deepplate[current_deepplate_well].bottom(3)) #need to check if water volume is higher than 50
-            last_surf_tip.blow_out(deepplate[current_deepplate_well])
-            last_surf_tip.touch_tip(deepplate[current_deepplate_well], v_offset=-7)
-            last_surf_tip.drop_tip()
+        #if n == len(surfactant_list)-1 and last_surf_tip is not None:
+         #   last_surf_tip.flow_rate.dispense = 50
+          #  last_surf_tip.mix(5, 100, deepplate[current_deepplate_well].bottom(3)) #need to check if water volume is higher than 50
+           # last_surf_tip.blow_out(deepplate[current_deepplate_well])
+            #last_surf_tip.touch_tip(deepplate[current_deepplate_well], v_offset=-7)
+            #last_surf_tip.drop_tip()
             #protocol.move_labware(labware=deepplate, new_location= "D3", use_gripper=True)#added speed don't know if it will work
-        
 
 
-        if n == len(drug_list)-1 and last_drug_tip is not None: 
-            if float(row_of_data['dmso']) != 0:
-                last_drug_tip.flow_rate.dispense = 50
-                last_drug_tip.mix(5, 50, deepplate[current_deepplate_well].bottom(3))
-                last_drug_tip.blow_out(deepplate[current_deepplate_well])
-                last_drug_tip.touch_tip(deepplate[current_deepplate_well], v_offset=-7)
+        #if n == len(drug_list)-1 and last_drug_tip is not None: 
+            #if float(row_of_data['dmso']) != 0:
+            #    last_drug_tip.flow_rate.dispense = 50
+             #   last_drug_tip.mix(5, 50, deepplate[current_deepplate_well].bottom(3))
+              #  last_drug_tip.blow_out(deepplate[current_deepplate_well])
+               # last_drug_tip.touch_tip(deepplate[current_deepplate_well], v_offset=-7)
                 #protocol.move_labware(labware=deepplate, new_location= "D2", use_gripper=True)
-            last_drug_tip.drop_tip()
-
+            #last_drug_tip.drop_tip()
+        
+        hs(deepplate, time=1, speed=200, orignial_location='D2')
         return current_deepplate_well, next_deepplate_well
 
 
@@ -473,25 +218,25 @@ def run(protocol: protocol_api.ProtocolContext):
             pipette.well_bottom_clearance.dispense = 13
             pipette.well_bottom_clearance.aspirate = 3     
 
-
+        hs_mod.close_labware_latch()
         pipette_high.pick_up_tip()
         #modified_transfer(vol=270, pipette_selection=pipette_high, source_well=deepplate[current_surfactant_well], transfered_well=plate[next_plate_well], trash=trash)
         pipette_high.flow_rate.dispense = 50
         pipette_high.transfer(270, deepplate[current_surfactant_well], plate[next_plate_well], new_tip='never', air_gap= 40)
         pipette_high.drop_tip()
 
-        hs(plate, time=1, speed=200, orignial_location='D1') # time in minutes, speed in rpm
-
         pipette_low.pick_up_tip()
         #modified_transfer(vol=30, pipette_selection=pipette_low, source_well=deepplate[current_drug_well], transfered_well=plate[next_plate_well], trash=trash)
         pipette_low.transfer(30, deepplate[current_drug_well], plate[next_plate_well], new_tip='never', air_gap= 10)
-
         pipette_low.flow_rate.aspiration = 25 #the system keeps aspirating at 35 
         pipette_low.flow_rate.dispense = 25
-        pipette_low.mix(5, 40, plate[next_plate_well].bottom(1))
+        #pipette_low.mix(5, 40, plate[next_plate_well].bottom(1))
         pipette_low.blow_out(plate[next_plate_well])
         pipette_low.touch_tip(plate[next_plate_well], v_offset=0)
         pipette_low.drop_tip()
+
+        hs(plate, time=1, speed=200, orignial_location='D1') # time in minutes, speed in rpm
+
         #protocol.move_labware(labware=plate, new_location= "D3", use_gripper=True)
         #protocol.move_labware(labware=plate, new_location= "D1", use_gripper=True)
 
@@ -513,7 +258,7 @@ def run(protocol: protocol_api.ProtocolContext):
         current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
         #n=2
-        current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
+        #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
         #n=3
         #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
