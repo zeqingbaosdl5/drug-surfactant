@@ -117,7 +117,9 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.move_labware(labware, new_location, use_gripper=True)
     
     def run(protocol: protocol_api.ProtocolContext):
-     hs_mod = protocol.load_module('heaterShakerModuleV1', 1)
+    # Load a Heater-Shaker Module GEN1 in deck slot D1.
+        heater_shaker = protocol.load_module(
+            module_name="heaterShakerModuleV1", location="D3")
 
 
 
