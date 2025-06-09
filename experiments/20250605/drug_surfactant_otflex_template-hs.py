@@ -6,7 +6,7 @@ metadata = {
     "author": "Zeqing Bao and Yunhee Hwang"
 }
 
-requirements = {"robotType": "Flex", "apiLevel": "2.23"}
+requirements = {"robotType": "Flex", "apiLevel": "2.19"}
 
 
 def run(protocol: protocol_api.ProtocolContext):
@@ -17,6 +17,9 @@ def run(protocol: protocol_api.ProtocolContext):
     tip1000_1 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_1000ul", location="B1")
     tip1000_2 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_1000ul", location="A1")
     tip50 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_50ul", location="B2")
+
+    hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
+    hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
     
     # attach pipette 
     pipette_low = protocol.load_instrument(instrument_name="flex_1channel_50", mount="right", tip_racks=[tip50])
@@ -116,12 +119,16 @@ def run(protocol: protocol_api.ProtocolContext):
         #new_location =new_location
         #protocol.move_labware(labware, new_location, use_gripper=True)
     
-    def run(protocol: protocol_api.ProtocolContext):
-        hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
-        hs_adapter = hs_mod.load_adapter("opentrons_96_flat_bottom_adapter")
-        labware = labware
+    def hs(labware_to_shake, time, speed, orignial_location):
+
         hs_mod.open_labware_latch()
-        protocol.move_labware(labware=labware, new_location=hs_adapter, use_gripper=True)
+        protocol.move_labware(labware=labware_to_shake, new_location=hs_adapter, use_gripper=True)
+        hs_mod.close_labware_latch()
+        hs_mod.set_and_wait_for_shake_speed(speed)
+        protocol.delay(minutes=time)
+        hs_mod.deactivate_shaker()
+        hs_mod.open_labware_latch()
+        protocol.move_labware(labware=labware_to_shake, new_location=orignial_location, use_gripper=True)
 
 
 
@@ -402,11 +409,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
 ################################################################################################################################################
    
-    protocol.move_labware(labware=deepplate, new_location=hs_adapter, use_gripper=True)
-    hs_mod.close_labware_latch()
-    hs_mod.set_and_wait_for_shake_speed(500)
-    protocol.delay(minutes=1)
-    hs_mod.deactivate_shaker()
+
     
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
 
@@ -440,6 +443,8 @@ def run(protocol: protocol_api.ProtocolContext):
         next_deepplate_well = next_well(next_deepplate_well)
 
         if n == len(surfactant_list)-1 and last_surf_tip is not None:
+
+
             last_surf_tip.flow_rate.dispense = 50
             last_surf_tip.mix(5, 100, deepplate[current_deepplate_well].bottom(3)) #need to check if water volume is higher than 50
             last_surf_tip.blow_out(deepplate[current_deepplate_well])
@@ -447,6 +452,8 @@ def run(protocol: protocol_api.ProtocolContext):
             last_surf_tip.drop_tip()
             #protocol.move_labware(labware=deepplate, new_location= "D3", use_gripper=True)#added speed don't know if it will work
         
+
+
         if n == len(drug_list)-1 and last_drug_tip is not None: 
             if float(row_of_data['dmso']) != 0:
                 last_drug_tip.flow_rate.dispense = 50
@@ -472,6 +479,8 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_high.flow_rate.dispense = 50
         pipette_high.transfer(270, deepplate[current_surfactant_well], plate[next_plate_well], new_tip='never', air_gap= 40)
         pipette_high.drop_tip()
+
+        hs(plate, time=1, speed=200, orignial_location='D1') # time in minutes, speed in rpm
 
         pipette_low.pick_up_tip()
         #modified_transfer(vol=30, pipette_selection=pipette_low, source_well=deepplate[current_drug_well], transfered_well=plate[next_plate_well], trash=trash)
