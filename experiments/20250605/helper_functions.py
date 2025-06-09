@@ -116,8 +116,11 @@ def design_to_conc_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total
 def process_absorbance(iteration, replicates=2, threshold=0.1):
 
     n = replicates
+    
     core_df = pd.read_excel(raw_data_file_path + 'i' + str(iteration) + '.xlsx', sheet_name=0, usecols="B:N", skiprows=23, nrows=9)
-    clean_df = core_df.dropna()
+    clean_df = core_df[~core_df.iloc[:, 1:].isna().all(axis=1)].dropna(axis=1, how='all')
+
+
     row_labels = clean_df.iloc[:, 0]
     numeric_data = clean_df.iloc[:, 1:]
     binary_data = (numeric_data < threshold).astype(int)
