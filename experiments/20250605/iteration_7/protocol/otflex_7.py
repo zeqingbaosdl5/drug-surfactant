@@ -51,12 +51,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'D6'
+    next_plate_well = 'E4'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'D6'
+    next_deepplate_well = 'E1'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -129,36 +129,52 @@ def run(protocol: protocol_api.ProtocolContext):
         hs_mod.open_labware_latch()
         protocol.move_labware(labware=labware_to_shake, new_location=orignial_location, use_gripper=True)
     
-    def plate_on_hs(speed, time, labware_to_shake, original_location):
+    def plate_on_hs(speed, time, labware_to_shake, new_location):
         hs_mod.set_and_wait_for_shake_speed(speed)
         protocol.delay(minutes=time)
         hs_mod.deactivate_shaker()
         hs_mod.open_labware_latch()
-        protocol.move_labware(labware=labware_to_shake, new_location= original_location, use_gripper=True)
+        protocol.move_labware(labware=labware_to_shake, new_location= new_location, use_gripper=True)
 
 
 
     # to be rewritten according to the exp design
-################################################################################################################################################
-    data = [{'': '0',
-  'trial_index': '0',
-  'drug': '120',
-  's1': '0.0',
-  's2': '0.0',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '10.0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0',
-  'water': '990.0'},
- ]
-
+########################################################################################################################################
+    data = [
+    {
+        "": "0",
+        "trial_index": "12.0",
+        "drug": "120.0",
+        "s1": "0.",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "2.847457627118644",
+        "s5": "0",
+        "s6": "0.0",
+        "s7": "1.0169491525423728",
+        "s8": "0",
+        "s9": "0",
+        "dmso": "0.0",
+        "water": "390.0"
+    },
+    {
+        "": "1",
+        "trial_index": "13.0",
+        "drug": "120.0",
+        "s1": "0.",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "2.847457627118644",
+        "s5": "0",
+        "s6": "0.0",
+        "s7": "0",
+        "s8": "0",
+        "s9": "0",
+        "dmso": "0.0",
+        "water": "390.0"
+    },
+]
+########################################################################################################################################
 ################################################################################################################################################
     
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
@@ -225,7 +241,7 @@ def run(protocol: protocol_api.ProtocolContext):
         well_pairs.append((current_drug_well, current_surfactant_well))  
 
     
-    plate_on_hs(speed= 600, time = 1, labware_to_shake = deepplate, new_location = 'D2')
+    plate_on_hs(speed= 550, time = 1, labware_to_shake = deepplate, new_location = 'D2')
 
     for i in range(len(data)):
         row_of_data = data[i]
@@ -241,4 +257,4 @@ def run(protocol: protocol_api.ProtocolContext):
         #n=3
         #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
-    hs(plate, time=1, speed=500, orignial_location='D1') # time in minutes, speed in rpm
+    hs(plate, time=1, speed=400, orignial_location='D1') # time in minutes, speed in rpm

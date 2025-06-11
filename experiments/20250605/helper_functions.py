@@ -13,7 +13,7 @@ import re
 optimizer_file_path = 'optimizer/optimizer_'
 raw_data_file_path = 'raw_data/raw_absorbance_'
 design_file_path = 'optimizer/design_'
-otflex_template_file_path = '../drug_surfactant_otflex_template.py'
+otflex_template_file_path = '../drug_surfactant_otflex_template-hs.py'
 otflex_output_file_path = 'protocol/otflex_'
 #results_file_path = 'result/result_'
 
