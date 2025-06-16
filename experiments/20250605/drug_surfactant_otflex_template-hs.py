@@ -51,12 +51,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'D6'
+    next_plate_well = 'H3'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'D6'
+    next_deepplate_well = 'H3'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -98,7 +98,7 @@ def run(protocol: protocol_api.ProtocolContext):
         return f"{row}{col}"
         
         
-    surfactant_list = ['water', 's1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9']#, 's10', 's11', 's12'] add this if more than 9 surfactants
+    surfactant_list = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9','water']#, 's10', 's11', 's12'] add this if more than 9 surfactants
     drug_list = ['dmso', 'drug']
     
 
@@ -129,12 +129,13 @@ def run(protocol: protocol_api.ProtocolContext):
         hs_mod.open_labware_latch()
         protocol.move_labware(labware=labware_to_shake, new_location=orignial_location, use_gripper=True)
     
-    def plate_on_hs(speed, time, labware_to_shake, original_location):
+    def plate_on_hs(labware_to_shake, new_location, speed, time):
+        hs_mod.close_labware_latch()
         hs_mod.set_and_wait_for_shake_speed(speed)
         protocol.delay(minutes=time)
         hs_mod.deactivate_shaker()
         hs_mod.open_labware_latch()
-        protocol.move_labware(labware=labware_to_shake, new_location= original_location, use_gripper=True)
+        protocol.move_labware(labware=labware_to_shake, new_location= new_location, use_gripper=True)
 
 
 
@@ -143,11 +144,11 @@ def run(protocol: protocol_api.ProtocolContext):
     data = [{'': '0',
   'trial_index': '0',
   'drug': '120',
-  's1': '0.0',
-  's2': '0.0',
+  's1': '300',
+  's2': '00',
   's3': '0.0',
   's4': '0.0',
-  's5': '10.0',
+  's5': '0',
   's6': '0.0',
   's7': '0.0',
   's8': '0.0',
@@ -156,7 +157,7 @@ def run(protocol: protocol_api.ProtocolContext):
   's11': '0.0',
   's12': '0.0',
   'dmso': '0',
-  'water': '990.0'},
+  'water': '500.0'},
  ]
 
 ################################################################################################################################################
@@ -176,8 +177,8 @@ def run(protocol: protocol_api.ProtocolContext):
                 air_gap_vol = 50 if pipette == pipette_high else 10
                 hs_mod.close_labware_latch()
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
-                pipette.blow_out(deepplate[next_deepplate_well])
-                pipette.touch_tip(deepplate[next_deepplate_well], v_offset=-5)
+                pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))
+                pipette.touch_tip(deepplate[next_deepplate_well], v_offset=10)
                 pipette.drop_tip()  
 
 
@@ -186,23 +187,20 @@ def run(protocol: protocol_api.ProtocolContext):
         
         return current_deepplate_well, next_deepplate_well
 
-    #hs(deepplate, time=1, speed=200, orignial_location='D2') use if deepplate is not already on the hs
-
         
     def make_exp(current_drug_well, current_surfactant_well, next_plate_well):
 
         for pipette in [pipette_low, pipette_high]:
             pipette.well_bottom_clearance.dispense = 13
-            pipette.well_bottom_clearance.aspirate = 3     
-
+            pipette.well_bottom_clearance.aspirate = 3    
+        
         pipette_high.pick_up_tip()
         pipette_high.flow_rate.dispense = 50
         pipette_high.transfer(270, deepplate[current_surfactant_well], plate[next_plate_well], new_tip='never', air_gap= 40)
         pipette_high.drop_tip()
 
         pipette_low.pick_up_tip()
-        pipette_low.transfer(30, deepplate[current_drug_well], plate[next_plate_well], new_tip='never', air_gap= 10)
-        pipette_low.flow_rate.aspiration = 25 #the system keeps aspirating at 35 
+        pipette_low.transfer(30, deepplate[current_drug_well], plate[next_plate_well], new_tip='never', air_gap= 10) 
         pipette_low.flow_rate.dispense = 25
         pipette_low.blow_out(plate[next_plate_well])
         pipette_low.touch_tip(plate[next_plate_well], v_offset=0)
@@ -225,7 +223,8 @@ def run(protocol: protocol_api.ProtocolContext):
         well_pairs.append((current_drug_well, current_surfactant_well))  
 
     
-    plate_on_hs(speed= 600, time = 1, labware_to_shake = deepplate, new_location = 'D2')
+    plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 600, time = 1)
+
 
     for i in range(len(data)):
         row_of_data = data[i]

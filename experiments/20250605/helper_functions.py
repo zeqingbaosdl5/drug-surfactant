@@ -246,11 +246,11 @@ def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
     found_deep = False
     for i, line in enumerate(lines):
         stripped = line.strip()
-        if not found_plate and stripped.startswith("next_plate_well") and "'E1'" in stripped:
+        if not found_plate and stripped.startswith("next_plate_well") and "'H3'" in stripped:
             indent = line[:len(line) - len(line.lstrip())]
             lines[i] = f"{indent}next_plate_well = '{plate_well}'\n"
             found_plate = True
-        elif not found_deep and stripped.startswith("next_deepplate_well") and "'D3'" in stripped:
+        elif not found_deep and stripped.startswith("next_deepplate_well") and "'H3'" in stripped:
             indent = line[:len(line) - len(line.lstrip())]
             lines[i] = f"{indent}next_deepplate_well = '{deepplate_well}'\n"
             found_deep = True
