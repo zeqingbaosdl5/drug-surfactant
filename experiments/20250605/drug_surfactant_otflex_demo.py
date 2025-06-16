@@ -156,15 +156,15 @@ def run(protocol: protocol_api.ProtocolContext):
   's6': '10.0',
   's7': '0.0',
   's8': '0.0',
-  's9': '200.0',
+  's9': '0.0',
   's10': '0.0',
-  's11': '40.0',
+  's11': '0',
   's12': '0.0',
   'dmso': '0',
-  'water': '450.0'},
+  'water': '690.0'},
   {'': '1',
   'trial_index': '1.0',
-  'drug': '20.0',
+  'drug': '10.0',
   's1': '00.0',
   's2': '300.0',
   's3': '0.0',
@@ -175,16 +175,16 @@ def run(protocol: protocol_api.ProtocolContext):
   's8': '0.0',
   's9': '0.0',
   's10': '0.0',
-  's11': '200.0',
+  's11': '0.0',
   's12': '0.0',
-  'dmso': '120.0',
-  'water': '450.0'},
+  'dmso': '110.0',
+  'water': '650.0'},
   {'': '2',
   'trial_index': '2.0',
-  'drug': '20.0',
-  's1': '30',
+  'drug': '10.0',
+  's1': '0',
   's2': '0.0',
-  's3': '300.0',
+  's3': '0.0',
   's4': '0.0',
   's5': '0.0',
   's6': '0.0',
@@ -192,60 +192,60 @@ def run(protocol: protocol_api.ProtocolContext):
   's8': '0.0',
   's9': '0.0',
   's10': '0.0',
-  's11': '0.0',
+  's11': '10.0',
   's12': '0.0',
-  'dmso': '100.0',
-  'water': '370.0'},
+  'dmso': '110.0',
+  'water': '690.0'},
   {'': '3',
   'trial_index': '3.0',
   'drug': '120.0',
   's1': '0.0',
-  's2': '80.0',
+  's2': '0.0',
   's3': '0.0',
-  's4': '0.0',
-  's5': '60.0',
+  's4': '10.0',
+  's5': '0.0',
   's6': '0.0',
-  's7': '40.0',
-  's8': '0.0',
+  's7': '0.0',
+  's8': '300.0',
   's9': '0.0',
   's10': '0.0',
-  's11': '100.0',
-  's12': '20.0',
+  's11': '0.0',
+  's12': '0.0',
   'dmso': '0',
-  'water': '700.0'},
+  'water': '690.0'},
   {'': '4',
   'trial_index': '4.0',
   'drug': '120.0',
   's1': '0.0',
-  's2': '100.0',
+  's2': '0.0',
   's3': '0.0',
   's4': '300.0',
   's5': '0.0',
   's6': '0.0',
-  's7': '500',
+  's7': '00',
   's8': '0.0',
   's9': '0.0',
   's10': '100.0',
   's11': '0.0',
   's12': '0.0',
   'dmso': '0',
-  'water': '0.0'},
+  'water': '600.0'},
   {'': '5',
   'trial_index': '5.0',
-  'drug': '10.0',
-  's1': '50.0',
+  'drug': '5.0',
+  's1': '0.0',
   's2': '0.0',
   's3': '0.0',
   's4': '30.0',
   's5': '0.0',
-  's6': '50.0',
-  's7': '300.0',
+  's6': '0.0',
+  's7': '500.0',
   's8': '0.0',
-  's9': '40.0',
+  's9': '0.0',
   's10': '0.0',
   's11': '0.0',
   's12': '0.0',
-  'dmso': '140.0',
+  'dmso': '115.0',
   'water': '600.0'},
   {'': '6',
   'trial_index': '6.0',
@@ -253,17 +253,17 @@ def run(protocol: protocol_api.ProtocolContext):
   's1': '0.0',
   's2': '10.0',
   's3': '0.0',
-  's4': '30.0',
-  's5': '40.0',
-  's6': '0.0',
+  's4': '0.0',
+  's5': '0.0',
+  's6': '400.0',
   's7': '0.0',
-  's8': '100.0',
-  's9': '60.0',
+  's8': '00.0',
+  's9': '0.0',
   's10': '0.0',
-  's11': '30.0',
-  's12': '60.0',
+  's11': '0.0',
+  's12': '0.0',
   'dmso': '30.0',
-  'water': '500.0'},
+  'water': '590.0'},
 
  ]
 
@@ -285,10 +285,15 @@ def run(protocol: protocol_api.ProtocolContext):
                 pipette.require_liquid_presence(sources[item])
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
                 pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))
-                pipette.touch_tip(deepplate[next_deepplate_well], v_offset=10)
+                pipette.touch_tip(deepplate[next_deepplate_well], v_offset=15)
                 pipette.drop_tip()
-                plate_on_hs(speed=400, time=5, speed_1=600, time_1=5)  
-
+                
+                if item in surfactant_list and n == len(surfactant_list) - 1:
+                    plate_on_hs(speed=400, time=5, speed_1=600, time_1=5)  
+                elif item in drug_list and n == len(drug_list) - 1:
+                    plate_on_hs(speed=400, time=5, speed_1=600, time_1=5)    
+                else:
+                    pass
 
         current_deepplate_well = next_deepplate_well
         next_deepplate_well = next_well(next_deepplate_well)
@@ -313,7 +318,10 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_low.blow_out(plate[next_plate_well])
         pipette_low.touch_tip(plate[next_plate_well], v_offset=-1)
         pipette_low.drop_tip()
-        plate_on_hs(speed=400, time=5, speed_1=550, time_1=5)  
+        plate_on_hs(speed=400, time=5, speed_1=550, time_1=5)
+        hs_mod.open_labware_latch() 
+        protocol.move_labware(labware=plate, new_location= 'D1', use_gripper=True)
+        protocol.move_labware(labware=deepplate, new_location= hs_adapter, use_gripper=True)
 
 
         current_exp_well = next_plate_well
@@ -322,37 +330,16 @@ def run(protocol: protocol_api.ProtocolContext):
         return current_exp_well, next_plate_well
     
 
-    well_pairs = []
     for i in range(len(data)):
-    #for i in [8,9,10]: 
-    #use either the first or 2nd line, 1st line does range to first 8, 2nd line does the ones only listed in the brackets
         row_of_data = data[i]
 
         current_surfactant_well, next_deepplate_well = make_drug_or_surfactant(surfactant_list, next_deepplate_well, row_of_data)
         current_drug_well, next_deepplate_well = make_drug_or_surfactant(drug_list, next_deepplate_well, row_of_data)
-        well_pairs.append((current_drug_well, current_surfactant_well))  
+        hs_mod.open_labware_latch()
+        protocol.move_labware(labware=deepplate, new_location= 'D2', use_gripper=True)
+        protocol.move_labware(labware=plate, new_location= hs_adapter, use_gripper=True)
+        hs_mod.close_labware_latch()
 
-    
-    #plate_on_hs(labware_to_shake = deepplate, speed= 400, time = 0.5, speed_1=600, time_1=0.5, new_location = 'D2')
-    hs_mod.open_labware_latch()
-    protocol.move_labware(labware=deepplate, new_location= 'D2', use_gripper=True)
-    protocol.move_labware(labware=plate, new_location= hs_adapter, use_gripper=True)
-    hs_mod.close_labware_latch()
 
-    for i in range(len(data)):
-        row_of_data = data[i]
-        
-        current_drug_well, current_surfactant_well = well_pairs[i]
-    
-        #n=1
         current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
-        #n=2
-        #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
-
-        #n=3
-        #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
-
-#    hs(plate, time=0.5, speed=400, speed_1=600, time_1=0.5, orignial_location='D1') # time in minutes, speed in rpm
-    hs_mod.open_labware_latch()
-    protocol.move_labware(labware=plate, new_location= 'D1', use_gripper=True)
