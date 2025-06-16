@@ -316,7 +316,7 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_low.transfer(30, deepplate[current_drug_well], plate[next_plate_well], new_tip='never', air_gap= 10) 
         pipette_low.flow_rate.dispense = 25
         pipette_low.blow_out(plate[next_plate_well])
-        pipette_low.touch_tip(plate[next_plate_well], v_offset=-1)
+        pipette_low.touch_tip(plate[next_plate_well], v_offset=-3)
         pipette_low.drop_tip()
         plate_on_hs(speed=400, time=5, speed_1=550, time_1=5)
         hs_mod.open_labware_latch() 
@@ -340,6 +340,8 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.move_labware(labware=plate, new_location= hs_adapter, use_gripper=True)
         hs_mod.close_labware_latch()
 
-
+        #n=1
         current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
+        #n=2
+        #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
