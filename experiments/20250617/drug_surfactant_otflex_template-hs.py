@@ -117,7 +117,7 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_selection.dispense (m_vol-vol, trash) 
 
     
-    def hs(labware_to_shake, time, speed, orignial_location):
+    def hs(labware_to_shake, time, speed, orignial_location):  #only use when plate is not already on hs_adapter
     #def hs(time, speed):
 
         hs_mod.open_labware_latch()
@@ -178,7 +178,7 @@ def run(protocol: protocol_api.ProtocolContext):
                 hs_mod.close_labware_latch()
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
                 pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))
-                pipette.touch_tip(deepplate[next_deepplate_well], v_offset=14)
+                pipette.touch_tip(deepplate[next_deepplate_well], v_offset=15)
                 pipette.drop_tip()  
 
 
@@ -203,7 +203,7 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_low.transfer(30, deepplate[current_drug_well], plate[next_plate_well], new_tip='never', air_gap= 10) 
         pipette_low.flow_rate.dispense = 25
         pipette_low.blow_out(plate[next_plate_well])
-        pipette_low.touch_tip(plate[next_plate_well], v_offset=0)
+        pipette_low.touch_tip(plate[next_plate_well], v_offset=-3)
         pipette_low.drop_tip()
 
         current_exp_well = next_plate_well
@@ -224,6 +224,8 @@ def run(protocol: protocol_api.ProtocolContext):
 
     
     plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 600, time = 1)
+    protocol.move_labware(labware= plate, new_location=hs_adapter, use_gripper=True)
+    hs_mod.close_labware_latch()
 
 
     for i in range(len(data)):
@@ -240,4 +242,4 @@ def run(protocol: protocol_api.ProtocolContext):
         #n=3
         #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
-    hs(plate, time=1, speed=500, orignial_location='D1') # time in minutes, speed in rpm
+    plate_on_hs(labware_to_shake=plate, time=1, speed=500, new_location='D1') # time in minutes, speed in rpm

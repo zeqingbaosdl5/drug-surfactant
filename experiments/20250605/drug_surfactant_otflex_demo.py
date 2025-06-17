@@ -280,7 +280,7 @@ def run(protocol: protocol_api.ProtocolContext):
             pipette = pipette_selection(vol)
             if vol > 0:
                 pipette.pick_up_tip()
-                air_gap_vol = 50 if pipette == pipette_high else 10
+                air_gap_vol = 60 if pipette == pipette_high else 10
                 hs_mod.close_labware_latch()
                 pipette.require_liquid_presence(sources[item])
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
@@ -289,7 +289,7 @@ def run(protocol: protocol_api.ProtocolContext):
                 pipette.drop_tip()
                 
                 if item in surfactant_list and n == len(surfactant_list) - 1:
-                    plate_on_hs(speed=400, time=5, speed_1=600, time_1=5)  
+                    plate_on_hs(speed=400, time=5, speed_1=600, time_1=5) 
                 elif item in drug_list and n == len(drug_list) - 1:
                     plate_on_hs(speed=400, time=5, speed_1=600, time_1=5)    
                 else:
