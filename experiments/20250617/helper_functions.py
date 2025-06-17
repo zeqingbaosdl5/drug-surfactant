@@ -59,7 +59,7 @@ def optimizer_init():
         objectives={
             'micelle_drug_conc': ObjectiveProperties(minimize=False),
             'surfactant_conc': ObjectiveProperties(minimize=True),
-            'complexity': ObjectiveProperties(minimize=True, threshold=2),
+            'complexity': ObjectiveProperties(minimize=True),
         },
 
         # parameter_constraints=[
