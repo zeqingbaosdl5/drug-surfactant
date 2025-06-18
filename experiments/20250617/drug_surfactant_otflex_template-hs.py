@@ -223,7 +223,7 @@ def run(protocol: protocol_api.ProtocolContext):
         well_pairs.append((current_drug_well, current_surfactant_well))  
 
     
-    plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 600, time = 1)
+    plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 1000, time = 1)
     protocol.move_labware(labware= plate, new_location=hs_adapter, use_gripper=True)
     hs_mod.close_labware_latch()
 
@@ -242,4 +242,4 @@ def run(protocol: protocol_api.ProtocolContext):
         #n=3
         #current_exp_well, next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
-    plate_on_hs(labware_to_shake=plate, time=1, speed=500, new_location='D1') # time in minutes, speed in rpm
+    plate_on_hs(labware_to_shake=plate, time=1, speed=1000, new_location='D1') # time in minutes, speed in rpm
