@@ -20,7 +20,7 @@ otflex_output_file_path = 'protocol/otflex_'
 
 drug_stock_conc = 25  # mg/mL
 surfactant_stock_conc = 50  # mg/mL
-drug_total_volume = 0.12  # mL
+drug_total_volume = 0.18  # mL
 surfactant_total_volume = 1  # mL
 number_of_surfactants = 8  # s1 to s12
 
