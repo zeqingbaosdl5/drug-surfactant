@@ -166,7 +166,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
         for pipette in [pipette_low, pipette_high]:
             pipette.well_bottom_clearance.dispense = 25
-            pipette.well_bottom_clearance.aspirate = 1     
+            pipette.well_bottom_clearance.aspirate = 2     
 
         for n, item in enumerate(a_list):
             vol = float(row_of_data[item])
@@ -192,7 +192,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
         for pipette in [pipette_low, pipette_high]:
             pipette.well_bottom_clearance.dispense = 13
-            pipette.well_bottom_clearance.aspirate = 1    
+            pipette.well_bottom_clearance.aspirate = 2    
         
         pipette_high.pick_up_tip()
         pipette_high.flow_rate.dispense = 50
