@@ -51,12 +51,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'D1'
+    next_plate_well = 'C1'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'F1'
+    next_deepplate_well = 'E1'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -149,10 +149,10 @@ def run(protocol: protocol_api.ProtocolContext):
         "s1": "0.0",
         "s2": "0.0",
         "s3": "0.0",
-        "s4": "4.201680672268908",
+        "s4": "5.0",
         "s5": "0.0",
-        "s6": "4.201680672268908",
-        "s7": "1.5966386554621848",
+        "s6": "0.0",
+        "s7": "5.0",
         "s8": "0.0",
         "dmso": "0.0",
         "water": "990.0"
@@ -160,43 +160,43 @@ def run(protocol: protocol_api.ProtocolContext):
     {
         "": "1",
         "trial_index": "7.0",
-        "drug": "1.8",
-        "s1": "200.0",
-        "s2": "200.0",
-        "s3": "200.0",
-        "s4": "200.0",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "5.0",
+        "s4": "0.0",
         "s5": "0.0",
         "s6": "0.0",
-        "s7": "200.0",
+        "s7": "5.0",
         "s8": "0.0",
-        "dmso": "178.2",
-        "water": "0.0"
+        "dmso": "0.0",
+        "water": "990.0"
     },
     {
         "": "2",
         "trial_index": "8.0",
-        "drug": "1.8",
-        "s1": "2.5",
-        "s2": "2.5",
-        "s3": "2.5",
-        "s4": "0.0",
+        "drug": "180.0",
+        "s1": "166.66666666666663",
+        "s2": "166.66666666666663",
+        "s3": "166.66666666666663",
+        "s4": "166.66666666666663",
         "s5": "0.0",
-        "s6": "0.0",
-        "s7": "2.5",
+        "s6": "166.66666666666663",
+        "s7": "166.66666666666663",
         "s8": "0.0",
-        "dmso": "178.2",
-        "water": "990.0"
+        "dmso": "0.0",
+        "water": "2.220446049250313e-13"
     },
     {
         "": "3",
         "trial_index": "9.0",
         "drug": "180.0",
-        "s1": "0.0",
+        "s1": "3.333333333333333",
         "s2": "0.0",
-        "s3": "3.333333333333333",
-        "s4": "0.0",
+        "s3": "0.0",
+        "s4": "3.333333333333333",
         "s5": "0.0",
-        "s6": "3.333333333333333",
+        "s6": "0.0",
         "s7": "3.333333333333333",
         "s8": "0.0",
         "dmso": "0.0",
@@ -206,13 +206,13 @@ def run(protocol: protocol_api.ProtocolContext):
         "": "4",
         "trial_index": "10.0",
         "drug": "180.0",
-        "s1": "1.7889087656529516",
-        "s2": "1.7889087656529516",
-        "s3": "0.0",
-        "s4": "1.0554561717352415",
-        "s5": "1.7889087656529516",
-        "s6": "1.7889087656529516",
-        "s7": "1.7889087656529516",
+        "s1": "2.0",
+        "s2": "0.0",
+        "s3": "2.0",
+        "s4": "2.0",
+        "s5": "2.0",
+        "s6": "0.0",
+        "s7": "2.0",
         "s8": "0.0",
         "dmso": "0.0",
         "water": "990.0"
@@ -223,12 +223,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
-        "s3": "0.0",
+        "s3": "3.333333333333333",
         "s4": "0.0",
-        "s5": "0.0",
+        "s5": "3.333333333333333",
         "s6": "0.0",
-        "s7": "5.0",
-        "s8": "5.0",
+        "s7": "3.333333333333333",
+        "s8": "0.0",
         "dmso": "0.0",
         "water": "990.0"
     }
