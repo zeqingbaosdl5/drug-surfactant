@@ -35,14 +35,16 @@ normalize_drug_properties_dict = {
 
 }
 
-# MPS -> Metal Performance Shaders. Akin to using GPU acceleration
-if torch.backends.mps.is_available():
-    device = torch.device("mps")
-else:
-    device = torch.device("cpu")
-model_kwargs = {"device": device}
+torch.set_num_threads(900)
 
-torch.set_num_threads()
+# MPS -> Metal Performance Shaders. Akin to using GPU acceleration
+#if torch.backends.mps.is_available():
+#    device = torch.device("mps")
+#else:
+#    device = torch.device("cpu")
+#model_kwargs = {"device": device}
+
+
 
 def optimizer_init():
     
