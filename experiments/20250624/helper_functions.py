@@ -9,7 +9,6 @@ import json
 import subprocess
 import os
 import re
-import torch
 
 
 optimizer_file_path = 'optimizer/optimizer_'
@@ -20,7 +19,7 @@ otflex_output_file_path = 'protocol/otflex_'
 #results_file_path = 'result/result_'
 
 drug_stock_conc = 25  # mg/mL
-surfactant_stock_conc = 5  # mg/mL
+surfactant_stock_conc = 50  # mg/mL
 drug_total_volume = 0.18  # mL
 surfactant_total_volume = 1  # mL
 number_of_surfactants = 8  # s1 to s12
@@ -35,16 +34,6 @@ normalize_drug_properties_dict = {
 
 }
 
-torch.set_num_threads(900)
-
-# MPS -> Metal Performance Shaders. Akin to using GPU acceleration
-#if torch.backends.mps.is_available():
-#    device = torch.device("mps")
-#else:
-#    device = torch.device("cpu")
-#model_kwargs = {"device": device}
-
-
 
 def optimizer_init():
     
@@ -53,7 +42,7 @@ def optimizer_init():
         steps=[
             GenerationStep(
                 model=Models.SOBOL,
-                num_trials=3,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
+                num_trials=6,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
                 model_kwargs={"seed": 0},
             ),
             GenerationStep(
