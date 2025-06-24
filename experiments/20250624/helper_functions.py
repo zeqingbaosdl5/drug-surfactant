@@ -19,7 +19,7 @@ otflex_output_file_path = 'protocol/otflex_'
 #results_file_path = 'result/result_'
 
 drug_stock_conc = 25  # mg/mL
-surfactant_stock_conc = 50  # mg/mL
+surfactant_stock_conc = 5  # mg/mL
 drug_total_volume = 0.18  # mL
 surfactant_total_volume = 1  # mL
 number_of_surfactants = 8  # s1 to s12
@@ -42,7 +42,7 @@ def optimizer_init():
         steps=[
             GenerationStep(
                 model=Models.SOBOL,
-                num_trials=6,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
+                num_trials=3,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
                 model_kwargs={"seed": 0},
             ),
             GenerationStep(
