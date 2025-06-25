@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from ax.service.ax_client import AxClient, ObjectiveProperties
 import matplotlib.pyplot as plt
-from ax.modelbridge.factory import Models
+from ax.modelbridge.registry import Models
 from ax.core.observation import ObservationFeatures
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 import json
