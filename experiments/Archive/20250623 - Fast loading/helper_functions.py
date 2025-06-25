@@ -35,7 +35,7 @@ normalize_drug_properties_dict = {
 
 }
 
-torch.set_num_threads(900)
+#torch.set_num_threads(900)
 
 # MPS -> Metal Performance Shaders. Akin to using GPU acceleration
 if torch.backends.mps.is_available():
