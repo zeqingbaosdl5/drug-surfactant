@@ -19,7 +19,7 @@ def branin(x1, x2):
     return y
 
 
-def ackley(x1, x2, a=20, b=0.2, c=2 * np.pi):
+def ackley(x1, x2, a=20, b=0.2, c=2 * np.pi): # [-32.768, 32.768]
     """
     ACKLEY FUNCTION
 
@@ -57,7 +57,7 @@ def ackley(x1, x2, a=20, b=0.2, c=2 * np.pi):
 
 # dummy functions for testing different generation strategies
 
-def noisy_quadratic(x, noise_scale=0.1, rng=None):
+def noisy_quadratic(x, noise_scale=0.1, rng=None): # [-5.0, 5.0]
     """Sparse quadratic function with noise.
     Only x[0], x[3], x[6], x[9], x[12] affect the output."""
     if rng is None:
@@ -66,7 +66,7 @@ def noisy_quadratic(x, noise_scale=0.1, rng=None):
     noise = noise_scale * rng.normal()
     return active_params + noise
 
-def noisy_rosenbrock(x, noise_scale=0.1, rng=None):
+def noisy_rosenbrock(x, noise_scale=0.1, rng=None): # [-2.0, 2.0]
     """14D Rosenbrock with multiplicative Gaussian noise."""
     if rng is None:
         rng = np.random.default_rng()
@@ -77,7 +77,7 @@ def noisy_rosenbrock(x, noise_scale=0.1, rng=None):
     noise = noise_scale * rosenbrock * rng.normal()
     return rosenbrock + noise
 
-def noisy_mixed(x, noise_scale=0.2, rng=None):
+def noisy_mixed(x, noise_scale=0.2, rng=None): # [-3.0, 3.0]
     """Linear + periodic terms with input-dependent noise."""
     if rng is None:
         rng = np.random.default_rng()
