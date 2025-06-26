@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 utils.set_seeds(0)  # setting the random seed for reproducibility
 
-seed_list = [3, 4, 5]
+seed_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 obj1_name = 'ackley'
 
 models_list = [Generators.SAASBO, Generators.BO_MIXED, Generators.BOTORCH_MODULAR] # BO_MIXED is new name for GPEI in Ax 1.0.0
@@ -64,27 +64,22 @@ for j, seed in enumerate(seed_list):
             results = utils.ackley(x1, x2)
             ax_client.complete_trial(trial_index=trial_index, raw_data=results)
 
-        traces[j][seed, :] = get_trace(ax_client._experiment)
-        print(traces[j][seed, :], "for model:", i, "seed:", seed)
+        traces[i][seed, :] = get_trace(ax_client._experiment)
+        print(traces[i][seed, :], "for model:", i, "seed:", seed)
     
     # plot for each seed
     objective = 'ackley'
     
     fig, ax = plt.subplots(figsize=(6, 4), dpi=150)
 
-    for model, name in zip([trace for trace in traces], ["SAASBO", "GPEI", "BOTORCH_MODULAR"]):
-
-        mean = np.mean(model, axis=0)
-        std = np.std(model, axis=0)
+    for trace, name in zip([trace for trace in traces], ["SAASBO", "GPEI", "BOTORCH_MODULAR"]):
 
         color = '#0033FF' if name == "SAASBO" else '#FF3300'
         color = '#00FF33' if name == "BOTORCH_MODULAR" else color
 
-        ax.plot(mean, color=color, label=f"{name} Mean")
-        '''ax.fill_between(
-            range(len(mean)), mean - std, mean + std,
-            color=color, alpha=0.3, label=f"{name} Std Dev"
-        )'''
+        ax.plot(trace[j], color=color, label=f"{name} Trace")
+        print(j, trace[j])
+        print(seed, trace[seed])
 
     ax.axvline(3, color='black', linestyle='--') # mark end of SOBOL trials
 
@@ -99,13 +94,13 @@ objective = 'ackley'
 
 fig, ax = plt.subplots(figsize=(6, 4), dpi=150)
 
-for model, name in zip([trace for trace in traces], ["SAASBO", "GPEI", "BOTORCH_MODULAR"]):
+for trace, name in zip([trace for trace in traces], ["SAASBO", "GPEI", "BOTORCH_MODULAR"]):
 
-    mean = np.mean(model, axis=0)
-    std = np.std(model, axis=0)
+    mean = np.mean(trace, axis=0)
+    std = np.std(trace, axis=0)
 
-    color = '#0033FF' if name == "EI" else '#FF3300'
-    color = '#00FF33' if name == "LEI" else color  # green for LEI
+    color = '#0033FF' if name == "SAASBO" else '#FF3300'
+    color = '#00FF33' if name == "BOTORCH_MODULAR" else color
 
     ax.plot(mean, color=color, label=f"{name} Mean")
     ax.fill_between(
@@ -118,4 +113,4 @@ ax.axvline(3, color='black', linestyle='--') # mark end of SOBOL trials
 ax.set_xlabel("Trial Number")
 ax.set_ylabel(objective)
 ax.legend()
-plt.savefig("benchmarking/gen_strategy_bench_seed0.png", dpi=150)
+plt.savefig("benchmarking/gen_strategy_bench_mean_and_std.png", dpi=150)
