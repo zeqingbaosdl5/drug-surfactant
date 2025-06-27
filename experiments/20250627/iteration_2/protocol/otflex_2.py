@@ -51,12 +51,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'F1'
+    next_plate_well = 'G1'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'H1'
+    next_deepplate_well = 'A7'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -144,48 +144,48 @@ def run(protocol: protocol_api.ProtocolContext):
     data = [
     {
         "": "0",
-        "trial_index": "0.0",
+        "trial_index": "6.0",
         "drug": "180.0",
-        "s1": "118.89880952380953",
-        "s2": "151.7857142857143",
-        "s3": "126.48809523809523",
-        "s4": "78.42261904761905",
-        "s5": "242.85714285714286",
-        "s6": "20.238095238095237",
-        "s7": "22.76785714285714",
-        "s8": "88.54166666666669",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "500.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "500.0",
+        "s8": "0.0",
         "dmso": "0.0",
-        "water": "149.99999999999991"
+        "water": "0.0"
     },
     {
         "": "1",
-        "trial_index": "1.0",
+        "trial_index": "7.0",
         "drug": "180.0",
-        "s1": "58.99772209567198",
-        "s2": "0.0",
-        "s3": "70.15945330296128",
-        "s4": "52.619589977220954",
-        "s5": "17.53986332574032",
-        "s6": "41.45785876993166",
-        "s7": "46.24145785876993",
-        "s8": "62.98405466970386",
+        "s1": "0.0",
+        "s2": "250.0",
+        "s3": "0.0",
+        "s4": "250.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "250.0",
+        "s8": "250.0",
         "dmso": "0.0",
-        "water": "650.0000000000001"
+        "water": "0.0"
     },
     {
         "": "2",
-        "trial_index": "2.0",
+        "trial_index": "8.0",
         "drug": "180.0",
-        "s1": "1.9597989949748742",
-        "s2": "2.2110552763819094",
-        "s3": "0.02512562814070352",
-        "s4": "0.07537688442211055",
-        "s5": "0.8040201005025126",
-        "s6": "2.3618090452261304",
-        "s7": "1.1055276381909547",
-        "s8": "1.4572864321608041",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "500.0",
+        "s5": "0.0",
+        "s6": "500.0",
+        "s7": "0.0",
+        "s8": "0.0",
         "dmso": "0.0",
-        "water": "990.0"
+        "water": "0.0"
     }
 ]
 ########################################################################################################################################

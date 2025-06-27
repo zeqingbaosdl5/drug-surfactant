@@ -51,12 +51,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'A7'
+    next_plate_well = 'F7'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'C7'
+    next_deepplate_well = 'A1'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -147,44 +147,44 @@ def run(protocol: protocol_api.ProtocolContext):
         "trial_index": "3.0",
         "drug": "180.0",
         "s1": "0.0",
-        "s2": "2.0000000000000004",
-        "s3": "2.0000000000000004",
-        "s4": "0.0",
-        "s5": "2.0000000000000004",
-        "s6": "2.0000000000000004",
-        "s7": "2.0000000000000004",
+        "s2": "200.0",
+        "s3": "200.0",
+        "s4": "200.0",
+        "s5": "0.0",
+        "s6": "200.0",
+        "s7": "200.0",
         "s8": "0.0",
         "dmso": "0.0",
-        "water": "990.0"
+        "water": "0.0"
     },
     {
         "": "1",
         "trial_index": "4.0",
         "drug": "180.0",
         "s1": "0.0",
-        "s2": "2.0000000000000004",
+        "s2": "0.0",
         "s3": "0.0",
-        "s4": "2.0000000000000004",
-        "s5": "2.0000000000000004",
-        "s6": "2.0000000000000004",
-        "s7": "2.0000000000000004",
+        "s4": "500.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "500.0",
         "s8": "0.0",
         "dmso": "0.0",
-        "water": "990.0"
+        "water": "0.0"
     },
     {
         "": "2",
         "trial_index": "5.0",
-        "drug": "1.8",
-        "s1": "0.0",
-        "s2": "5.0",
+        "drug": "180.0",
+        "s1": "2.5",
+        "s2": "0.0",
         "s3": "0.0",
-        "s4": "5.0",
-        "s5": "0.0",
+        "s4": "2.5",
+        "s5": "2.5",
         "s6": "0.0",
-        "s7": "0.0",
+        "s7": "2.5",
         "s8": "0.0",
-        "dmso": "178.2",
+        "dmso": "0.0",
         "water": "990.0"
     }
 ]
