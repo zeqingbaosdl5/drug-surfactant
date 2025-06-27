@@ -1,0 +1,4 @@
+trial_index,Drug_MW,Drug_LogP,Drug_TPSA,s1,s2,s3,s4,s5,s6,s7,s8,surfactant_conc,drug_conc,micelle_drug_conc,success,initial_drug_conc_surfactant_conc_ratio,Complexity
+27,0.206,0.307,0.037,0,0,0,3,0,0,0,0,1,95,,,,
+28,0.206,0.307,0.037,0,0,0,52,0,0,0,0,1,97,,,,
+29,0.206,0.307,0.037,0,0,0,33,0,0,0,0,1,86,,,,
