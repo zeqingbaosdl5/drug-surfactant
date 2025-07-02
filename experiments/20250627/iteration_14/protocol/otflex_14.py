@@ -14,8 +14,8 @@ def run(protocol: protocol_api.ProtocolContext):
 
     # robot setup
     # load 1000 uL tip rack in deck slot D2
-    tip1000_1 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_200ul", location="B1")
-    tip1000_2 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_200ul", location="A1")
+    tip1000_1 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_1000ul", location="B1")
+    tip1000_2 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_1000ul", location="A1")
     tip50 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_50ul", location="B2")
 
     hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
@@ -51,12 +51,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'H3'
+    next_plate_well = 'E7'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'H3'
+    next_deepplate_well = 'A7'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -140,26 +140,55 @@ def run(protocol: protocol_api.ProtocolContext):
 
 
     # to be rewritten according to the exp design
-################################################################################################################################################
-    data = [{'': '0',
-  'trial_index': '0',
-  'drug': '120',
-  's1': '300',
-  's2': '00',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0',
-  'water': '500.0'},
- ]
-
+########################################################################################################################################
+    data = [
+    {
+        "": "0",
+        "trial_index": "42.0",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "280.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "720.0"
+    },
+    {
+        "": "1",
+        "trial_index": "43.0",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "215.98272138228944",
+        "s5": "136.06911447084232",
+        "s6": "215.98272138228944",
+        "s7": "215.98272138228944",
+        "s8": "215.98272138228944",
+        "dmso": "0.0",
+        "water": "0.0"
+    },
+    {
+        "": "2",
+        "trial_index": "44.0",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "390.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "610.0"
+    }
+]
+########################################################################################################################################
 ################################################################################################################################################
     
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
