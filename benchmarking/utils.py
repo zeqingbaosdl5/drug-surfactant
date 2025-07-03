@@ -86,3 +86,37 @@ def noisy_mixed(x, noise_scale=0.2, rng=None): # [-3.0, 3.0]
     interaction_part = x[10] * x[11] - 0.5 * x[12] * x[13]
     noise = noise_scale * (1.0 + np.abs(x[0])) * rng.normal()  # Noise scales with |x[0]|
     return linear_part + periodic_part + interaction_part + noise
+
+def polynomial_14d(x, noise_scale=0.1): # [-5.0, 5.0]
+    """14D quadratic function with sparse interactions and noise."""
+    rng = np.random.default_rng()
+    
+    # Objectives (quadratic + sparse linear terms)
+    f1 = 2.0 * x[0]**2 - 1.5 * x[1] + 0.3 * x[2]*x[3] + 0.1 * sum(x[4:7]) + noise_scale * rng.normal()
+    f2 = 0.5 * x[0] + 0.2 * x[1]**2 - 0.4 * x[5]*x[6] + 0.1 * sum(x[7:10]) + noise_scale * rng.normal()
+    f3 = -1.0 * x[0] + 0.7 * x[1]*x[2] + 0.05 * sum(x[10:14]) + noise_scale * rng.normal()
+    
+    return {"f1": f1, "f2": f2, "f3": f3}
+
+def sigmoid_14d(x, noise_scale=0.1): # [-3.0, 3.0]
+    """14D sigmoid-based function with input-dependent noise."""
+    rng = np.random.default_rng()
+    x = np.array(list(x.values()))
+    
+    # Sigmoid: S(x) = 1 / (1 + exp(-x))
+    f1 = 1.0 / (1 + np.exp(-x[0])) + 0.2 * x[1] - 0.3 / (1 + np.exp(-x[2])) + noise_scale * rng.normal()
+    f2 = 0.5 / (1 + np.exp(-2 * x[3])) + 0.1 * sum(x[4:6]) + noise_scale * (1 + abs(x[3])) * rng.normal()
+    f3 = -1.0 / (1 + np.exp(-x[6])) + 0.3 * x[7] + 0.05 * sum(x[8:14]) + noise_scale * rng.normal()
+    
+    return {"f1": f1, "f2": f2, "f3": f3}
+
+def mixed_14d(x, noise_scale=0.15): # [-pi, pi] for x[0], x[2], x[4], x[10], x[11], [-3.0, 3.0] for rest
+    """14D mix of sin/cos, linear, and periodic terms."""
+    rng = np.random.default_rng()
+    x = np.array(list(x.values()))
+    
+    f1 = np.sin(x[0]) + 0.5 * x[1] + 0.2 * np.cos(x[2]*x[3]) + noise_scale * rng.normal()
+    f2 = np.cos(x[4]) - 0.3 * x[5] * x[6] + 0.1 * sum(x[7:10]) + noise_scale * (0.5 + abs(x[4])) * rng.normal()
+    f3 = 0.2 * (x[0] + x[1] + x[2]) + np.sin(x[10]) * np.cos(x[11]) + noise_scale * rng.normal()
+    
+    return {"f1": f1, "f2": f2, "f3": f3}
