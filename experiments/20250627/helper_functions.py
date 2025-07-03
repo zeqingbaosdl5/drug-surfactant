@@ -29,10 +29,33 @@ normalize_drug_properties_dict = {
 
     'IBP': {
         'full_name': 'Ibuprofen',
-        'normalized_properties': {"Drug_MW": 0.206, "Drug_LogP": 0.307,  "Drug_TPSA": 0.037},  # normalized values /1000; /10; /1000
+        'normalized_properties': {"Drug_MW": 0.2063, "Drug_LogP": 0.3073,  "Drug_TPSA": 0.0373},  # normalized values /1000; /10; /1000
         'drug_stock_conc': 25, # mg/mL
-    }
+    },
 
+    'DCF': {
+        'full_name': 'Diclofenac',
+        'normalized_properties': {"Drug_MW": 0.2962, "Drug_LogP": 0.4364,  "Drug_TPSA": 0.0493},  # normalized values /1000; /10; /1000
+        'drug_stock_conc': 25, # mg/mL
+    },
+
+    'LOV': {
+        'full_name': 'Lovastatin',
+        'normalized_properties': {"Drug_MW": 0.4045, "Drug_LogP": 0.4196,  "Drug_TPSA": 0.0728},  # normalized values /1000; /10; /1000
+        'drug_stock_conc': 25, # mg/mL
+    },
+
+    'ITZ': {
+        'full_name': 'Itraconazole',
+        'normalized_properties': {"Drug_MW": 0.7056, "Drug_LogP": 0.5577,  "Drug_TPSA": 0.1047},  # normalized values /1000; /10; /1000
+        'drug_stock_conc': 25, # mg/mL
+    },
+
+    'RPD': {
+        'full_name': 'Risperidone',
+        'normalized_properties': {"Drug_MW": 0.4105, "Drug_LogP": 0.3590,  "Drug_TPSA": 0.0642},  # normalized values /1000; /10; /1000
+        'drug_stock_conc': 25, # mg/mL
+    },
 }
 
 
@@ -240,7 +263,7 @@ def run_optimizer(current_iteration, drug, bopt, n_trials):
     if bopt == 0:
         print("Generating random trials for")
     elif bopt == 1:
-        print("Generating Bayesian Optimization trialsfor")
+        print("Generating Bayesian Optimization trials for")
     print("Drug name: ", normalize_drug_properties_dict[drug]["full_name"],f"{(drug)}", " | Iteration: ", current_iteration)
     print()
     print("**************************************************************************************************************")
