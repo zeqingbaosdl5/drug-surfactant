@@ -59,20 +59,20 @@ for j, seed in enumerate(seed_list):
 
         ax_client.create_experiment(
             parameters=[
-                {"name": "x1", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x2", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x3", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x4", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x5", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x6", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x7", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x8", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x9", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x10", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x11", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x12", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x13", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"},
-                {"name": "x14", "type": "range", "bounds": [-5.0, 5.0], "value_type": "float"}
+                {"name": "x1", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x2", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x3", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x4", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x5", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x6", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x7", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x8", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x9", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x10", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x11", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x12", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x13", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x14", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"}
                 ],
             objectives={
                 obj1_name: ObjectiveProperties(minimize=True),
@@ -88,7 +88,7 @@ for j, seed in enumerate(seed_list):
 
             x = np.array([parameterization[f"x{i+1}"] for i in range(14)])
 
-            results = utils.polynomial_14d(x)
+            results = utils.sigmoid_14d(x)
             ax_client.complete_trial(trial_index=trial_index, raw_data=results)
 
         traces[i][seed, :] = get_trace(ax_client._experiment)
@@ -96,7 +96,7 @@ for j, seed in enumerate(seed_list):
         print(times[i][seed, :], "for model:", i, "seed:", seed)
     
     # plot for each seed
-    objective = '14D Polynomial Hypervolume'
+    objective = '14D Sigmoid Hypervolume'
     
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 8), dpi=150)
 
@@ -124,11 +124,11 @@ for j, seed in enumerate(seed_list):
 
     plt.tight_layout()
     #plt.show()
-    plt.savefig("benchmarking/14_parameter_benches/polynomial_multi/gen_strategy_bench_poly14D_seed{}.png".format(seed), dpi=150)
+    plt.savefig("benchmarking/14_parameter_benches/sigmoid_multi/gen_strategy_bench_sig14D_seed{}.png".format(seed), dpi=150)
 
 
 # plot everything together
-objective = 'rosenbrock'
+objective = '14D Sigmoid Hypervolume'
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 8), dpi=150)
 
@@ -164,4 +164,4 @@ ax1.set_ylabel(objective)
 
 ax2.set_ylabel("Time (seconds)")
 
-plt.savefig("benchmarking/14_parameter_benches/polynomial_multi/gen_strategy_bench_poly14D_mean_and_std.png", dpi=150)
+plt.savefig("benchmarking/14_parameter_benches/sigmoid_multi/gen_strategy_bench_sig14D_mean_and_std.png", dpi=150)

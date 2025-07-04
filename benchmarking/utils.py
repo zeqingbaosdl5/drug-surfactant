@@ -101,7 +101,6 @@ def polynomial_14d(x, noise_scale=0.1): # [-5.0, 5.0]
 def sigmoid_14d(x, noise_scale=0.1): # [-3.0, 3.0]
     """14D sigmoid-based function with input-dependent noise."""
     rng = np.random.default_rng()
-    x = np.array(list(x.values()))
     
     # Sigmoid: S(x) = 1 / (1 + exp(-x))
     f1 = 1.0 / (1 + np.exp(-x[0])) + 0.2 * x[1] - 0.3 / (1 + np.exp(-x[2])) + noise_scale * rng.normal()
@@ -113,7 +112,6 @@ def sigmoid_14d(x, noise_scale=0.1): # [-3.0, 3.0]
 def mixed_14d(x, noise_scale=0.15): # [-pi, pi] for x[0], x[2], x[4], x[10], x[11], [-3.0, 3.0] for rest
     """14D mix of sin/cos, linear, and periodic terms."""
     rng = np.random.default_rng()
-    x = np.array(list(x.values()))
     
     f1 = np.sin(x[0]) + 0.5 * x[1] + 0.2 * np.cos(x[2]*x[3]) + noise_scale * rng.normal()
     f2 = np.cos(x[4]) - 0.3 * x[5] * x[6] + 0.1 * sum(x[7:10]) + noise_scale * (0.5 + abs(x[4])) * rng.normal()
