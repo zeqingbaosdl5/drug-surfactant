@@ -11,8 +11,6 @@ import matplotlib.pyplot as plt
 
 import time
 
-utils.set_seeds(0)  # setting the random seed for reproducibility
-
 seed_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 obj1_name = 'f1'
 obj2_name = 'f2'
@@ -33,6 +31,7 @@ for model in models_list:
     times.append(np.zeros((len(seed_list), trial_num)))
 
 for j, seed in enumerate(seed_list):
+    utils.set_seeds(seed)  # setting the random seed for reproducibility
     for i, model in enumerate(models_list):
         gs = GenerationStrategy(
             steps=[
@@ -59,18 +58,18 @@ for j, seed in enumerate(seed_list):
 
         ax_client.create_experiment(
             parameters=[
-                {"name": "x1", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x1", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
                 {"name": "x2", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x3", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x3", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
                 {"name": "x4", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x5", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x5", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
                 {"name": "x6", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
                 {"name": "x7", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
                 {"name": "x8", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
                 {"name": "x9", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
                 {"name": "x10", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x11", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x12", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+                {"name": "x11", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
+                {"name": "x12", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
                 {"name": "x13", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
                 {"name": "x14", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"}
                 ],
@@ -88,7 +87,7 @@ for j, seed in enumerate(seed_list):
 
             x = np.array([parameterization[f"x{i+1}"] for i in range(14)])
 
-            results = utils.sigmoid_14d(x)
+            results = utils.mixed_14d(x)
             ax_client.complete_trial(trial_index=trial_index, raw_data=results)
 
         traces[i][seed, :] = get_trace(ax_client._experiment)
@@ -96,7 +95,7 @@ for j, seed in enumerate(seed_list):
         print(times[i][seed, :], "for model:", i, "seed:", seed)
     
     # plot for each seed
-    objective = '14D Sigmoid Hypervolume'
+    objective = '14D Mixed Function Hypervolume'
     
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 8), dpi=150)
 
@@ -124,11 +123,11 @@ for j, seed in enumerate(seed_list):
 
     plt.tight_layout()
     #plt.show()
-    plt.savefig("benchmarking/14_parameter_benches/sigmoid_multi/gen_strategy_bench_sig14D_seed{}.png".format(seed), dpi=150)
+    plt.savefig("benchmarking/14_parameter_benches/mixed_multi/gen_strategy_bench_mixed14D_seed{}.png".format(seed), dpi=150)
 
 
 # plot everything together
-objective = '14D Sigmoid Hypervolume'
+objective = '14D Mixed Function Hypervolume'
 
 fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 8), dpi=150)
 
@@ -164,4 +163,4 @@ ax1.set_ylabel(objective)
 
 ax2.set_ylabel("Time (seconds)")
 
-plt.savefig("benchmarking/14_parameter_benches/sigmoid_multi/gen_strategy_bench_sig14D_mean_and_std.png", dpi=150)
+plt.savefig("benchmarking/14_parameter_benches/mixed_multi/gen_strategy_bench_mixed14D_mean_and_std.png", dpi=150)
