@@ -15,14 +15,14 @@ import re
 optimizer_file_path = 'optimizer/optimizer_'
 raw_data_file_path = 'raw_data/raw_absorbance_'
 design_file_path = 'optimizer/design_'
-otflex_template_file_path = '../drug_surfactant_otflex_template-hs.py'
+otflex_template_file_path = '../drug_surfactant_otflex_template.py'
 otflex_output_file_path = 'protocol/otflex_'
 #results_file_path = 'result/result_'
 
 drug_stock_conc = 25  # mg/mL
 surfactant_stock_conc = 50  # mg/mL
-drug_total_volume = 0.18  # mL
-surfactant_total_volume = 1.2  # mL
+drug_total_volume = 0.36  # mL
+surfactant_total_volume = 2  # mL
 number_of_surfactants = 8  # s1 to s12
 
 normalize_drug_properties_dict = {
@@ -157,7 +157,7 @@ def design_to_conc_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total
     return df_conc, df_vol
 
 
-def process_absorbance(iteration, replicates=3, threshold=0.1):
+def process_absorbance(iteration, replicates=6, threshold=0.1):
 
     n = replicates
     
@@ -312,11 +312,11 @@ def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
     found_deep = False
     for i, line in enumerate(lines):
         stripped = line.strip()
-        if not found_plate and stripped.startswith("next_plate_well") and "'H3'" in stripped:
+        if not found_plate and stripped.startswith("next_plate_well") and "'A1'" in stripped:
             indent = line[:len(line) - len(line.lstrip())]
             lines[i] = f"{indent}next_plate_well = '{plate_well}'\n"
             found_plate = True
-        elif not found_deep and stripped.startswith("next_deepplate_well") and "'H3'" in stripped:
+        elif not found_deep and stripped.startswith("next_deepplate_well") and "'A1'" in stripped:
             indent = line[:len(line) - len(line.lstrip())]
             lines[i] = f"{indent}next_deepplate_well = '{deepplate_well}'\n"
             found_deep = True
