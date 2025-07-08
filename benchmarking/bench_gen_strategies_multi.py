@@ -18,22 +18,49 @@ obj3_name = 'f3'
 
 models_list = [Generators.SAASBO, Generators.BO_MIXED, Generators.BOTORCH_MODULAR]
 
-trial_num = 20
+total_trials = 20
 
 sobol_count = 5
+trial_num = total_trials - sobol_count
+
+trial_parameters = [
+    {"name": "x1", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
+    {"name": "x2", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x3", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
+    {"name": "x4", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x5", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
+    {"name": "x6", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x7", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x8", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x9", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x10", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x11", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
+    {"name": "x12", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
+    {"name": "x13", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
+    {"name": "x14", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"}
+]
+
+trial_objectives = {
+    obj1_name: ObjectiveProperties(minimize=True),
+    obj2_name: ObjectiveProperties(minimize=True),
+    obj3_name: ObjectiveProperties(minimize=True),
+}
 
 traces = []
 for model in models_list:
-    traces.append(np.zeros((len(seed_list), trial_num)))
+    traces.append(np.zeros((len(seed_list), total_trials)))
 
 times = []
 for model in models_list:
-    times.append(np.zeros((len(seed_list), trial_num)))
+    times.append(np.zeros((len(seed_list), total_trials)))
 
 for j, seed in enumerate(seed_list):
     utils.set_seeds(seed)  # setting the random seed for reproducibility
-    for i, model in enumerate(models_list):
-        gs = GenerationStrategy(
+
+    # generate same sobol trials for all models
+    sobol_trials = []
+    sobol_client = AxClient(
+        generation_strategy=GenerationStrategy(
             steps=[
                 GenerationStep(
                     model=Generators.SOBOL,
@@ -43,6 +70,41 @@ for j, seed in enumerate(seed_list):
                     model_kwargs={"seed": seed},
                     model_gen_kwargs={},
                 ),
+            ]
+        ),
+        verbose_logging=False,
+        random_seed=seed)
+    
+    sobol_client.create_experiment(
+        parameters=trial_parameters,
+        objectives=trial_objectives,
+    )
+
+    for a in range(sobol_count):
+        start_time = time.time()
+        parameterization, trial_index = sobol_client.get_next_trial()
+        time_taken = time.time() - start_time
+        
+        for mod_time in times:
+            mod_time[j, a] = time_taken
+
+        x = np.array([parameterization[f"x{i+1}"] for i in range(14)])
+
+        results = utils.mixed_14d(x)
+        sobol_trials.append([results, parameterization])
+        sobol_client.complete_trial(trial_index=trial_index, raw_data=results)
+
+    for i, model in enumerate(models_list):
+        gs = GenerationStrategy(
+            steps=[
+                #GenerationStep(
+                #    model=Generators.SOBOL,
+                #    num_trials=sobol_count,
+                #    min_trials_observed=3,
+                #    max_parallelism=5,
+                #    model_kwargs={"seed": seed},
+                #    model_gen_kwargs={},
+                #),
                 GenerationStep(
                     model=model,
                     num_trials=-1,
@@ -57,42 +119,27 @@ for j, seed in enumerate(seed_list):
                                 random_seed=seed)
 
         ax_client.create_experiment(
-            parameters=[
-                {"name": "x1", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
-                {"name": "x2", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x3", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
-                {"name": "x4", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x5", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
-                {"name": "x6", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x7", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x8", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x9", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x10", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x11", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
-                {"name": "x12", "type": "range", "bounds": [-np.pi, np.pi], "value_type": "float"},
-                {"name": "x13", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"},
-                {"name": "x14", "type": "range", "bounds": [-3.0, 3.0], "value_type": "float"}
-                ],
-            objectives={
-                obj1_name: ObjectiveProperties(minimize=True),
-                obj2_name: ObjectiveProperties(minimize=True),
-                obj3_name: ObjectiveProperties(minimize=True),
-            },
+            parameters=trial_parameters,
+            objectives=trial_objectives,
         )
+
+        for a, (result, parameterization) in enumerate(sobol_trials):
+            ax_client.attach_trial(parameters=parameterization)
+            ax_client.complete_trial(trial_index=a, raw_data=result)
 
         for a in range(trial_num):
             start_time = time.time()
             parameterization, trial_index = ax_client.get_next_trial()
-            times[i][seed, a] = time.time() - start_time
+            times[i][j, a] = time.time() - start_time
 
             x = np.array([parameterization[f"x{i+1}"] for i in range(14)])
 
             results = utils.mixed_14d(x)
             ax_client.complete_trial(trial_index=trial_index, raw_data=results)
 
-        traces[i][seed, :] = get_trace(ax_client._experiment)
-        print(traces[i][seed, :], "for model:", i, "seed:", seed)
-        print(times[i][seed, :], "for model:", i, "seed:", seed)
+        traces[i][j, :] = get_trace(ax_client._experiment)
+        print(traces[i][j, :], "for model:", i, "seed:", seed)
+        print(times[i][j, :], "for model:", i, "seed:", seed)
     
     # plot for each seed
     objective = '14D Mixed Function Hypervolume'
@@ -105,12 +152,10 @@ for j, seed in enumerate(seed_list):
         color = '#00FF33' if name == "BOTORCH_MODULAR" else color
 
         ax1.plot(trace[j], color=color, label=f"{name} Trace")
-        print(j, trace[j])
-        print(seed, trace[seed])
+        print(seed, trace[j])
 
         ax2.plot(duration[j], color=color, label=f"{name} Duration")
-        print(j, duration[j])
-        print(seed, duration[seed])
+        print(seed, duration[j])
 
     for ax in [ax1, ax2]:
         ax.axvline(sobol_count - 1, color='black', linestyle='--') # mark end of SOBOL trials
@@ -122,8 +167,8 @@ for j, seed in enumerate(seed_list):
     ax2.set_ylabel("Time (seconds)")
 
     plt.tight_layout()
-    #plt.show()
-    plt.savefig("benchmarking/14_parameter_benches/mixed_multi/gen_strategy_bench_mixed14D_seed{}.png".format(seed), dpi=150)
+    plt.show()
+    #plt.savefig("benchmarking/14_parameter_benches/mixed_multi/gen_strategy_bench_mixed14D_seed{}.png".format(seed), dpi=150)
 
 
 # plot everything together
@@ -162,5 +207,5 @@ for ax in [ax1, ax2]:
 ax1.set_ylabel(objective)
 
 ax2.set_ylabel("Time (seconds)")
-
-plt.savefig("benchmarking/14_parameter_benches/mixed_multi/gen_strategy_bench_mixed14D_mean_and_std.png", dpi=150)
+plt.show()
+#plt.savefig("benchmarking/14_parameter_benches/mixed_multi/gen_strategy_bench_mixed14D_mean_and_std.png", dpi=150)
