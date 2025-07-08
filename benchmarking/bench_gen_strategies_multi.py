@@ -18,7 +18,7 @@ obj3_name = 'f3'
 
 models_list = [Generators.SAASBO, Generators.BO_MIXED, Generators.BOTORCH_MODULAR]
 
-total_trials = 20
+total_trials = 7
 
 sobol_count = 5
 trial_num = total_trials - sobol_count
@@ -90,7 +90,7 @@ for j, seed in enumerate(seed_list):
 
         x = np.array([parameterization[f"x{i+1}"] for i in range(14)])
 
-        results = utils.mixed_14d(x)
+        results = utils.polynomial_14d(x)
         sobol_trials.append([results, parameterization])
         sobol_client.complete_trial(trial_index=trial_index, raw_data=results)
 
@@ -126,18 +126,19 @@ for j, seed in enumerate(seed_list):
         for a, (result, parameterization) in enumerate(sobol_trials):
             ax_client.attach_trial(parameters=parameterization)
             ax_client.complete_trial(trial_index=a, raw_data=result)
+        traces[i][j, :sobol_count] = get_trace(ax_client._experiment)[:sobol_count]
 
         for a in range(trial_num):
             start_time = time.time()
             parameterization, trial_index = ax_client.get_next_trial()
-            times[i][j, a] = time.time() - start_time
+            times[i][j, sobol_count + a] = time.time() - start_time
 
             x = np.array([parameterization[f"x{i+1}"] for i in range(14)])
 
             results = utils.mixed_14d(x)
             ax_client.complete_trial(trial_index=trial_index, raw_data=results)
 
-        traces[i][j, :] = get_trace(ax_client._experiment)
+        traces[i][j, :] = get_trace(ax_client._experiment)#[sobol_count:]
         print(traces[i][j, :], "for model:", i, "seed:", seed)
         print(times[i][j, :], "for model:", i, "seed:", seed)
     
