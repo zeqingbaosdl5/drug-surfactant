@@ -1,0 +1,4 @@
+trial_index,Drug_MW,Drug_LogP,Drug_TPSA,s1,s2,s3,s4,s5,s6,s7,s8,surfactant_conc,drug_conc,success,surfactant_input,Complexity
+78,0.3448,0.5377,0.0178,0,0,0,0,22,0,100,0,100,100,,,
+79,0.3448,0.5377,0.0178,86,11,0,0,0,0,0,7,100,100,,,
+80,0.3448,0.5377,0.0178,21,0,0,0,0,9,0,0,66,100,,,
