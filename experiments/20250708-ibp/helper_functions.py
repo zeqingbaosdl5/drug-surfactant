@@ -56,6 +56,25 @@ normalize_drug_properties_dict = {
         'normalized_properties': {"Drug_MW": 0.4105, "Drug_LogP": 0.3590,  "Drug_TPSA": 0.0642},  # normalized values /1000; /10; /1000
         'drug_stock_conc': 25, # mg/mL
     },
+
+    'GLV': {
+        'full_name': 'Griseofulvin',
+        'normalized_properties': {"Drug_MW": 0.3528, "Drug_LogP": 0.2810,  "Drug_TPSA": 0.0711},  # normalized values /1000; /10; /1000
+        'drug_stock_conc': 25, # mg/mL
+    },
+
+    'CTZ': {
+        'full_name': 'Clotrimazole',
+        'normalized_properties': {"Drug_MW": 0.3448, "Drug_LogP": 0.5377,  "Drug_TPSA": 0.0178},  # normalized values /1000; /10; /1000
+        'drug_stock_conc': 25, # mg/mL
+    },
+
+    'GBC': {
+        'full_name': 'Glibenclamide/Glyburide',
+        'normalized_properties': {"Drug_MW": 0.4940, "Drug_LogP": 0.3642,  "Drug_TPSA": 0.1136},  # normalized values /1000; /10; /1000
+        'drug_stock_conc': 25, # mg/mL
+    },
+
 }
 
 
