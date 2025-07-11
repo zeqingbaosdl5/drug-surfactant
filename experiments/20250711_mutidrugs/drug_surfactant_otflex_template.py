@@ -43,8 +43,8 @@ def run(protocol: protocol_api.ProtocolContext):
     s12 = surfactant_drug_dmso_stock_2['A4']
     ibp = surfactant_drug_dmso_stock_2['B1']
     lov = surfactant_drug_dmso_stock_2['B2']
-    gbc = surfactant_drug_dmso_stock_2['B3']
-    ctz = surfactant_drug_dmso_stock_2['B4']
+    dcf = surfactant_drug_dmso_stock_2['B3']
+    glv = surfactant_drug_dmso_stock_2['B4']
 
 #    dmso = surfactant_drug_dmso_stock_2['B2']
 
@@ -81,8 +81,8 @@ def run(protocol: protocol_api.ProtocolContext):
         'water': water,
         'IBP': ibp,
         'LOV': lov,
-        'GBC': gbc,
-        'CTZ': ctz,
+        'DCF': dcf,
+        'GLV': glv,
     }
     
 
@@ -105,7 +105,7 @@ def run(protocol: protocol_api.ProtocolContext):
         
         
     surfactant_list = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8','water']#, 'S9','s10', 's11', 's12'] add this if more than 9 surfactants
-    drug_list = ['IBP', 'LOV', 'GBC', 'CTZ']
+    drug_list = ['IBP', 'LOV', 'DCF', 'GLV']
     
 
     def pipette_selection (vol):
