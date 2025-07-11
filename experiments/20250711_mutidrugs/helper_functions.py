@@ -225,7 +225,7 @@ def design_to_conc_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total
 #     return summary_df
 
 
-def process_absorbance(iteration, replicates=3, threshold=0.1):
+def process_absorbance(iteration, replicates=3, threshold=0.08):
     # 1) read your raw block exactly as before
     core_df = pd.read_excel(
         raw_data_file_path + f'i{iteration}.xlsx',
