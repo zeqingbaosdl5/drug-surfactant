@@ -306,6 +306,12 @@ def normalize_data(df, mode):
 
     return df
 
+def results_so_far (current_iteration):
+
+    ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded.json')
+    results = ax_client.get_trials_data_frame()
+
+    return results
 
 def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
 
