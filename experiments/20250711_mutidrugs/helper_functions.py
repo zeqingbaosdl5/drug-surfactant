@@ -225,7 +225,7 @@ def design_to_conc_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total
 #     return summary_df
 
 
-def process_absorbance(iteration, replicates=3, threshold=0.08):
+def process_absorbance(iteration, replicates=3, threshold=0.1):
     # 1) read your raw block exactly as before
     core_df = pd.read_excel(
         raw_data_file_path + f'i{iteration}.xlsx',
@@ -498,6 +498,35 @@ def load_data_to_optimizer(iteration, norm_results):
         ax_client.complete_trial(trial_index=trial_index, raw_data=raw_data)
     
     ax_client.save_to_json_file(optimizer_file_path + str(n) + '_loaded.json')
+
+    return ax_client
+
+
+def update_data_to_optimizer(iteration, list_of_new_failures):
+
+    # Load the existing optimizer state
+    json_path = optimizer_file_path + f"{iteration}.json"
+    ax_client = AxClient.load_from_json_file(json_path)
+
+    # Fetch current trials
+    trials_df = ax_client.get_trials_data_frame()
+
+    for trial_index in list_of_new_failures:
+        # Make sure we actually have this trial
+        if trial_index not in trials_df["trial_index"].values:
+            print(f"Trial {trial_index} not found – skipping.")
+            continue
+
+        # Build the forced-failure payload
+        new_data = {
+            "success": 0,
+            "surfactant_input": 1,
+            "complexity": 1,
+        }
+
+        # Update the trial in-place
+        ax_client.update_trial_data(trial_index=trial_index, raw_data=new_data)
+        print(f"Updated trial {trial_index}: set success=0, surfactant_input=1, complexity=1")
 
     return ax_client
 
