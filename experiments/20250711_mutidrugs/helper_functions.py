@@ -225,7 +225,7 @@ def design_to_conc_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total
 #     return summary_df
 
 
-def process_absorbance(iteration, replicates=3, threshold=0.1):
+def process_absorbance(iteration, replicates=3, threshold=0.08):
     # 1) read your raw block exactly as before
     core_df = pd.read_excel(
         raw_data_file_path + f'i{iteration}.xlsx',
@@ -504,9 +504,14 @@ def load_data_to_optimizer(iteration, norm_results):
 
 def update_data_to_optimizer(iteration, list_of_new_failures):
 
+
     # Load the existing optimizer state
     json_path = optimizer_file_path + f"{iteration}.json"
     ax_client = AxClient.load_from_json_file(json_path)
+
+
+    before_updated_path = optimizer_file_path + f"{iteration}_before_updated.json"
+    ax_client.save_to_json_file(before_updated_path)
 
     # Fetch current trials
     trials_df = ax_client.get_trials_data_frame()
@@ -527,6 +532,10 @@ def update_data_to_optimizer(iteration, list_of_new_failures):
         # Update the trial in-place
         ax_client.update_trial_data(trial_index=trial_index, raw_data=new_data)
         print(f"Updated trial {trial_index}: set success=0, surfactant_input=1, complexity=1")
+
+    # Save out the updated optimizer state
+    updated_path = optimizer_file_path + f"{iteration}_loaded.json"
+    ax_client.save_to_json_file(updated_path)
 
     return ax_client
 
