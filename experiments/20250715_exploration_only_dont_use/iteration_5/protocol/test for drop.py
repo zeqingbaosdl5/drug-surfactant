@@ -1,0 +1,335 @@
+from opentrons import protocol_api
+import re
+
+metadata = {
+    "description": "Written in 2025.05",
+    "author": "Zeqing Bao and Yunhee Hwang"
+}
+
+requirements = {"robotType": "Flex", "apiLevel": "2.19"}
+
+
+def run(protocol: protocol_api.ProtocolContext):
+
+
+    # robot setup
+    # load 1000 uL tip rack in deck slot D2
+    tip1000_1 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_1000ul", location="B1")
+    tip1000_2 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_1000ul", location="A1")
+    tip50 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_50ul", location="B2")
+
+    hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
+    hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
+    
+    # attach pipette 
+    pipette_low = protocol.load_instrument(instrument_name="flex_1channel_50", mount="right", tip_racks=[tip50])
+    pipette_high = protocol.load_instrument(instrument_name="flex_1channel_1000", mount="left", tip_racks=[tip1000_1, tip1000_2])
+
+    surfactant_stock_1 = protocol.load_labware(load_name="allenlab_8_wellplate_20000ul", location="C1")
+    s1 = surfactant_stock_1['A1']
+    s2 = surfactant_stock_1['A2']
+    s3 = surfactant_stock_1['A3']
+    s4 = surfactant_stock_1['A4']
+    s5 = surfactant_stock_1['B1']
+    s6 = surfactant_stock_1['B2']
+    s7 = surfactant_stock_1['B3']
+    s8 = surfactant_stock_1['B4']
+
+    # load second stock plate with 4 surfactants + pyrene in deck slot C2
+    surfactant_drug_dmso_stock_2 = protocol.load_labware(load_name="allenlab_8_wellplate_20000ul", location="C2")
+    s9 = surfactant_drug_dmso_stock_2['A1']
+    s10 = surfactant_drug_dmso_stock_2['A2']
+    s11 = surfactant_drug_dmso_stock_2['A3']
+    s12 = surfactant_drug_dmso_stock_2['A4']
+    ibp = surfactant_drug_dmso_stock_2['B1']
+    lov = surfactant_drug_dmso_stock_2['B2']
+    dcf = surfactant_drug_dmso_stock_2['B3']
+    glv = surfactant_drug_dmso_stock_2['B4']
+
+#    dmso = surfactant_drug_dmso_stock_2['B2']
+
+    # load water in deck slot C3
+    water_res = protocol.load_labware('nest_1_reservoir_290ml','C3')
+    water = water_res['A1']
+    
+    # load well plate in deck slot D1
+    plate = protocol.load_labware(load_name="greiner_96_wellplate_392ul", location='D1')
+    #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
+    next_plate_well = 'G1'
+
+    # load deep well plate in deck slot D2
+    #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
+    #deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
+    next_deepplate_well = 'A1'
+
+    # trash bin
+    trash = protocol.load_trash_bin(location="A3")
+
+    sources = {
+        's1': s1,
+        's2': s2,
+        's3': s3,
+        's4': s4,
+        's5': s5,
+        's6': s6,
+        's7': s7,
+        's8': s8,
+        's9': s9,
+        's10': s10,
+        's11': s11,
+        's12': s12,
+        'water': water,
+        'IBP': ibp,
+        'LOV': lov,
+        'DCF': dcf,
+        'GLV': glv,
+    }
+    
+
+    def next_well(well):
+        match = re.match(r"([A-H])(\d+)", well)
+        if not match:
+            raise ValueError(f"Invalid well format: {well}")
+        
+        row, col = match.groups()
+        col = int(col)
+
+        if col < 12:
+            col += 1
+        else:
+            col = 1
+            # if row == 'H':
+            #     raise ValueError("Plate overflow: no more wells after H12")
+            row = chr(ord(row) + 1)
+        return f"{row}{col}"
+        
+        
+    surfactant_list = ['s1', 's2', 's3', 's4', 's5', 's6', 's7', 's8','water']#, 'S9','s10', 's11', 's12'] add this if more than 9 surfactants
+    drug_list = ['IBP', 'LOV', 'DCF', 'GLV']
+    
+
+    def pipette_selection (vol):
+        if vol <= 40:
+            return pipette_low
+        else:
+            return pipette_high
+
+    def modified_transfer(vol, pipette_selection, source_well, transfered_well, trash):
+        buffer= 0.3 # buffer can be modified to change buffer volume
+        m_vol= vol*(1+ buffer)
+        pipette_selection.aspirate(m_vol, source_well)
+        pipette_selection.flow_rate.dispense = 50 #can change rate if it is too fast
+        pipette_selection.dispense(vol, transfered_well)
+        pipette_selection.dispense (m_vol-vol, trash) 
+
+    
+    def plate_on_hs_2(labware_to_shake, time_1, speed_1, new_location):  #only use when plate is not already on hs_adapter
+    #def hs(time, speed):
+
+        hs_mod.close_labware_latch()
+        hs_mod.set_and_wait_for_shake_speed(speed_1)
+        protocol.delay(minutes=time_1)
+        #hs_mod.deactivate_shaker()
+        #protocol.delay(minutes=time_2)
+        #hs_mod.set_and_wait_for_shake_speed(speed_3)
+        #protocol.delay(minutes=time_3)
+        #hs_mod.deactivate_shaker()
+        #protocol.delay(minutes=time_4)
+        hs_mod.deactivate_shaker()
+        hs_mod.open_labware_latch()
+        protocol.move_labware(labware=labware_to_shake, new_location=new_location, use_gripper=True)
+    
+    def plate_on_hs(labware_to_shake, new_location, speed, time):
+        hs_mod.close_labware_latch()
+        hs_mod.set_and_wait_for_shake_speed(speed)
+        protocol.delay(minutes=time)
+        hs_mod.deactivate_shaker()
+        hs_mod.open_labware_latch()
+        protocol.move_labware(labware=labware_to_shake, new_location= new_location, use_gripper=True)
+
+
+
+    # to be rewritten according to the exp design
+########################################################################################################################################
+    data = [
+    {
+        "": "0",
+        "trial_index": "40",
+        "drug_name": "IBP",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "494.1176470588235",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "705.8823529411765",
+        "dmso": "0.0",
+        "water": "0.0",
+        "IBP": "180.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "1",
+        "trial_index": "41",
+        "drug_name": "IBP",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "2.838709677419355",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "6.451612903225806",
+        "s8": "2.7096774193548385",
+        "dmso": "0.0",
+        "water": "1188.0",
+        "IBP": "180.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "2",
+        "trial_index": "42",
+        "drug_name": "LOV",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "579.5121951219512",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "35.1219512195122",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "585.3658536585366",
+        "dmso": "0.0",
+        "water": "0.0",
+        "IBP": "0.0",
+        "LOV": "180.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "3",
+        "trial_index": "43",
+        "drug_name": "LOV",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "267.4698795180723",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "209.63855421686748",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "722.8915662650602",
+        "dmso": "0.0",
+        "water": "0.0",
+        "IBP": "0.0",
+        "LOV": "180.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "4",
+        "trial_index": "44",
+        "drug_name": "DCF",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "320.36199095022624",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "336.65158371040724",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "542.9864253393665",
+        "dmso": "0.0",
+        "water": "0.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "180.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "5",
+        "trial_index": "45",
+        "drug_name": "DCF",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "458.98617511520735",
+        "s3": "188.0184331797235",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "552.9953917050691",
+        "dmso": "0.0",
+        "water": "2.220446049250313e-13",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "180.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "6",
+        "trial_index": "46",
+        "drug_name": "GLV",
+        "drug": "180.0",
+        "s1": "199.99999999999994",
+        "s2": "199.99999999999994",
+        "s3": "199.99999999999994",
+        "s4": "199.99999999999994",
+        "s5": "0.0",
+        "s6": "199.99999999999994",
+        "s7": "0.0",
+        "s8": "199.99999999999994",
+        "dmso": "0.0",
+        "water": "2.220446049250313e-13",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "180.0"
+    },
+    {
+        "": "7",
+        "trial_index": "47",
+        "drug_name": "GLV",
+        "drug": "180.0",
+        "s1": "2.0",
+        "s2": "0.0",
+        "s3": "2.0",
+        "s4": "2.0",
+        "s5": "2.0",
+        "s6": "2.0",
+        "s7": "2.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "1188.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "180.0"
+    }
+]
+########################################################################################################################################
+################################################################################################################################################
+    
+    hs_mod.open_labware_latch()
+    protocol.move_labware(labware=plate, new_location= hs_adapter, use_gripper=True)
+    hs_mod.close_labware_latch()
+    hs_mod.set_and_wait_for_shake_speed(rpm=1000)
+    protocol.delay(seconds=5)
+    hs_mod.deactivate_shaker()
+    hs_mod.open_labware_latch()
+    protocol.move_labware(labware=plate, new_location= "D1", use_gripper=True)
+
+
+
+
+
+
+
+
+  
