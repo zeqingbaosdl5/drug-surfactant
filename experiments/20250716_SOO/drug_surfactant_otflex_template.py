@@ -259,7 +259,7 @@ def run(protocol: protocol_api.ProtocolContext):
         well_pairs.append((current_drug_well, current_surfactant_well))  
 
     
-    plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 1000, time = 1)
+    plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 1000, time = 5)  # Changed to 5 mins of shaking
     protocol.move_labware(labware= plate, new_location=hs_adapter, use_gripper=True)
     hs_mod.close_labware_latch()
 
