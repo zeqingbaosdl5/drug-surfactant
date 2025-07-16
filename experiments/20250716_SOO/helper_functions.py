@@ -23,7 +23,7 @@ drug_stock_conc = 25  # mg/mL
 surfactant_stock_conc = 50  # mg/mL
 drug_total_volume = 0.18  # mL
 surfactant_total_volume = 1.2  # mL
-number_of_surfactants = 8  # s1 to s12
+number_of_surfactants = 8  # s1 to s8
 
 normalize_drug_properties_dict = {
 
@@ -89,7 +89,8 @@ def optimizer_init():
                 model_kwargs={"seed": 0},
             ),
             GenerationStep(
-                model=Generators.BO_MIXED,
+#                model=Generators.BO_MIXED,
+                model=Generators.BOTORCH_MODULAR,
                 num_trials=-1,
                 model_kwargs={},
             ),
@@ -108,30 +109,24 @@ def optimizer_init():
             {"name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
             {"name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
 
-            # 8 surfactant amounts
-            *[{"name": f"s{i}", "type": "range", "bounds": [0, 100], "value_type": "int"}
-            for i in range(1, 9)],
+            {"name": "surf_1", "type": "choice", "is_ordered": False, "values": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]},
+            {"name": "surf_1_conc", "type": "range", "bounds": [0.0, surfactant_stock_conc], "value_type": "float"},
 
-            # 8 binary selectors
-            *[{"name": f"b{i}", "type": "range",  "bounds": [0, 1], "value_type": "int"}
-            for i in range(1, 9)],
+            {"name": "surf_2", "type": "choice", "is_ordered": False, "values": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]},
+            {"name": "surf_2_conc", "type": "range", "bounds": [0.0, surfactant_stock_conc], "value_type": "float"},
 
-            # overall concentrations
-            {"name": "surfactant_conc", "type": "range", "bounds": [1, 100], "value_type": "int"},
-            {"name": "drug_conc",       "type": "range", "bounds": [1, 100], "value_type": "int"},
+            {"name": "surf_3", "type": "choice", "is_ordered": False, "values": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]},
+            {"name": "surf_3_conc", "type": "range", "bounds": [0.0, surfactant_stock_conc], "value_type": "float"},
+
+            {"name": "drug_conc",       "type": "range", "bounds": [0.0, drug_stock_conc], "value_type": "float"},
         ],
         objectives={
-            'success':           ObjectiveProperties(minimize=False, threshold=0.5),
-            'surfactant_input':  ObjectiveProperties(minimize=True),
-            'complexity':        ObjectiveProperties(minimize=True),
+            'obj_surf_conc':           ObjectiveProperties(minimize=True),
         },
+
         parameter_constraints=[
             # exactly two surfactants active
-            "b1 + b2 + b3 + b4 + b5 + b6 + b7 + b8 >= 2",
-            "b1 + b2 + b3 + b4 + b5 + b6 + b7 + b8 <= 2",
-            # link selectors to amounts
-            *[f"s{i} <= 100 * b{i}"       for i in range(1, 9)],
-            *[f"s{i} >= 1 * b{i}"         for i in range(1, 9)],  # optional
+            f"surf_1_conc + surf_2_conc + surf_3_conc <= {surfactant_stock_conc}"
         ],
     )
 
@@ -139,21 +134,21 @@ def optimizer_init():
     return ax_client
 
 
-def design_to_conc(df, drug_stock_conc=drug_stock_conc, surfactant_stock_conc=surfactant_stock_conc):
+# def design_to_conc(df, drug_stock_conc=drug_stock_conc, surfactant_stock_conc=surfactant_stock_conc):
 
-    df_conc = pd.DataFrame()
-    df_conc['trial_index'] = df['trial_index']
-    df_conc['drug_name'] = df['drug_name']
-    df_conc['surfactant_conc'] = df['surfactant_conc']/100 * surfactant_stock_conc
-    df_conc['drug_conc'] = df['drug_conc']/100 * drug_stock_conc
+#     df_conc = pd.DataFrame()
+#     df_conc['trial_index'] = df['trial_index']
+#     df_conc['drug_name'] = df['drug_name']
+#     df_conc['surfactant_conc'] = df['surfactant_conc']/100 * surfactant_stock_conc
+#     df_conc['drug_conc'] = df['drug_conc']/100 * drug_stock_conc
     
 
 
-    total_ratios = [f's{i}' for i in range(1, number_of_surfactants+1)]
-    total_sum = df[total_ratios].sum(axis=1)
-    for i in range(1, number_of_surfactants+1):
-        df_conc[f's{i}'] = df[f's{i}'] / total_sum * df_conc['surfactant_conc']
-    return df_conc
+#     total_ratios = [f's{i}' for i in range(1, number_of_surfactants+1)]
+#     total_sum = df[total_ratios].sum(axis=1)
+#     for i in range(1, number_of_surfactants+1):
+#         df_conc[f's{i}'] = df[f's{i}'] / total_sum * df_conc['surfactant_conc']
+#     return df_conc
 
 def conc_to_vol_helper(conc, total_volume, stock_conc):
     vol = (conc * total_volume) / stock_conc
@@ -161,18 +156,50 @@ def conc_to_vol_helper(conc, total_volume, stock_conc):
 
 def conc_to_vol(df, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume): # in mg/mL or mL
 
-    df_vol = pd.DataFrame()
-    df_vol['trial_index'] = df['trial_index']
-    df_vol['drug_name'] = df['drug_name']
-    df_vol['drug'] = df['drug_conc'].apply(lambda conc: conc_to_vol_helper(conc, total_volume=drug_total_volume, stock_conc=drug_stock_conc))
-    s_cols = [f"s{i}" for i in range(1, number_of_surfactants+1) if f"s{i}" in df.columns]
-    for s_col in s_cols:
-        df_vol[s_col] = df[s_col].apply(lambda conc: conc_to_vol_helper(conc, total_volume=surfactant_total_volume, stock_conc=surfactant_stock_conc))
-    df_vol['dmso'] = drug_total_volume - df_vol['drug']
+    # start output
+    df_vol = pd.DataFrame({
+        'trial_index': df['trial_index'],
+        'drug_name':  df['drug_name']
+    })
 
+    # drug volume (mL)
+    df_vol['drug'] = df['drug_conc'] \
+        .apply(lambda c: conc_to_vol_helper(c, drug_total_volume, drug_stock_conc))
+
+    # initialize surfactant volume columns s1…sN
+    s_cols = [f"s{i}" for i in range(1, number_of_surfactants + 1)]
+    for s in s_cols:
+        df_vol[s] = 0.0
+
+    # find all "surf_X" slots dynamically
+    surf_slots = sorted(
+        [col for col in df.columns if re.match(r"^surf_\d+$", col)],
+        key=lambda x: int(x.split("_")[1])
+    )
+
+    # for each slot, compute its volume and add it into the correct s# column
+    for slot in surf_slots:
+        conc_col = f"{slot}_conc"
+        # volume from that slot (in mL)
+        slot_volumes = df[conc_col] \
+            .apply(lambda c: conc_to_vol_helper(c, surfactant_total_volume, surfactant_stock_conc))
+        # which surfactant it is
+        surf_names = df[slot]
+        for idx, surf in surf_names.items():
+            if pd.isna(surf):
+                continue
+            if surf not in s_cols:
+                # skip unknown or out‑of‑range surfactants
+                continue
+            df_vol.at[idx, surf] += slot_volumes.at[idx]
+
+    # calculate dmso and water (mL)
+    df_vol['dmso'] = drug_total_volume - df_vol['drug']
     df_vol['water'] = surfactant_total_volume - df_vol[s_cols].sum(axis=1)
-    mask = (df_vol.columns != 'trial_index') & (df_vol.columns != 'drug_name')
-    df_vol.loc[:, mask] *= 1000
+
+    # convert everything except trial_index & drug_name to µL
+    data_cols = df_vol.columns.difference(['trial_index', 'drug_name'])
+    df_vol.loc[:, data_cols] *= 1000
 
     return df_vol
 
@@ -183,55 +210,21 @@ def add_drug_columns(df):
         df[d] = df.apply(lambda row: row['drug'] if row['drug_name'] == d else 0, axis=1)
     return df
 
-def design_to_conc_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total_volume=drug_total_volume, surfactant_stock_conc=surfactant_stock_conc, surfactant_total_volume=surfactant_total_volume): # in mg/mL or mL
+def design_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total_volume=drug_total_volume, surfactant_stock_conc=surfactant_stock_conc, surfactant_total_volume=surfactant_total_volume): # in mg/mL or mL
     
     df_design = pd.read_csv(design_file_path + 'i' + str(iteration) + '.csv')
 
-    df_conc = design_to_conc(df_design)
-    df_vol = conc_to_vol(df_conc, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume)
+    # df_conc = design_to_conc(df_design)
+
+    df_vol = conc_to_vol(df_design, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume)
 
     df_vol_drug = add_drug_columns(df_vol)
 
-    return df_conc, df_vol_drug
+    return df_design, df_vol_drug
 
 
-# def process_absorbance(iteration, replicates=3, threshold=0.1):
 
-#     n = replicates
-    
-#     core_df = pd.read_excel(raw_data_file_path + 'i' + str(iteration) + '.xlsx', sheet_name=0, usecols="B:N", skiprows=23, nrows=9)
-#     clean_df = core_df[~core_df.iloc[:, 1:].isna().all(axis=1)].dropna(axis=1, how='all')
-
-
-#     row_labels = clean_df.iloc[:, 0]
-#     numeric_data = clean_df.iloc[:, 1:]
-#     binary_data = (numeric_data < threshold).astype(int)
-
-#     # Combine back with row labels
-#     binary_df = pd.concat([row_labels.reset_index(drop=True), binary_data.reset_index(drop=True)], axis=1)
-
-#     # Flatten the binary values (excluding the 'Row' labels), row-wise
-#     binary_values = binary_df.iloc[:, 1:].values.flatten()
-#     #print(binary_values)
-
-#     # Calculate how many complete groups of size n
-#     num_groups = len(binary_values) // n
-
-#     # Prepare summary list
-#     summary = []
-
-#     for i in range(num_groups):
-#         group = binary_values[i * n: (i + 1) * n]
-#         success = int(all(group))  # If all values in the group are 1, then success = 1; else 0
-#         summary.append({"trial_index": i, "success": success})
-
-#     # Convert to DataFrame
-#     summary_df = pd.DataFrame(summary)
-    
-#     return summary_df
-
-
-def process_absorbance(iteration, replicates=3, threshold=0.08):
+def process_absorbance(iteration, replicates=3, threshold=0.06):
     # 1) read your raw block exactly as before
     core_df = pd.read_excel(
         raw_data_file_path + f'i{iteration}.xlsx',
@@ -261,20 +254,20 @@ def process_absorbance(iteration, replicates=3, threshold=0.08):
     return pd.DataFrame(summary)
 
 
-def build_results(iteration, df_conc, df_absorbance):
+def build_results(iteration, df_absorbance):
     # 1. trial_index from df_design
     df_design = pd.read_csv(design_file_path + 'i' + str(iteration) + '.csv')
-    results = pd.DataFrame()
-    results['trial_index'] = df_design['trial_index']
-    results['drug_name'] = df_design['drug_name']
+    results = df_design.copy()
+    # results['trial_index'] = df_design['trial_index']
+    # results['drug_name'] = df_design['drug_name']
 
-    # 2. s1 to s12 from df_design
-    s_cols = [f's{i}' for i in range(1, number_of_surfactants+1)]
-    results[s_cols] = df_design[s_cols]
+    # # 2. s1 to s12 from df_design
+    # s_cols = [f's{i}' for i in range(1, number_of_surfactants+1)]
+    # results[s_cols] = df_design[s_cols]
 
-    # 3. surfactant_conc and drug_conc from df_conc
-    results['surfactant_input'] = df_conc['surfactant_conc']
-    results['drug_conc'] = df_conc['drug_conc']
+    # # 3. surfactant_conc and drug_conc from df_conc
+    # results['surfactant_input'] = df_conc['surfactant_conc']
+    # results['drug_conc'] = df_conc['drug_conc']
 
     # # 4. Calculate initial drug concentration to surfactant concentration ratio
     # results['initial_drug_conc_surfactant_conc_ratio'] = results['drug_conc'] / results['surfactant_conc']
@@ -285,32 +278,35 @@ def build_results(iteration, df_conc, df_absorbance):
     # # 6. micelle_drug_conc = drug_conc / 10 * success
     # results['micelle_drug_conc'] = (results['drug_conc'] / 10) * results['success']
 
-    # 7. complexity = number of non-zero s1-s12
-    results['complexity'] = results[s_cols].ne(0).sum(axis=1)
+    # # 7. complexity = number of non-zero s1-s12
+    # results['complexity'] = results[s_cols].ne(0).sum(axis=1)
+
+#    results['surf_conc'] = results['surf_1_conc'] + results['surf_2_conc'] + results['surf_3_conc']
+    results['obj_surf_conc'] = np.where( results['success'] == 1, results['surf_conc'], surfactant_stock_conc )
 
     return results
 
 
-def normalize_data(df, mode):
-    df = df.copy()  
+# def normalize_data(df, mode):
+#     df = df.copy()  
 
-    factors = {
-        'surfactant_input': surfactant_stock_conc,  # normalized value is between 0 and 1
-        'success': 1,  # success is binary, so no normalization needed
-        'drug_conc': drug_stock_conc,  # normalized value is between 0 and 1
-#        'micelle_drug_conc': drug_stock_conc / 10,  # micelle drug conc is 1/10 of drug conc
-        'complexity': number_of_surfactants
-    }
-    for col, factor in factors.items():
-        if col in df.columns:
-            if mode == 'normalize':
-                df[col] = df[col] / factor
-            elif mode == 'denormalize':
-                df[col] = df[col] * factor
-            else:
-                raise ValueError("mode must be either 'normalize' or 'denormalize'")
+#     factors = {
+#         'surfactant_input': surfactant_stock_conc,  # normalized value is between 0 and 1
+#         'success': 1,  # success is binary, so no normalization needed
+#         'drug_conc': drug_stock_conc,  # normalized value is between 0 and 1
+# #        'micelle_drug_conc': drug_stock_conc / 10,  # micelle drug conc is 1/10 of drug conc
+#         'complexity': number_of_surfactants
+#     }
+#     for col, factor in factors.items():
+#         if col in df.columns:
+#             if mode == 'normalize':
+#                 df[col] = df[col] / factor
+#             elif mode == 'denormalize':
+#                 df[col] = df[col] * factor
+#             else:
+#                 raise ValueError("mode must be either 'normalize' or 'denormalize'")
 
-    return df
+#     return df
 
 def results_so_far (current_iteration):
 
@@ -360,15 +356,13 @@ def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
                     "trial_index": trial_index,
                     "drug_name": drug,
                     **parameters,
-    #                "micelle_drug_conc": None,
-                    "success": None,
-                    "surfactant_input": None, 
-                    "Complexity": None,
 
                 }
             )
 
     df_design = pd.DataFrame(trials_data)
+    df_design ['surf_conc'] = df_design['surf_1_conc'] + df_design['surf_2_conc'] + df_design['surf_3_conc'] 
+    df_design ['obj_surf_conc'] = None
 
 
     ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '.json')
@@ -475,36 +469,21 @@ def load_design_optimizer(iteration):
     return ax_client
 
 
-def load_data_to_optimizer(iteration, norm_results):
+def load_data_to_optimizer(iteration, results):
     
     n=iteration
     ax_client = AxClient.load_from_json_file(optimizer_file_path + str(n) + '.json')
-    labeled_data = norm_results.copy()
+    labeled_data = results.copy()
 
     for _, row in labeled_data.iterrows():
         trial_index = int(row["trial_index"])
-        success = int(row["success"])
         # pull the original values
-        surfactant_input = row["surfactant_input"]
-        complexity       = row["complexity"]
+        obj_surf_conc = row["obj_surf_conc"]
 
-        # decide whether to override
-        if success == 0:
-            surfactant_input = 1
-            complexity = 1
-            print(f"Trial {trial_index}: success=0 → overriding surfactant_input & complexity to 1")
-        else:
-            print(
-                f"Trial {trial_index}: success={success} → "
-                f"using surfactant_input={surfactant_input}, complexity={complexity}"
-            )
 
         # build the payload
         raw_data = {
-            "success": success,
-            "surfactant_input": surfactant_input,
-            "complexity": complexity,
-            # "micelle_drug_conc": row["micelle_drug_conc"],
+            "obj_surf_conc": obj_surf_conc,
         }
         
         ax_client.complete_trial(trial_index=trial_index, raw_data=raw_data)
