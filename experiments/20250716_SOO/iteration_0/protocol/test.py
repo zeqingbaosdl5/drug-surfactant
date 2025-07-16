@@ -171,6 +171,8 @@ def run(protocol: protocol_api.ProtocolContext):
     protocol.move_labware(labware=deepplate, new_location='D2', use_gripper=True)
     hs_mod.close_labware_latch()
     
+
+    protocol.drop_offset (z=0)
     
     
    
