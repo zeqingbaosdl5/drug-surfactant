@@ -156,23 +156,25 @@ def run(protocol: protocol_api.ProtocolContext):
     
     
     hs_mod.open_labware_latch()
-    protocol.move_labware(labware=plate, new_location=hs_adapter, use_gripper=True)
+    #z=-8 is max for pick up, z for drop should be -3 units less than z for pick up to place on hs surface
+    protocol.move_labware(labware=plate, new_location=hs_adapter,pick_up_offset={'x': 0, 'y': 0, 'z':-2}, drop_offset={'x': 0, 'y': 0, 'z': -5}, use_gripper=True)
     hs_mod.close_labware_latch()
 
     hs_mod.open_labware_latch()
-    protocol.move_labware(labware=plate, new_location='D1', use_gripper=True)
-    hs_mod.close_labware_latch()
+    protocol.move_labware(labware=plate, pick_up_offset={'x': 0, 'y': 0, 'z': -3}, new_location='D1', use_gripper=True)
     
-    hs_mod.open_labware_latch()
-    protocol.move_labware(labware=deepplate, new_location=hs_adapter, use_gripper=True)
+    
+   
+    protocol.move_labware(labware=deepplate, new_location=hs_adapter, pick_up_offset={'x': 0, 'y': 0, 'z': -2}, drop_offset={'x': 0, 'y': 0, 'z': -5}, use_gripper=True)
     hs_mod.close_labware_latch()
 
     hs_mod.open_labware_latch()
-    protocol.move_labware(labware=deepplate, new_location='D2', use_gripper=True)
-    hs_mod.close_labware_latch()
+    protocol.move_labware(labware=deepplate, new_location='D2', pick_up_offset={'x': 0, 'y': 0, 'z': -2}, use_gripper=True)
+    
     
 
-    protocol.drop_offset (z=0)
+    #protocol.drop_offset (z=0)
+    #protocol.pick_up_offset(z=0)
     
     
    
