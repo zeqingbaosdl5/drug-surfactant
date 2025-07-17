@@ -161,7 +161,7 @@ def run(protocol: protocol_api.ProtocolContext):
     hs_mod.close_labware_latch()
 
     hs_mod.open_labware_latch()
-    protocol.move_labware(labware=plate, pick_up_offset={'x': 0, 'y': 0, 'z': -3}, new_location='D1', use_gripper=True)
+    protocol.move_labware(labware=plate, pick_up_offset={'x': 0, 'y': 0, 'z': -2}, new_location='D1', use_gripper=True)
     
     
    

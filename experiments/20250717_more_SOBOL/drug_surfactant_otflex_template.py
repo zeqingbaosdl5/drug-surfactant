@@ -123,21 +123,15 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_selection.dispense (m_vol-vol, trash) 
 
     
-    def plate_on_hs_2(labware_to_shake, time_1, speed_1, new_location):  #only use when plate is not already on hs_adapter
-    #def hs(time, speed):
+    def hs(labware_to_shake, time, speed, new_location, original_location):  #only use when plate is not already on hs_adapter
 
+        protocol.move_labware(labware=labware_to_shake, new_location=new_location, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, drop_offset={'x': 0, 'y': 0, 'z': -5}, use_gripper=True)
         hs_mod.close_labware_latch()
-        hs_mod.set_and_wait_for_shake_speed(speed_1)
-        protocol.delay(minutes=time_1)
-        #hs_mod.deactivate_shaker()
-        #protocol.delay(minutes=time_2)
-        #hs_mod.set_and_wait_for_shake_speed(speed_3)
-        #protocol.delay(minutes=time_3)
-        #hs_mod.deactivate_shaker()
-        #protocol.delay(minutes=time_4)
+        hs_mod.set_and_wait_for_shake_speed(speed)
+        protocol.delay(minutes=time)
         hs_mod.deactivate_shaker()
         hs_mod.open_labware_latch()
-        protocol.move_labware(labware=labware_to_shake, new_location=new_location, use_gripper=True)
+        protocol.move_labware(labware=labware_to_shake, new_location=original_location, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, use_gripper=True)
     
     def plate_on_hs(labware_to_shake, new_location, speed, time):
         hs_mod.close_labware_latch()
@@ -145,7 +139,7 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.delay(minutes=time)
         hs_mod.deactivate_shaker()
         hs_mod.open_labware_latch()
-        protocol.move_labware(labware=labware_to_shake, new_location= new_location, use_gripper=True)
+        protocol.move_labware(labware=labware_to_shake, new_location= new_location, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, use_gripper=True)
 
 
 
@@ -260,7 +254,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
     
     plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 1000, time = 1)  # Changed to 5 mins of shaking
-    protocol.move_labware(labware= plate, new_location=hs_adapter, use_gripper=True)
+    protocol.move_labware(labware= plate, new_location=hs_adapter, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, drop_offset={'x': 0, 'y': 0, 'z': -5}, use_gripper=True)
     hs_mod.close_labware_latch()
 
 
@@ -271,4 +265,4 @@ def run(protocol: protocol_api.ProtocolContext):
         next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
         
 
-    plate_on_hs_2(labware_to_shake=plate, time_1=5, speed_1=1000, new_location='D1') # time in minutes, speed in rpm
+    plate_on_hs(labware_to_shake=plate, new_location='D1', time=5, speed=1000) # time in minutes, speed in rpm

@@ -137,7 +137,7 @@ def run(protocol: protocol_api.ProtocolContext):
         #protocol.delay(minutes=time_4)
         hs_mod.deactivate_shaker()
         hs_mod.open_labware_latch()
-        protocol.move_labware(labware=labware_to_shake, new_location=new_location, use_gripper=True)
+        protocol.move_labware(labware=labware_to_shake, new_location=new_location,pick_up_offset={'x': 0, 'y': 0, 'z':-2}, use_gripper=True)
     
     def plate_on_hs(labware_to_shake, new_location, speed, time):
         hs_mod.close_labware_latch()
@@ -145,7 +145,7 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.delay(minutes=time)
         hs_mod.deactivate_shaker()
         hs_mod.open_labware_latch()
-        protocol.move_labware(labware=labware_to_shake, new_location= new_location, use_gripper=True)
+        protocol.move_labware(labware=labware_to_shake, new_location= new_location, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, use_gripper=True)
 
 
 
@@ -260,7 +260,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
     
     plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 1000, time = 1)  # Changed to 5 mins of shaking
-    protocol.move_labware(labware= plate, new_location=hs_adapter, use_gripper=True)
+    protocol.move_labware(labware= plate, new_location=hs_adapter, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, drop_offset={'x': 0, 'y': 0, 'z': -5}, use_gripper=True)
     hs_mod.close_labware_latch()
 
 
