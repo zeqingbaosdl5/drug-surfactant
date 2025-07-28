@@ -114,9 +114,9 @@ def optimizer_init():
         name="drug_surfactant",
         parameters=[
             # drug properties…
-            {"name": "Drug_MW",   "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
+            # {"name": "Drug_MW",   "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
+            # {"name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
+            # {"name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
 
             {"name": "surf_1", "type": "choice", "is_ordered": False, "values": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]},
             {"name": "surf_1_conc", "type": "range", "bounds": [0.0, surfactant_stock_conc], "value_type": "int"},
@@ -130,13 +130,16 @@ def optimizer_init():
             {"name": "drug_conc",       "type": "range", "bounds": [0.0, drug_stock_conc], "value_type": "float"},
         ],
         objectives={
-            'obj_surf_conc':           ObjectiveProperties(minimize=True),
+            'ibp_surf_conc':           ObjectiveProperties(minimize=True),
+            'lov_surf_conc':           ObjectiveProperties(minimize=True),
+            'dcf_surf_conc':           ObjectiveProperties(minimize=True),
+            'glv_surf_conc':           ObjectiveProperties(minimize=True),
         },
 
         parameter_constraints=[
             # exactly two surfactants active
-            f"surf_1_conc + surf_2_conc + surf_3_conc <= {surfactant_stock_conc}",
-            'surf_1_conc + surf_2_conc + surf_3_conc >= 0',
+            f"surf_1_conc + surf_2_conc + surf_3_conc <= {surfactant_stock_conc-1}",
+            'surf_1_conc + surf_2_conc + surf_3_conc >= 1',
         ],
     )
 
@@ -164,7 +167,15 @@ def conc_to_vol_helper(conc, total_volume, stock_conc):
     vol = (conc * total_volume) / stock_conc
     return vol
 
-def conc_to_vol(df, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume): # in mg/mL or mL
+def conc_to_vol(df_raw, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume, list_of_drug, number_of_micelles): # in mg/mL or mL
+
+
+    # Step 2: Replicate the DataFrame
+    df = df_raw.loc[df_raw.index.repeat(len(list_of_drug))].reset_index(drop=True)
+
+    # Step 3: Create the 'drug_name' column
+    drug_names = list_of_drug * number_of_micelles
+    df['drug_name'] = drug_names
 
     # start output
     df_vol = pd.DataFrame({
@@ -220,13 +231,13 @@ def add_drug_columns(df):
         df[d] = df.apply(lambda row: row['drug'] if row['drug_name'] == d else 0, axis=1)
     return df
 
-def design_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total_volume=drug_total_volume, surfactant_stock_conc=surfactant_stock_conc, surfactant_total_volume=surfactant_total_volume): # in mg/mL or mL
+def design_to_vol(iteration, list_of_drug, number_of_micelles, drug_stock_conc=drug_stock_conc, drug_total_volume=drug_total_volume, surfactant_stock_conc=surfactant_stock_conc, surfactant_total_volume=surfactant_total_volume): # in mg/mL or mL
     
     df_design = pd.read_csv(design_file_path + 'i' + str(iteration) + '.csv')
 
     # df_conc = design_to_conc(df_design)
 
-    df_vol = conc_to_vol(df_design, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume)
+    df_vol = conc_to_vol(df_design, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume, list_of_drug, number_of_micelles)
 
     df_vol_drug = add_drug_columns(df_vol)
 
@@ -325,7 +336,7 @@ def results_so_far (current_iteration):
 
     return results
 
-def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
+def run_optimizer(current_iteration, number_of_micelles, list_of_drugs, bopt, n_trials=1):
 
     if current_iteration == 0:
         ax_client = AxClient.load_from_json_file(optimizer_file_path + '00' + '.json')
@@ -337,21 +348,21 @@ def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
     trials_data = []
 
     count = 0
-    for drug in drug_list:
-        drug_props = normalize_drug_properties_dict[drug]["normalized_properties"].copy()
+    for i in range(number_of_micelles):
+        drug_props = {}
         drug_props["drug_conc"] = 100  # fix drug conc to the maximum
 
         drug_features = ObservationFeatures(parameters = drug_props)
         
         count = count+1
-        print("*" * 100, count, " out of ", len(drug_list), "*" * 100)
+        print("*" * 100, count, " out of ", number_of_micelles, "*" * 100)
         print("*" * 200)
         print()
         if bopt == 0:
             print("Generating a random trial for")
         elif bopt == 1:
             print("Generating a Bayesian Optimization trial for")
-        print("Drug name: ", normalize_drug_properties_dict[drug]["full_name"],f"{(drug)}", " | Iteration: ", current_iteration)
+#        print("Drug name: ", normalize_drug_properties_dict[drug]["full_name"],f"{(drug)}", " | Iteration: ", current_iteration)
         print()
         print("*" * 200)
         print("*" * 200)
@@ -364,7 +375,7 @@ def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
             trials_data.append(
                 {
                     "trial_index": trial_index,
-                    "drug_name": drug,
+#                    "drug_name": drug,
                     **parameters,
 
                 }
@@ -372,7 +383,9 @@ def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
 
     df_design = pd.DataFrame(trials_data)
     df_design ['surf_conc'] = df_design['surf_1_conc'] + df_design['surf_2_conc'] + df_design['surf_3_conc'] 
-    df_design ['obj_surf_conc'] = None
+
+    for drug in list_of_drugs:
+        df_design [drug + '_surf_conc'] = None
 
 
     ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '.json')
@@ -488,12 +501,18 @@ def load_data_to_optimizer(iteration, results):
     for _, row in labeled_data.iterrows():
         trial_index = int(row["trial_index"])
         # pull the original values
-        obj_surf_conc = row["obj_surf_conc"]
+        ibp_surf_conc = row["ibp_surf_conc"]
+        lov_surf_conc = row["lov_surf_conc"]
+        dcf_surf_conc = row["dcf_surf_conc"]
+        glv_surf_conc = row["glv_surf_conc"]
 
 
         # build the payload
         raw_data = {
-            "obj_surf_conc": obj_surf_conc,
+            "ibp_surf_conc": ibp_surf_conc,
+            "lov_surf_conc": lov_surf_conc,
+            "dcf_surf_conc": dcf_surf_conc,
+            "glv_surf_conc": glv_surf_conc,
         }
         
         ax_client.complete_trial(trial_index=trial_index, raw_data=raw_data)
