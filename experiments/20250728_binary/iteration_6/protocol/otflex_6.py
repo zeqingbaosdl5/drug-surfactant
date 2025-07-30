@@ -55,12 +55,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'H3'
+    next_plate_well = 'C1'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'H3'
+    next_deepplate_well = 'F5'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -126,45 +126,170 @@ def run(protocol: protocol_api.ProtocolContext):
 
 
     # to be rewritten according to the exp design
-################################################################################################################################################
-    data = [{'': '0',
-  'trial_index': '0',
-  'drug': '120',
-  's1': '300',
-  's2': '00',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0',
-  'water': '500.0'},
-
-  {'': '0',
-  'trial_index': '0',
-  'drug': '120',
-  's1': '300',
-  's2': '00',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0',
-  'water': '500.0'},
-
- ]
-
+########################################################################################################################################
+    data = [
+    {
+        "": "0",
+        "trial_index": "72",
+        "drug_name": "IBP",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "60.0",
+        "s7": "600.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "540.0",
+        "IBP": "180.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "1",
+        "trial_index": "73",
+        "drug_name": "LOV",
+        "drug": "180.0",
+        "s1": "683.9999999999999",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "36.0",
+        "s7": "0.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "480.0",
+        "IBP": "0.0",
+        "LOV": "180.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "2",
+        "trial_index": "74",
+        "drug_name": "DCF",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "132.0",
+        "s7": "1008.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "59.99999999999983",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "180.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "3",
+        "trial_index": "75",
+        "drug_name": "GLV",
+        "drug": "180.0",
+        "s1": "948.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "12.0",
+        "s7": "0.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "240.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "180.0"
+    },
+    {
+        "": "4",
+        "trial_index": "76",
+        "drug_name": "IBP",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "48.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "288.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "864.0",
+        "IBP": "180.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "5",
+        "trial_index": "77",
+        "drug_name": "LOV",
+        "drug": "180.0",
+        "s1": "743.9999999999999",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "107.99999999999999",
+        "s7": "0.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "348.0000000000001",
+        "IBP": "0.0",
+        "LOV": "180.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "6",
+        "trial_index": "78",
+        "drug_name": "DCF",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "252.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "683.9999999999999",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "264.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "180.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "7",
+        "trial_index": "79",
+        "drug_name": "GLV",
+        "drug": "180.0",
+        "s1": "708.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "107.99999999999999",
+        "s7": "0.0",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "384.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "180.0"
+    }
+]
+########################################################################################################################################
 ################################################################################################################################################
     
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
@@ -179,7 +304,7 @@ def run(protocol: protocol_api.ProtocolContext):
             if vol > 0:
                 pipette.pick_up_tip()
                 pipette_high.flow_rate.dispense= 50
-                air_gap_vol = 55 if pipette == pipette_high else 10 #do air gap 50 for 1000uL tip
+                air_gap_vol = 50 if pipette == pipette_high else 10 #do air gap 50 for 1000uL tip
                 hs_mod.close_labware_latch()
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
                 pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))
