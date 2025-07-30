@@ -79,7 +79,7 @@ normalize_drug_properties_dict = {
 }
 
 
-def optimizer_init():
+def optimizer_init(drug, lowest_so_far):
     
     # generation strategy
     gs = GenerationStrategy(
@@ -135,13 +135,60 @@ def optimizer_init():
 
         parameter_constraints=[
             # exactly two surfactants active
-            f"surf_1_conc + surf_2_conc  <= {surfactant_stock_conc-1}",
+            f"surf_1_conc + surf_2_conc  <= {lowest_so_far[drug]-1}",
             'surf_1_conc + surf_2_conc   >= 1',
         ],
     )
 
 
     return ax_client
+
+
+
+def fetch_previous_design(current_iteration, drug_list, drug):
+
+    try:
+        idx = drug_list.index(drug)
+        print(f"{drug!r} is at index {idx}")
+    except ValueError:
+        print(f"{drug!r} is not in the list")
+
+    if ((current_iteration == 0) & (idx == 0)):
+        previous_ax_client = AxClient.load_from_json_file(optimizer_file_path + '00' + '.json')
+
+    else:
+        if idx == 0:
+            previous_ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded_' + drug_list[-1] + '.json')
+
+        else:
+            previous_ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration) + "/" + optimizer_file_path + str(current_iteration) + '_design_' + drug_list[idx-1] + '.json')
+
+
+    data_so_far = previous_ax_client.get_trials_data_frame()
+    lowest_so_far = lowest_so_far(data_so_far, drug_list)
+
+    return previous_ax_client, lowest_so_far
+
+
+def load_warm_start(ax_client, warm_start_df, objective_col="obj_surf_conc"):
+
+    df = warm_start_df.reset_index(drop=True)
+
+    # get the list of parameter names your experiment expects
+    param_names = list(ax_client.experiment.search_space.parameters.keys())
+
+    for trial_index, row in df.iterrows():
+        # build the dict of parameter values for this trial
+        parameterization = {name: row[name] for name in param_names}
+
+        # attach it (positional arg!)
+        ax_client.attach_trial(parameterization)
+
+        # then mark it completed with your observed objective
+        ax_client.complete_trial(trial_index, raw_data=row[objective_col])
+
+    return ax_client
+
 
 
 # def design_to_conc(df, drug_stock_conc=drug_stock_conc, surfactant_stock_conc=surfactant_stock_conc):
@@ -332,6 +379,7 @@ def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
     else:
         ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded.json')
 
+
     ax_client.generation_strategy._curr = ax_client.generation_strategy._steps[bopt]
 
     trials_data = []
@@ -375,8 +423,8 @@ def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
     df_design ['obj_surf_conc'] = None
 
 
-    ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '.json')
-    df_design.to_csv(design_file_path + 'i' + str(current_iteration) + '.csv', index=False)
+    ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '_' + drug +'.json')
+    df_design.to_csv(design_file_path + 'i' + str(current_iteration) + '_' + drug + '.csv', index=False)
 
     return df_design, ax_client
 
@@ -585,3 +633,32 @@ def upload_file_to_robot(local_file_path, remote_file_name):
     else:
         print("File transfer failed.")
         print("Error:", scp_result.stderr)
+
+def add_drug_abbr(df):
+
+    df_drug = df.copy()
+    abbr_map = {
+        props["normalized_properties"]["Drug_MW"]: abbr
+        for abbr, props in normalize_drug_properties_dict.items()
+    }
+    full_map = {
+        props["normalized_properties"]["Drug_MW"]: props["full_name"]
+        for props in normalize_drug_properties_dict.values()
+    }
+
+    # add the two new columns
+    df["drug_name"] = df["Drug_MW"].map(abbr_map)
+    df["drug_full"] = df["Drug_MW"].map(full_map)
+
+    return df_drug
+
+def lowest_so_far(df, list_of_drugs = ['IBP', 'LOV', 'DCF', 'GLV']):
+
+    result = {}
+    for drug in list_of_drugs:
+        filtered_df = df[df['drug_name'] == drug]
+        if not filtered_df.empty:
+            result[drug] = filtered_df['obj_surf_conc'].min()
+        else:
+            result[drug] = None  # or np.nan or skip, depending on your preference
+    return result
