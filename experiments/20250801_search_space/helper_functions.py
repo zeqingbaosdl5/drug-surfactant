@@ -467,7 +467,7 @@ def add_drug_names(df):
 #     return df_design, ax_client, data_so_far, best_concs
 
 
-def run_optimizer(current_iteration, drug_list, bopt, constraint_ratio,n_trials=1):
+def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
     # 1. 加载或恢复上一次的 AxClient
     if current_iteration == 0:
         ax_client = AxClient.load_from_json_file(optimizer_file_path + '00.json')
@@ -505,12 +505,12 @@ def run_optimizer(current_iteration, drug_list, bopt, constraint_ratio,n_trials=
         ]
         new_constraints = [
             # 上界：surf_1_conc + surf_2_conc <= best_conc - 1
-            SumConstraint(parameters=param_objs, is_upper_bound=True,  bound=best_conc * constraint_ratio),
+            SumConstraint(parameters=param_objs, is_upper_bound=True,  bound=best_conc -2),
             # 下界：surf_1_conc + surf_2_conc >= 1
             SumConstraint(parameters=param_objs, is_upper_bound=False, bound=1),
         ]
         space._parameter_constraints = new_constraints
-        print(f"Update constraints (drug={drug})：surf_1_conc+surf_2_conc <= {best_conc * constraint_ratio}，>=1")
+        print(f"Update constraints (drug={drug})：surf_1_conc+surf_2_conc <= {best_conc -2}，>=1")
 
         # 6. 清除 BoTorch/SAASBO 的拟合缓存，确保使用最新约束重新 fit
         gs = ax_client.generation_strategy
