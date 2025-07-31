@@ -78,6 +78,48 @@ normalize_drug_properties_dict = {
 
 }
 
+def add_drug_columns(df):
+    abbr_map = {
+        props["normalized_properties"]["Drug_MW"]: abbr
+        for abbr, props in normalize_drug_properties_dict.items()
+    }
+    full_map = {
+        props["normalized_properties"]["Drug_MW"]: props["full_name"]
+        for props in normalize_drug_properties_dict.values()
+    }
+
+    # add the two new columns
+    df["drug_name"] = df["Drug_MW"].map(abbr_map)
+    df["drug_full"] = df["Drug_MW"].map(full_map)
+
+    return df
+
+def fetch_previous_design(current_iteration, drug_list, drug):
+
+    try:
+        idx = drug_list.index(drug)
+        print(f"{drug!r} is at index {idx}")
+    except ValueError:
+        print(f"{drug!r} is not in the list")
+
+    if ((current_iteration == 0) & (idx == 0)):
+        previous_ax_client = AxClient.load_from_json_file(optimizer_file_path + '00' + '.json')
+
+    # else:
+    #     if idx == 0:
+    #         previous_ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded_' + drug_list[-1] + '.json')
+
+    #     else:
+    #         previous_ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration) + "/" + optimizer_file_path + str(current_iteration) + '_design_' + drug_list[idx-1] + '.json')
+
+    else:
+        previous_ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded.json')
+    data_so_far = previous_ax_client.get_trials_data_frame()
+    data_so_far = add_drug_columns(data_so_far)
+    constrainst = lowest_so_far(data_so_far, drug_list)
+
+    return data_so_far, constrainst
+
 
 def optimizer_init(drug, lowest_so_far):
     
@@ -145,31 +187,6 @@ def optimizer_init(drug, lowest_so_far):
 
 
 
-def fetch_previous_design(current_iteration, drug_list, drug):
-
-    try:
-        idx = drug_list.index(drug)
-        print(f"{drug!r} is at index {idx}")
-    except ValueError:
-        print(f"{drug!r} is not in the list")
-
-    if ((current_iteration == 0) & (idx == 0)):
-        previous_ax_client = AxClient.load_from_json_file(optimizer_file_path + '00' + '.json')
-
-    else:
-        if idx == 0:
-            previous_ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded_' + drug_list[-1] + '.json')
-
-        else:
-            previous_ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration) + "/" + optimizer_file_path + str(current_iteration) + '_design_' + drug_list[idx-1] + '.json')
-
-
-    data_so_far = previous_ax_client.get_trials_data_frame()
-    lowest_so_far = lowest_so_far(data_so_far, drug_list)
-
-    return previous_ax_client, lowest_so_far
-
-
 def load_warm_start(ax_client, warm_start_df, objective_col="obj_surf_conc"):
 
     df = warm_start_df.reset_index(drop=True)
@@ -190,6 +207,59 @@ def load_warm_start(ax_client, warm_start_df, objective_col="obj_surf_conc"):
     return ax_client
 
 
+
+def run_optimizer(current_iteration, ax_client, drug, bopt, n_trials=1):
+
+    # if current_iteration == 0:
+    #     ax_client = AxClient.load_from_json_file(optimizer_file_path + '00' + '.json')
+    # else:
+    #     ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded.json')
+
+
+    ax_client.generation_strategy._curr = ax_client.generation_strategy._steps[bopt]
+
+    trials_data = []
+
+    drug_props = normalize_drug_properties_dict[drug]["normalized_properties"].copy()
+    drug_props["drug_conc"] = 100  # fix drug conc to the maximum
+
+    drug_features = ObservationFeatures(parameters = drug_props)
+    
+    print("*" * 100,  "*" * 100)
+    print("*" * 200)
+    print()
+    if bopt == 0:
+        print("Generating a random trial for")
+    else :
+        print("Generating a Bayesian Optimization trial for")
+    print("Drug name: ", normalize_drug_properties_dict[drug]["full_name"],f"{(drug)}", " | Iteration: ", current_iteration)
+    print()
+    print("*" * 200)
+    print("*" * 200)
+
+    trials, _ = ax_client.get_next_trials(n_trials, fixed_features=drug_features)
+
+    # Prepare the trial data for DataFrame
+    
+    for trial_index, parameters in trials.items():
+        trials_data.append(
+            {
+                "trial_index": trial_index,
+                "drug_name": drug,
+                **parameters,
+
+            }
+        )
+
+    df_design = pd.DataFrame(trials_data)
+    df_design ['surf_conc'] = df_design['surf_1_conc'] + df_design['surf_2_conc']
+    df_design ['obj_surf_conc'] = None
+
+
+    ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '_' + drug +'.json')
+    df_design.to_csv(design_file_path + 'i' + str(current_iteration) + '_' + drug + '.csv', index=False)
+
+    return df_design, ax_client
 
 # def design_to_conc(df, drug_stock_conc=drug_stock_conc, surfactant_stock_conc=surfactant_stock_conc):
 
@@ -261,11 +331,7 @@ def conc_to_vol(df, drug_stock_conc, drug_total_volume, surfactant_stock_conc, s
     return df_vol
 
 
-def add_drug_columns(df):
-    unique_drugs = df['drug_name'].unique()
-    for d in unique_drugs:
-        df[d] = df.apply(lambda row: row['drug'] if row['drug_name'] == d else 0, axis=1)
-    return df
+
 
 def design_to_vol(iteration, drug_stock_conc=drug_stock_conc, drug_total_volume=drug_total_volume, surfactant_stock_conc=surfactant_stock_conc, surfactant_total_volume=surfactant_total_volume): # in mg/mL or mL
     
@@ -372,61 +438,7 @@ def results_so_far (current_iteration):
 
     return results
 
-def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
 
-    if current_iteration == 0:
-        ax_client = AxClient.load_from_json_file(optimizer_file_path + '00' + '.json')
-    else:
-        ax_client = AxClient.load_from_json_file("../iteration_" + str(current_iteration-1) + "/" + optimizer_file_path + str(current_iteration-1) + '_loaded.json')
-
-
-    ax_client.generation_strategy._curr = ax_client.generation_strategy._steps[bopt]
-
-    trials_data = []
-
-    count = 0
-    for drug in drug_list:
-        drug_props = normalize_drug_properties_dict[drug]["normalized_properties"].copy()
-        drug_props["drug_conc"] = 100  # fix drug conc to the maximum
-
-        drug_features = ObservationFeatures(parameters = drug_props)
-        
-        count = count+1
-        print("*" * 100, count, " out of ", len(drug_list), "*" * 100)
-        print("*" * 200)
-        print()
-        if bopt == 0:
-            print("Generating a random trial for")
-        elif bopt == 1:
-            print("Generating a Bayesian Optimization trial for")
-        print("Drug name: ", normalize_drug_properties_dict[drug]["full_name"],f"{(drug)}", " | Iteration: ", current_iteration)
-        print()
-        print("*" * 200)
-        print("*" * 200)
-
-        trials, _ = ax_client.get_next_trials(n_trials, fixed_features=drug_features)
-
-        # Prepare the trial data for DataFrame
-        
-        for trial_index, parameters in trials.items():
-            trials_data.append(
-                {
-                    "trial_index": trial_index,
-                    "drug_name": drug,
-                    **parameters,
-
-                }
-            )
-
-    df_design = pd.DataFrame(trials_data)
-    df_design ['surf_conc'] = df_design['surf_1_conc'] + df_design['surf_2_conc']
-    df_design ['obj_surf_conc'] = None
-
-
-    ax_client.save_to_json_file(optimizer_file_path + str(current_iteration) + '_' + drug +'.json')
-    df_design.to_csv(design_file_path + 'i' + str(current_iteration) + '_' + drug + '.csv', index=False)
-
-    return df_design, ax_client
 
 
 def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
