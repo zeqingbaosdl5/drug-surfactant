@@ -31,7 +31,7 @@ obj1_name = "y1"
 obj2_name = "y2"
 obj3_name = "y3"
 
-models_list = [Generators.BO_MIXED, Generators.BOTORCH_MODULAR]
+models_list = [Generators.SAASBO, Generators.BO_MIXED, Generators.BOTORCH_MODULAR]
 
 total_trials = 20
 
@@ -171,9 +171,10 @@ for j, seed in enumerate(seed_list):
     
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 8), dpi=150)
 
-    for trace, duration, name in zip(traces, times, ["BO_MIXED", "BOTORCH_MODULAR"]):
+    for trace, duration, name in zip(traces, times, models_list):
 
-        color = '#0033FF' if name == "BO_MIXED" else "#8CFF00"
+        color = '#0033FF' if name == Generators.BO_MIXED else "#8CFF00"
+        color = '#FF0000' if name == Generators.BOTORCH_MODULAR else color
 
         ax1.plot(np.minimum.accumulate(trace[0][j]), color=color, label=f"{name} y1")
 
@@ -203,9 +204,10 @@ for j, seed in enumerate(seed_list):
 
 fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(10, 8), dpi=150)
 
-for trace, duration, name in zip(traces, times, ["BO_MIXED", "BOTORCH_MODULAR"]):
+for trace, duration, name in zip(traces, times, models_list):
 
-    color = '#0033FF' if name == "BO_MIXED" else "#8CFF00"
+    color = '#0033FF' if name == Generators.BO_MIXED else "#8CFF00"
+    color = '#FF0000' if name == Generators.BOTORCH_MODULAR else color
 
     y1_mean = np.mean(np.minimum.accumulate(trace[0]), axis=1)
     y1_std = np.std(np.minimum.accumulate(trace[0]), axis=1)
