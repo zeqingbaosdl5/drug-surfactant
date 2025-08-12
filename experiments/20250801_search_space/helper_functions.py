@@ -23,6 +23,7 @@ otflex_output_file_path = 'protocol/otflex_'
 
 drug_stock_conc = 25  # mg/mL
 surfactant_stock_conc = 100  # represents percent of the stock solution
+surfactant_stock_conc *= 100 # artificially raise to prevent similar values in the optimizer
 actual_surfactant_stock_conc = 50 # mg/mL represents the actual conc
 drug_total_volume = 0.18  # mL
 surfactant_total_volume = 1.2  # mL
