@@ -29,7 +29,7 @@ drug_total_volume = 0.18  # mL
 surfactant_total_volume = 1.2  # mL
 number_of_surfactants = 8  # s1 to s8
 
-drug_path = "some_path/"
+drug_path = "some_path/" # change to your actual path
 
 drug_file_dict = {
     'IBP': 'ibuprofen.json',
@@ -306,7 +306,7 @@ def add_drug_names(df):
     return df
 
 
-def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
+def run_optimizer(current_iteration, drug_list, bopt, n_trials=1): # modified to run separate optimizers for each drug
     df_design_dict, ax_client_dict, data_so_far_dict, best_concs_dict = {}, {}, {}, {}
 
     for drug in drug_list:
