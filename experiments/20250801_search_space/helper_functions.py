@@ -2,15 +2,18 @@ import pandas as pd
 import numpy as np
 from ax.service.ax_client import AxClient, ObjectiveProperties
 import matplotlib.pyplot as plt
-from ax.modelbridge.registry import Generators
 
-from ax.core.observation import ObservationFeatures
+from ax.modelbridge.factory import Models
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
+from ax.modelbridge.registry import Specified_Task_ST_MTGP_trans
+from ax.core.observation import ObservationFeatures
+
 import json
 import subprocess
 import os
 import re
 from ax.core.parameter_constraint import SumConstraint
+
 
 
 
@@ -87,22 +90,23 @@ def optimizer_init():
     gs = GenerationStrategy(
         steps=[
             GenerationStep(
-                model=Generators.SOBOL,
+                model=Models.SOBOL,
                 num_trials=1000,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
-                model_kwargs={"seed": 0},
+                model_kwargs={"seed": 0, "transforms": Specified_Task_ST_MTGP_trans},
+                model_gen_kwargs={"deduplicate": True},
             ),
             GenerationStep(
 
-                model=Generators.BOTORCH_MODULAR,
+                model=Models.BOTORCH_MODULAR,
                 num_trials=1000,
-                model_kwargs={},
+                model_kwargs={"transforms": Specified_Task_ST_MTGP_trans},
             
             ),
             GenerationStep(
 
-                model=Generators.SAASBO,
+                model=Models.SAASBO,
                 num_trials=1000,
-                model_kwargs={},
+                model_kwargs={"transforms": Specified_Task_ST_MTGP_trans},
             
             ),
         ]
@@ -119,6 +123,7 @@ def optimizer_init():
             {"name": "Drug_MW",   "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
             {"name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
             {"name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
+            {"name":"drugs", "type" : "choice", "values" :["IBP","LOV", "DCF", "GLV"], "is_task": True }, # different tasks
 
             {"name": "surf_1", "type": "choice", "is_ordered": False, "values": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]},
             {"name": "surf_1_conc", "type": "range", "bounds": [0.0, surfactant_stock_conc], "value_type": "int"},
@@ -140,7 +145,7 @@ def optimizer_init():
             f"surf_1_conc + surf_2_conc  <= {surfactant_stock_conc-1}",
             'surf_1_conc + surf_2_conc   >= 1',
         ],
-    )
+        )
 
 
     return ax_client
@@ -492,6 +497,7 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
         # 3. 构造固定的药物特征
         drug_props = normalize_drug_properties_dict[drug]["normalized_properties"].copy()
         drug_props["drug_conc"] = 100  # 固定药浓度
+        drug_props["drugs"] = drug
         drug_features = ObservationFeatures(parameters=drug_props)
 
         # 4. 取出该 drug 的最新 best_conc
@@ -636,9 +642,9 @@ def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
         with open(output_path, "w", encoding="utf-8") as f:
             f.writelines(new_lines)
 
-        print(f"✅ Successfully wrote to: {output_path}")
+        print(f"Successfully wrote to: {output_path}")
     else:
-        print("❌ Could not locate the block to replace.")
+        print("Could not locate the block to replace.")
 
 def load_design_optimizer(iteration):
 
