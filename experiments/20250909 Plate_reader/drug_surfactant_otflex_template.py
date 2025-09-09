@@ -125,13 +125,18 @@ def run(protocol: protocol_api.ProtocolContext):
         hs_mod.open_labware_latch()
         protocol.move_labware(labware=labware_to_shake, new_location= new_location, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, use_gripper=True)
 
-    def plate_on_pr(labware_to_read):
+
+    def plate_on_pr(labware_to_read, new_location):
+        pr_mod.close_lid()
         pr_mod.initialize(mode="single", wavelengths=[600]) # can add (reference_wavelength=) for normalization (reference wavelenth data will be subtracted from wavelength indicated)
         pr_mod.open_lid()
         protocol.move_labware(labware=labware_to_read, new_location= pr_mod, use_gripper=True)
         pr_mod.close_lid()
         pr_data = pr_mod.read()
+        pr_data[600]["A1"]
         pr_data = pr_mod.read(export_filename="plate_data") #CSV file
+        pr_mod.open_lid()
+        protocol.move_labware(labware=labware_to_read, new_location= new_location, use_gripper=True)
 
 
     # to be rewritten according to the exp design
@@ -257,4 +262,4 @@ def run(protocol: protocol_api.ProtocolContext):
         
 
     plate_on_hs(labware_to_shake=plate, new_location='D1', time=5, speed=1000) # time in minutes, speed in rpm
-    plate_on_pr(labware_to_read= plate)
+    plate_on_pr(labware_to_read= plate, new_location= "D1")
