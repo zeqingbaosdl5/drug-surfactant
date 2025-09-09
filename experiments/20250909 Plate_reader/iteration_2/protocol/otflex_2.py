@@ -6,7 +6,7 @@ metadata = {
     "author": "Zeqing Bao and Yunhee Hwang"
 }
 
-requirements = {"robotType": "Flex", "apiLevel": "2.19"}
+requirements = {"robotType": "Flex", "apiLevel": "2.21"}
 
 
 def run(protocol: protocol_api.ProtocolContext):
@@ -20,6 +20,8 @@ def run(protocol: protocol_api.ProtocolContext):
 
     hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
     hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
+
+    pr_mod = protocol.load_module(module_name="absorbanceReaderV1", location="C3")
     
     # attach pipette 
     pipette_low = protocol.load_instrument(instrument_name="flex_1channel_50", mount="right", tip_racks=[tip50])
@@ -37,10 +39,10 @@ def run(protocol: protocol_api.ProtocolContext):
 
     # load second stock plate with 4 surfactants + pyrene in deck slot C2
     surfactant_drug_dmso_stock_2 = protocol.load_labware(load_name="allenlab_8_wellplate_20000ul", location="C2")
-    s9 = surfactant_drug_dmso_stock_2['A1']
-    s10 = surfactant_drug_dmso_stock_2['A2']
-    s11 = surfactant_drug_dmso_stock_2['A3']
-    s12 = surfactant_drug_dmso_stock_2['A4']
+#    s9 = surfactant_drug_dmso_stock_2['A1']
+#    s10 = surfactant_drug_dmso_stock_2['A2']
+#    s11 = surfactant_drug_dmso_stock_2['A3']
+#    s12 = surfactant_drug_dmso_stock_2['A4']
     ibp = surfactant_drug_dmso_stock_2['B1']
     lov = surfactant_drug_dmso_stock_2['B2']
     dcf = surfactant_drug_dmso_stock_2['B3']
@@ -49,13 +51,13 @@ def run(protocol: protocol_api.ProtocolContext):
 #    dmso = surfactant_drug_dmso_stock_2['B2']
 
     # load water in deck slot C3
-    water_res = protocol.load_labware('nest_1_reservoir_290ml','C3')
-    water = water_res['A1']
+    #water_res = protocol.load_labware('nest_1_reservoir_290ml','C3')
+    water = surfactant_drug_dmso_stock_2['A1']
     
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'C1'
+    next_plate_well = 'A1'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
@@ -74,10 +76,10 @@ def run(protocol: protocol_api.ProtocolContext):
         's6': s6,
         's7': s7,
         's8': s8,
-        's9': s9,
-        's10': s10,
-        's11': s11,
-        's12': s12,
+     #   's9': s9,
+     #   's10': s10,
+     #   's11': s11,
+     #   's12': s12,
         'water': water,
         'IBP': ibp,
         'LOV': lov,
@@ -123,6 +125,17 @@ def run(protocol: protocol_api.ProtocolContext):
         hs_mod.open_labware_latch()
         protocol.move_labware(labware=labware_to_shake, new_location= new_location, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, use_gripper=True)
 
+    def plate_on_pr(labware_to_read, new_location):
+        pr_mod.close_lid()
+        pr_mod.initialize(mode="single", wavelengths=[600]) # can add (reference_wavelength=) for normalization (reference wavelenth data will be subtracted from wavelength indicated)
+        pr_mod.open_lid()
+        protocol.move_labware(labware=labware_to_read, new_location= pr_mod, use_gripper=True)
+        pr_mod.close_lid()
+        pr_data = pr_mod.read()
+        pr_data[600]["A1"]
+        pr_data = pr_mod.read(export_filename="plate_data") #CSV file
+        pr_mod.open_lid()
+        protocol.move_labware(labware=labware_to_read, new_location= new_location, use_gripper=True)
 
 
     # to be rewritten according to the exp design
@@ -132,244 +145,24 @@ def run(protocol: protocol_api.ProtocolContext):
         "": "0",
         "trial_index": "40",
         "drug_name": "IBP",
-        "drug": "180.0",
+        "drug": "0.0",
         "s1": "0.0",
         "s2": "0.0",
         "s3": "0.0",
-        "s4": "156.0",
+        "s4": "0",
         "s5": "0.0",
         "s6": "0.0",
         "s7": "0.0",
-        "s8": "215.99999999999997",
+        "s8": "0",
         "dmso": "0.0",
-        "water": "828.0",
-        "IBP": "180.0",
+        "water": "0",
+        "IBP": "0.0",
         "LOV": "0.0",
         "DCF": "0.0",
         "GLV": "0.0"
     },
-    {
-        "": "1",
-        "trial_index": "41",
-        "drug_name": "LOV",
-        "drug": "180.0",
-        "s1": "0.0",
-        "s2": "0.0",
-        "s3": "0.0",
-        "s4": "107.99999999999999",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "0.0",
-        "s8": "215.99999999999997",
-        "dmso": "0.0",
-        "water": "876.0",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
-    },
-    {
-        "": "2",
-        "trial_index": "42",
-        "drug_name": "DCF",
-        "drug": "180.0",
-        "s1": "0.0",
-        "s2": "0.0",
-        "s3": "0.0",
-        "s4": "107.99999999999999",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "0.0",
-        "s8": "215.99999999999997",
-        "dmso": "0.0",
-        "water": "876.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
-    },
-    {
-        "": "3",
-        "trial_index": "43",
-        "drug_name": "GLV",
-        "drug": "180.0",
-        "s1": "0.0",
-        "s2": "0.0",
-        "s3": "0.0",
-        "s4": "300.0",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "0.0",
-        "s8": "215.99999999999997",
-        "dmso": "0.0",
-        "water": "683.9999999999999",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
-    },
-    {
-        "": "4",
-        "trial_index": "44",
-        "drug_name": "IBP",
-        "drug": "180.0",
-        "s1": "0.0",
-        "s2": "0.0",
-        "s3": "0.0",
-        "s4": "132.0",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "0.0",
-        "s8": "215.99999999999997",
-        "dmso": "0.0",
-        "water": "852.0",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
-    },
-    {
-        "": "5",
-        "trial_index": "45",
-        "drug_name": "LOV",
-        "drug": "180.0",
-        "s1": "0.0",
-        "s2": "0.0",
-        "s3": "0.0",
-        "s4": "215.99999999999997",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "0.0",
-        "s8": "215.99999999999997",
-        "dmso": "0.0",
-        "water": "768.0",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
-    },
-    {
-        "": "6",
-        "trial_index": "46",
-        "drug_name": "DCF",
-        "drug": "180.0",
-        "s1": "0.0",
-        "s2": "0.0",
-        "s3": "0.0",
-        "s4": "168.0",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "0.0",
-        "s8": "215.99999999999997",
-        "dmso": "0.0",
-        "water": "816.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
-    },
-    {
-        "": "7",
-        "trial_index": "47",
-        "drug_name": "GLV",
-        "drug": "180.0",
-        "s1": "0.0",
-        "s2": "0.0",
-        "s3": "0.0",
-        "s4": "431.99999999999994",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "0.0",
-        "s8": "215.99999999999997",
-        "dmso": "0.0",
-        "water": "552.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
-    }
 ]
 ########################################################################################################################################
 ################################################################################################################################################
-    
-    def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
 
-        for pipette in [pipette_low, pipette_high]:
-            pipette.well_bottom_clearance.dispense = 25
-            pipette.well_bottom_clearance.aspirate = 2     
-
-        for n, item in enumerate(a_list):
-            vol = float(row_of_data[item])
-            pipette = pipette_selection(vol)
-            if vol > 0:
-                pipette.pick_up_tip()
-                pipette_high.flow_rate.dispense= 50
-                air_gap_vol = 50 if pipette == pipette_high else 10 #do air gap 50 for 1000uL tip
-                hs_mod.close_labware_latch()
-                pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
-                pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))
-                pipette.touch_tip(deepplate[next_deepplate_well], v_offset=15)
-                pipette.drop_tip()  
-
-
-        current_deepplate_well = next_deepplate_well
-        next_deepplate_well = next_well(next_deepplate_well)
-        
-        return current_deepplate_well, next_deepplate_well
-
-        
-    def make_exp(current_drug_well, current_surfactant_well, next_plate_well):
-
-        for pipette in [pipette_low, pipette_high]:
-            pipette.well_bottom_clearance.dispense = 13
-            pipette.well_bottom_clearance.aspirate = 2    
-        
-        replicate_wells = []
-        for _ in range(3):  #Change this number to control the amount of replicates
-            replicate_wells.append(next_plate_well)
-            next_plate_well = next_well(next_plate_well)
-
-        pipette_high.pick_up_tip()
-        pipette_high.flow_rate.dispense = 50
-        for well in replicate_wells:
-            pipette_high.transfer(270, deepplate[current_surfactant_well], plate[well], new_tip='never', air_gap= 50) #do air gap 50 for 1000uL tip
-            pipette_high.touch_tip(plate[well], v_offset=-3)
-        pipette_high.drop_tip()
-
-
-        pipette_low.pick_up_tip()
-        for well in replicate_wells:
-            pipette_low.transfer(30, deepplate[current_drug_well], plate[well], new_tip='never', air_gap= 10) 
-            pipette_low.flow_rate.dispense = 25
-            pipette_low.blow_out(plate[well])
-            pipette_low.touch_tip(plate[well], v_offset=-3)
-        pipette_low.drop_tip()
-        
-
-        return next_plate_well
-    
-
-    well_pairs = []
-    for i in range(len(data)):
-    #for i in [8,9,10]: 
-    #use either the first or 2nd line, 1st line does range to first 8, 2nd line does the ones only listed in the brackets
-        row_of_data = data[i]
-
-        current_surfactant_well, next_deepplate_well = make_drug_or_surfactant(surfactant_list, next_deepplate_well, row_of_data)
-        current_drug_well, next_deepplate_well = make_drug_or_surfactant(drug_list, next_deepplate_well, row_of_data)
-        well_pairs.append((current_drug_well, current_surfactant_well))  
-
-    
-    plate_on_hs(labware_to_shake = deepplate, new_location = 'D2', speed= 1000, time = 1)  # Changed to 5 mins of shaking
-    protocol.move_labware(labware= plate, new_location=hs_adapter, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, drop_offset={'x': 0, 'y': 0, 'z': -5}, use_gripper=True)
-    hs_mod.close_labware_latch()
-
-
-    for i in range(len(data)):
-        row_of_data = data[i]
-        current_drug_well, current_surfactant_well = well_pairs[i]
-
-        next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
-        
-
-    plate_on_hs(labware_to_shake=plate, new_location='D1', time=5, speed=1000) # time in minutes, speed in rpm
+    plate_on_pr(labware_to_read= plate, new_location= "D1")
