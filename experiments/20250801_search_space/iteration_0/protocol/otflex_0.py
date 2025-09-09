@@ -37,10 +37,10 @@ def run(protocol: protocol_api.ProtocolContext):
 
     # load second stock plate with 4 surfactants + pyrene in deck slot C2
     surfactant_drug_dmso_stock_2 = protocol.load_labware(load_name="allenlab_8_wellplate_20000ul", location="C2")
-    s9 = surfactant_drug_dmso_stock_2['A1']
-    s10 = surfactant_drug_dmso_stock_2['A2']
-    s11 = surfactant_drug_dmso_stock_2['A3']
-    s12 = surfactant_drug_dmso_stock_2['A4']
+#    s9 = surfactant_drug_dmso_stock_2['A1']
+#    s10 = surfactant_drug_dmso_stock_2['A2']
+#    s11 = surfactant_drug_dmso_stock_2['A3']
+#    s12 = surfactant_drug_dmso_stock_2['A4']
     ibp = surfactant_drug_dmso_stock_2['B1']
     lov = surfactant_drug_dmso_stock_2['B2']
     dcf = surfactant_drug_dmso_stock_2['B3']
@@ -49,8 +49,8 @@ def run(protocol: protocol_api.ProtocolContext):
 #    dmso = surfactant_drug_dmso_stock_2['B2']
 
     # load water in deck slot C3
-    water_res = protocol.load_labware('nest_1_reservoir_290ml','C3')
-    water = water_res['A1']
+    #water_res = protocol.load_labware('nest_1_reservoir_290ml','C3')
+    water = surfactant_drug_dmso_stock_2['A1']
     
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
@@ -74,10 +74,10 @@ def run(protocol: protocol_api.ProtocolContext):
         's6': s6,
         's7': s7,
         's8': s8,
-        's9': s9,
-        's10': s10,
-        's11': s11,
-        's12': s12,
+     #   's9': s9,
+     #   's10': s10,
+     #   's11': s11,
+     #   's12': s12,
         'water': water,
         'IBP': ibp,
         'LOV': lov,
@@ -714,26 +714,6 @@ def run(protocol: protocol_api.ProtocolContext):
         "drug_name": "LOV",
         "drug": "180.0",
         "s1": "0.0",
-        "s2": "996.0",
-        "s3": "0.0",
-        "s4": "0.0",
-        "s5": "0.0",
-        "s6": "0.0",
-        "s7": "192.0",
-        "s8": "0.0",
-        "dmso": "0.0",
-        "water": "12.00000000000001",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
-    },
-    {
-        "": "30",
-        "trial_index": "30",
-        "drug_name": "DCF",
-        "drug": "180.0",
-        "s1": "0.0",
         "s2": "180.0",
         "s3": "0.0",
         "s4": "0.0",
@@ -744,14 +724,14 @@ def run(protocol: protocol_api.ProtocolContext):
         "dmso": "0.0",
         "water": "156.00000000000014",
         "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
+        "LOV": "180.0",
+        "DCF": "0.0",
         "GLV": "0.0"
     },
     {
-        "": "31",
-        "trial_index": "31",
-        "drug_name": "GLV",
+        "": "30",
+        "trial_index": "30",
+        "drug_name": "DCF",
         "drug": "180.0",
         "s1": "635.9999999999999",
         "s2": "0.0",
@@ -763,6 +743,26 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "396.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "180.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "31",
+        "trial_index": "31",
+        "drug_name": "GLV",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "0.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "887.9999999999999",
+        "s8": "0.0",
+        "dmso": "0.0",
+        "water": "312.00000000000006",
         "IBP": "0.0",
         "LOV": "0.0",
         "DCF": "0.0",
@@ -784,7 +784,7 @@ def run(protocol: protocol_api.ProtocolContext):
             if vol > 0:
                 pipette.pick_up_tip()
                 pipette_high.flow_rate.dispense= 50
-                air_gap_vol = 50 if pipette == pipette_high else 10 #do air gap 50 for 1000uL tip
+                air_gap_vol = 55 if pipette == pipette_high else 10 #do air gap 50 for 1000uL tip
                 hs_mod.close_labware_latch()
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
                 pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))

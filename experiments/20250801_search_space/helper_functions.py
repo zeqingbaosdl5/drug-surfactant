@@ -3,8 +3,13 @@ import numpy as np
 from ax.service.ax_client import AxClient, ObjectiveProperties
 import matplotlib.pyplot as plt
 
+#from ax.modelbridge.registry import Generators, Specified_Task_ST_MTGP_trans
+#from ax.modelbridge.registry import Generators
+#from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
+
 from ax.modelbridge.factory import Models
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
+
 from ax.modelbridge.registry import Specified_Task_ST_MTGP_trans
 from ax.core.observation import ObservationFeatures
 
@@ -83,6 +88,15 @@ normalize_drug_properties_dict = {
 
 }
 
+# To numerize the tasks for multi-task campaign
+drug_number = {drug: i for i, drug in enumerate(normalize_drug_properties_dict.keys())}
+number_to_drug = {i: drug for drug, i in drug_number.items()}
+
+def add_drug_names(df):
+    # map numeric IDs back to abbreviations
+    df["drug_name"] = df["drugs"].map(number_to_drug)
+    df["drug_full"] = df["drug_name"].map(lambda x: normalize_drug_properties_dict[x]["full_name"])
+    return df
 
 def optimizer_init():
     
@@ -99,15 +113,16 @@ def optimizer_init():
 
                 model=Models.BOTORCH_MODULAR,
                 num_trials=1000,
-                model_kwargs={"transforms": Specified_Task_ST_MTGP_trans},
+                #model_kwargs={"model_class": "MultiTaskGP", "task_features": [0]},
+                model_kwargs={"transforms": Specified_Task_ST_MTGP_trans,  "fixed_noise": True},
             
             ),
             GenerationStep(
 
                 model=Models.SAASBO,
                 num_trials=1000,
-                model_kwargs={"transforms": Specified_Task_ST_MTGP_trans},
-            
+                #model_kwargs={"model_class": "MultiTaskGP", "task_features": [0]},
+                 model_kwargs={"transforms": Specified_Task_ST_MTGP_trans},
             ),
         ]
     )
@@ -123,7 +138,7 @@ def optimizer_init():
             {"name": "Drug_MW",   "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
             {"name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
             {"name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float"},
-            {"name":"drugs", "type" : "choice", "values" :["IBP","LOV", "DCF", "GLV"], "is_task": True }, # different tasks
+            {"name":"drugs", "type" : "choice", "values" : list(drug_number.values()), "is_task": True, "target_value": drug_number["IBP"] }, # different tasks, target value is the initial task
 
             {"name": "surf_1", "type": "choice", "is_ordered": False, "values": ["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8"]},
             {"name": "surf_1_conc", "type": "range", "bounds": [0.0, surfactant_stock_conc], "value_type": "int"},
@@ -353,21 +368,21 @@ def lowest_so_far(df, list_of_drugs):
 
 #     return data_so_far, constrainst
 
-def add_drug_names(df):
-    abbr_map = {
-        props["normalized_properties"]["Drug_MW"]: abbr
-        for abbr, props in normalize_drug_properties_dict.items()
-    }
-    full_map = {
-        props["normalized_properties"]["Drug_MW"]: props["full_name"]
-        for props in normalize_drug_properties_dict.values()
-    }
+#def add_drug_names(df):
+#    abbr_map = {
+#        props["normalized_properties"]["Drug_MW"]: abbr
+#        for abbr, props in normalize_drug_properties_dict.items()
+#    }
+#    full_map = {
+#        props["normalized_properties"]["Drug_MW"]: props["full_name"]
+#        for props in normalize_drug_properties_dict.values()
+#    }
 
     # add the two new columns
-    df["drug_name"] = df["Drug_MW"].map(abbr_map)
-    df["drug_full"] = df["Drug_MW"].map(full_map)
+ #   df["drug_name"] = df["Drug_MW"].map(abbr_map)
+ #   df["drug_full"] = df["Drug_MW"].map(full_map)
 
-    return df
+#    return df
 
 
 # def run_optimizer(current_iteration, drug_list, bopt, n_trials=1):
@@ -476,6 +491,8 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
     # 1. 加载或恢复上一次的 AxClient
     if current_iteration == 0:
         ax_client = AxClient.load_from_json_file(optimizer_file_path + '00.json')
+        data_so_far = pd.DataFrame()  # no previous data
+        best_concs = {drug: 100 for drug in drug_list}
     else:
         ax_client = AxClient.load_from_json_file(
             f"../iteration_{current_iteration-1}/{optimizer_file_path}{current_iteration-1}_loaded.json"
@@ -497,7 +514,7 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
         # 3. 构造固定的药物特征
         drug_props = normalize_drug_properties_dict[drug]["normalized_properties"].copy()
         drug_props["drug_conc"] = 100  # 固定药浓度
-        drug_props["drugs"] = drug
+        drug_props["drugs"] = drug_number[drug]
         drug_features = ObservationFeatures(parameters=drug_props)
 
         # 4. 取出该 drug 的最新 best_conc
@@ -555,6 +572,28 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
 
     return df_design, ax_client, data_so_far, best_concs
 
+#To see if we coded the multi-task campaign correcctly
+def print_campaign_type(ax_client):
+    # Check objective(s)
+    objectives = ax_client.experiment.optimization_config.objective
+    if hasattr(objectives, "objectives"):
+        print("Campaign type: MULTI-OBJECTIVE")
+        for name, obj in objectives.objectives.items():
+            print(f" - {name}, minimize={obj.minimize}")
+    else:
+        print("Campaign type: SINGLE-OBJECTIVE")
+        print(f" - {objectives.metric.name}, minimize={objectives.minimize}")
+    
+    # Check task(s)
+    task_params = [
+        p for p in ax_client.experiment.search_space.parameters.values() 
+        if p.parameter_type.name == "TASK"
+    ]
+    if task_params:
+        print("With MULTI-TASK setup")
+        print(f"Task parameter(s): {[p.name for p in task_params]}")
+    else:
+        print("With SINGLE-TASK setup")
 
 
 def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
