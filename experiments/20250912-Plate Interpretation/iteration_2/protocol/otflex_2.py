@@ -57,12 +57,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'H3'
+    next_plate_well = 'A1'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'H3'
+    next_deepplate_well = 'A1'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -134,51 +134,176 @@ def run(protocol: protocol_api.ProtocolContext):
         pr_mod.close_lid()
         pr_data = pr_mod.read()
         pr_data[600]["A1"]
-        pr_data = pr_mod.read(export_filename="raw_data") #CSV file
+        pr_data = pr_mod.read(export_filename = "raw_absorbance_i2")
         pr_mod.open_lid()
         protocol.move_labware(labware=labware_to_read, new_location= new_location, use_gripper=True)
-        pr_mod.close_lid()
+
 
     # to be rewritten according to the exp design
-################################################################################################################################################
-    data = [{'': '0',
-  'trial_index': '0',
-  'drug': '0',
-  's1': '0',
-  's2': '00',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0',
-  'water': '500.0'},
-
-  {'': '0',
-  'trial_index': '0',
-  'drug': '120',
-  's1': '300',
-  's2': '00',
-  's3': '0.0',
-  's4': '0.0',
-  's5': '0',
-  's6': '0.0',
-  's7': '0.0',
-  's8': '0.0',
-  's9': '0.0',
-  's10': '0.0',
-  's11': '0.0',
-  's12': '0.0',
-  'dmso': '0',
-  'water': '500.0'},
-
- ]
-
+########################################################################################################################################
+    data = [
+    {
+        "": "0",
+        "trial_index": "40",
+        "drug_name": "IBP",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "12.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "972.0",
+        "IBP": "180.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "1",
+        "trial_index": "41",
+        "drug_name": "LOV",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "120.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "864.0",
+        "IBP": "0.0",
+        "LOV": "180.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "2",
+        "trial_index": "42",
+        "drug_name": "DCF",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "168.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "816.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "180.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "3",
+        "trial_index": "43",
+        "drug_name": "GLV",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "192.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "792.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "180.0"
+    },
+    {
+        "": "4",
+        "trial_index": "44",
+        "drug_name": "IBP",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "144.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "840.0",
+        "IBP": "180.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "5",
+        "trial_index": "45",
+        "drug_name": "LOV",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "120.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "864.0",
+        "IBP": "0.0",
+        "LOV": "180.0",
+        "DCF": "0.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "6",
+        "trial_index": "46",
+        "drug_name": "DCF",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "24.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "960.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "180.0",
+        "GLV": "0.0"
+    },
+    {
+        "": "7",
+        "trial_index": "47",
+        "drug_name": "GLV",
+        "drug": "180.0",
+        "s1": "0.0",
+        "s2": "0.0",
+        "s3": "0.0",
+        "s4": "204.0",
+        "s5": "0.0",
+        "s6": "0.0",
+        "s7": "0.0",
+        "s8": "215.99999999999997",
+        "dmso": "0.0",
+        "water": "780.0",
+        "IBP": "0.0",
+        "LOV": "0.0",
+        "DCF": "0.0",
+        "GLV": "180.0"
+    }
+]
+########################################################################################################################################
 ################################################################################################################################################
     
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):

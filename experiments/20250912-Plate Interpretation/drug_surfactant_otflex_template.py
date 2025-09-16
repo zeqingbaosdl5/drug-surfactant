@@ -134,10 +134,10 @@ def run(protocol: protocol_api.ProtocolContext):
         pr_mod.close_lid()
         pr_data = pr_mod.read()
         pr_data[600]["A1"]
-        pr_data = pr_mod.read(export_filename="raw_data") #CSV file
+        pr_data = pr_mod.read(export_filename="raw_absorbance_in") #CSV file
         pr_mod.open_lid()
         protocol.move_labware(labware=labware_to_read, new_location= new_location, use_gripper=True)
-        pr_mod.close_lid()
+
 
     # to be rewritten according to the exp design
 ################################################################################################################################################
