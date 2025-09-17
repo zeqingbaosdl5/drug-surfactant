@@ -139,7 +139,7 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.move_labware(labware=labware_to_read, new_location= new_location, use_gripper=True)
 
 
-    # to be rewritten according to the exp design
+    # to be treated as an input arguement in the future
 ################################################################################################################################################
     data = [{'': '0',
   'trial_index': '0',
