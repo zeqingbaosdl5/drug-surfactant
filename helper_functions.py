@@ -7,12 +7,16 @@ from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrateg
 import subprocess
 
 
-def virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12):
+def virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, surfactant_conc=None):
 
     complexity = sum(1 for x in [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12] if x != 0)
     cost = s1+s2+s3+s4+s5+s6+s7+s8+s9+s10+s11+s12
     performance = 0.3*s1*(1+s2) - 0.5*s3*s4 + s5**2 + 0.8*s9 - s10*s11 + 0.2*s12
-    return {'complexity': complexity, 'cost': cost, 'performance': performance}
+    
+    # obj_surf_conc is the total surfactant concentration (deterministic outcome to minimize)
+    obj_surf_conc = surfactant_conc if surfactant_conc is not None else 0
+    
+    return {'complexity': complexity, 'cost': cost, 'performance': performance, 'obj_surf_conc': obj_surf_conc}
 
 def optimizer_init():
     
@@ -49,6 +53,7 @@ def optimizer_init():
             'complexity': ObjectiveProperties(minimize=True, threshold=5),
             'cost': ObjectiveProperties(minimize=True, threshold=0.5),
             'performance': ObjectiveProperties(minimize=False),
+            'obj_surf_conc': ObjectiveProperties(minimize=True),
         },
 
         parameter_constraints=[
