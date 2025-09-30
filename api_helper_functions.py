@@ -3,6 +3,7 @@ API-based helper functions for drug-surfactant experiments.
 
 This module replaces the SSH/SCP-based workflow with API calls to the FastAPI server
 that handles protocol simulation and execution using opentrons.simulate and opentrons.execute.
+The API server is designed to be deployed on Railway for cloud hosting.
 """
 
 import requests
@@ -19,8 +20,9 @@ import re
 import os
 
 
-# Configuration - these could be environment variables in production
+# Configuration - Railway deployment URL or local development
 API_BASE_URL = os.getenv("DRUG_SURFACTANT_API_URL", "http://localhost:8000")
+# For Railway deployment, set environment variable to: https://your-railway-app.railway.app
 
 # Keep the same constants from the original helper_functions.py
 optimizer_file_path = 'optimizer/optimizer_'

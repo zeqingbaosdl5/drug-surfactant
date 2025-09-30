@@ -141,12 +141,16 @@ python api_server.py
 ```
 
 ### Railway Deployment
+The API is specifically configured for Railway platform deployment:
+
 ```bash
-# Deploy to Railway
+# Deploy to Railway using the Railway CLI
 railway login
-railway init
+railway init --name drug-surfactant-api
 railway up
 ```
+
+Alternatively, use the Railway MCP server tools for automated deployment.
 
 The Railway configuration is in `railway.toml` and uses the `Dockerfile` for deployment.
 
