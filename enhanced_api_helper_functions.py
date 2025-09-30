@@ -16,7 +16,10 @@ import pandas as pd
 logger = logging.getLogger(__name__)
 
 # API Configuration
-API_BASE_URL = os.getenv("DRUG_SURFACTANT_API_URL", "http://localhost:8000")
+# Default to Railway production URL if available, fallback to localhost
+API_BASE_URL = os.getenv("DRUG_SURFACTANT_API_URL") or os.getenv("RAILWAY_PUBLIC_DOMAIN") or "http://localhost:8000"
+if "RAILWAY_PUBLIC_DOMAIN" in os.environ and not API_BASE_URL.startswith("http"):
+    API_BASE_URL = f"https://{API_BASE_URL}"
 API_USERNAME = os.getenv("DRUG_SURFACTANT_USERNAME", "drug_surfactant_user")
 API_PASSWORD = os.getenv("DRUG_SURFACTANT_PASSWORD", "demo_password_123")
 

@@ -43,13 +43,26 @@ pip install -r requirements.txt
 python enhanced_api_server.py
 
 # Test the API
-python test_enhanced_api.py
+python tests/test_enhanced_api.py
 ```
 
 #### Railway Deployment
 ```bash
-# Deploy to Railway
+# Deploy to Railway (automated)
 ./deploy_railway.sh
+
+# Or deploy manually via Railway CLI
+railway login
+railway init
+railway up
+```
+
+#### Environment Configuration
+```bash
+# For production deployment, set these environment variables in Railway:
+# JWT_SECRET_KEY=your_production_secret_key
+# DRUG_SURFACTANT_PASSWORD=your_production_password
+# LAB_ADMIN_PASSWORD=your_production_admin_password
 ```
 
 ### API Usage Examples
