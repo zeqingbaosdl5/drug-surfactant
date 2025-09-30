@@ -162,6 +162,8 @@ ax_client = AxClient(generation_strategy=gs)
 
 When using `get_next_trials`, Ax respects these limits automatically.
 
+**Hardware Constraint Note:** For the drug-surfactant automated workflow, consider that there are 4 slots available for wellplates or tips, with 2 tip sizes to accommodate. This leaves capacity for up to 2 x 96-wellplates before requiring manual refresh. Set your parallelism limits accordingly to match these hardware constraints.
+
 ### Checking Generation Limits
 
 You can check how many trials can currently be generated:
