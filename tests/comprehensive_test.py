@@ -145,7 +145,7 @@ def test_file_structure():
         "requirements.txt",
         "Dockerfile", 
         "railway.toml",
-        "MIGRATION_GUIDE.md",
+        "../docs/MIGRATION_GUIDE.md",
         "api_workflow_demo.ipynb",
         ".gitignore"
     ]

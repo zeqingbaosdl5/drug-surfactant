@@ -183,10 +183,10 @@ Use the provided test scripts to verify functionality:
 
 ```bash
 # Test core API functionality
-python test_api_simple.py
+python tests/test_api_simple.py
 
 # Test with sample data
-python test_api.py
+python tests/test_api.py
 ```
 
 ## Troubleshooting

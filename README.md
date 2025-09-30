@@ -87,7 +87,7 @@ sim_result = eapi_hf.execute_task("simulate_protocol_task", {
 | `enhanced_api_server.py` | Main FastAPI server with auth & task management |
 | `enhanced_api_helper_functions.py` | Client helper functions |
 | `enhanced_api_workflow_demo.ipynb` | Demo notebook |
-| `test_enhanced_api.py` | Comprehensive test suite |
+| [`tests/test_enhanced_api.py`](tests/test_enhanced_api.py) | Comprehensive test suite |
 | `deploy_railway.sh` | Railway deployment script |
 | `railway.toml` | Railway configuration |
 | `Dockerfile` | Container configuration |

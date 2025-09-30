@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Enhanced FastAPI server** (`enhanced_api_server.py`) with JWT authentication
 - **Task management system** using decorator pattern from ac-dev-lab (@task decorator)
 - **Authentication system** with user roles and JWT bearer tokens
-- **Comprehensive test suite** (`test_enhanced_api.py`) with 6 test categories
+- **Comprehensive test suite** (`tests/test_enhanced_api.py`) with 6 test categories
 - **Enhanced helper functions** (`enhanced_api_helper_functions.py`) with auth support
 - **Railway deployment script** (`deploy_railway.sh`) for automated cloud deployment
 - **Enhanced demo notebook** (`enhanced_api_workflow_demo.ipynb`) showing new workflow
@@ -48,8 +48,8 @@ All 6 enhanced test categories passed:
 - Protocol execution endpoint using `opentrons.execute` for hardware control
 - API helper functions (`api_helper_functions.py`) replacing SSH/SCP workflow
 - Railway deployment configuration (`railway.toml`, `Dockerfile`)
-- Comprehensive test suite (`comprehensive_test.py`)
-- Migration guide and documentation (`MIGRATION_GUIDE.md`)
+- Comprehensive test suite (`tests/comprehensive_test.py`)
+- Migration guide and documentation (`docs/MIGRATION_GUIDE.md`)
 - Demo notebook (`api_workflow_demo.ipynb`) showing new workflow
 
 ### Changed

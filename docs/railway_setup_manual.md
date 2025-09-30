@@ -115,11 +115,11 @@ if success:
 Run the MVP communication test against your Railway deployment:
 
 ```python
-# In mvp_communication_test.py, update the API_BASE_URL:
+# In tests/mvp_communication_test.py, update the API_BASE_URL:
 API_BASE_URL = "https://drug-surfactant-api-production-XXXX.up.railway.app"
 
 # Then run:
-python mvp_communication_test.py
+python tests/mvp_communication_test.py
 ```
 
 ## Monitoring and Logs
