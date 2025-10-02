@@ -186,6 +186,109 @@ else:
 3. **Complete trials when data is available** - Use `complete_trial` to add real experimental data
 4. **Configure parallelism in GenerationStrategy** - Set appropriate limits for your use case
 5. **Check generation limits** - Use `get_current_trial_generation_limit` to understand optimization status
+6. **Consider intermediate measurements for early stopping** - If you need periodic measurements (e.g., hourly stability checks), use Ax's trial-level early stopping instead of maximizing batch sizes
+
+## Trial-Level Early Stopping with Intermediate Measurements
+
+### Use Case: Periodic Stability Measurements
+
+For experiments requiring periodic measurements (e.g., measuring stability with a plate reader every hour up to 24 hours), consider using **trial-level early stopping** rather than filling all available slots at once.
+
+#### Hardware Trade-offs
+
+With limited hardware capacity (e.g., 2 x 96-wellplates maximum):
+- **Filling all slots** enables maximum parallelism but requires manual intervention when capacity is reached
+- **Partial slot usage** allows periodic measurements and early stopping, reducing wasted resources on underperforming trials
+- **Manual intervention cost** - Once all wells are used, human intervention is needed to refresh wellplates (potentially daily on business days)
+
+#### Implementing Early Stopping
+
+Ax supports trial-level early stopping through intermediate data reporting:
+
+```python
+from ax.service.ax_client import AxClient, ObjectiveProperties
+
+# Create experiment with support for intermediate data
+ax_client = AxClient()
+ax_client.create_experiment(
+    parameters=[...],
+    objectives={...},
+    support_intermediate_data=True,  # Enable intermediate reporting
+)
+
+# Generate trials (potentially fewer than max capacity)
+trials_dict, _ = ax_client.get_next_trials(max_trials=10)  # Not filling all slots
+
+# Run trials with periodic measurements
+for trial_idx, params in trials_dict.items():
+    # Start experiment
+    start_experiment(**params)
+    
+    # Periodic measurements (e.g., hourly for up to 24 hours)
+    for hour in range(1, 25):
+        # Measure intermediate results
+        intermediate_results = measure_stability(trial_idx)
+        
+        # Report intermediate data
+        if hour < 24:  # Not the final measurement
+            ax_client.update_running_trial_with_intermediate_data(
+                trial_index=trial_idx,
+                raw_data={"stability": (intermediate_results, 0.1)},
+                metadata={"hour": hour}
+            )
+            
+            # Check if trial should be stopped early
+            if ax_client.should_stop_trials_early({trial_idx}).get(trial_idx):
+                ax_client.stop_trial_early(trial_idx)
+                break
+        else:  # Final measurement
+            ax_client.complete_trial(
+                trial_index=trial_idx,
+                raw_data={"stability": (intermediate_results, 0.1)}
+            )
+```
+
+#### Benefits of Early Stopping Approach
+
+- **Resource efficiency** - Stop underperforming trials early, freeing up capacity
+- **Reduced manual intervention** - Running fewer trials in parallel means less frequent capacity exhaustion
+- **Better data quality** - Get intermediate measurements without waiting for all trials to complete
+- **Flexibility** - Can add more trials as capacity becomes available
+
+#### Configuring Early Stopping Strategy
+
+```python
+from ax.early_stopping.strategies import PercentileEarlyStoppingStrategy
+
+# Configure early stopping
+early_stopping_strategy = PercentileEarlyStoppingStrategy(
+    percentile_threshold=50,  # Stop trials in bottom 50%
+    min_progression=5,  # Require at least 5 measurements before stopping
+)
+
+ax_client = AxClient(early_stopping_strategy=early_stopping_strategy)
+```
+
+See [Ax Early Stopping Tutorial](https://ax.dev/tutorials/early_stopping.html) for more details on configuring early stopping strategies.
+
+### Balancing Batch Size and Measurement Frequency
+
+When hardware capacity is limited:
+
+1. **Conservative approach** - Use smaller batches to enable frequent measurements
+   - Batch size: 10-20 trials instead of 96+
+   - Allows hourly measurements and early stopping
+   - Reduces manual intervention frequency
+
+2. **Aggressive approach** - Maximize batch size
+   - Batch size: Fill all available wells (2 x 96 = 192)
+   - Higher throughput but limited measurement flexibility
+   - More frequent manual intervention needed
+
+3. **Hybrid approach** - Stagger trial start times
+   - Start subset of trials at different times
+   - Enables rolling measurements and capacity refresh
+   - More complex to implement but most efficient
 
 ## References
 

@@ -10,6 +10,16 @@ The automated workflow has specific hardware limitations:
 
 These constraints affect the maximum batch size for parallel experiments. When using `get_next_trials()`, consider these hardware limitations when setting `max_trials`.
 
+### Periodic Measurements and Early Stopping
+
+For experiments requiring **periodic stability measurements** (e.g., hourly plate reader measurements up to 24 hours), consider using **trial-level early stopping** rather than maximizing batch sizes:
+
+- **Trade-off**: Filling all slots maximizes throughput but requires manual intervention when capacity is exhausted
+- **Alternative**: Use smaller batches with early stopping to periodically measure stability and stop underperforming trials
+- **Manual intervention cost**: Once all wells are used, human intervention is needed (potentially daily on business days)
+
+See the [Trial-Level Early Stopping section](BATCH_CONDITIONING_GUIDE.md#trial-level-early-stopping-with-intermediate-measurements) in the batch conditioning guide for implementation details.
+
 ## Batch Conditioning / Pending Observations
 
 For information on properly implementing batch conditioning (also known as pending observations or fantasy modeling) in Ax, see:
