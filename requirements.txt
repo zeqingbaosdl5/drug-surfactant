@@ -1,1 +1,1 @@
-ax-platform~=0.2
+ax-platform>=1,<2
