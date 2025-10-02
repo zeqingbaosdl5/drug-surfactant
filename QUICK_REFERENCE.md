@@ -59,6 +59,10 @@ protocol.move_labware(plate, "D1", use_gripper=True)
 # Single wavelength
 value = data[450]["A1"]
 
+# Single wavelength with reference (returns both corrected and reference values)
+corrected = data[450]["A1"]  # Reference-corrected sample value
+reference = data[562]["A1"]  # Raw reference value
+
 # Multiple wavelengths
 value_450 = data[450]["A1"]
 value_562 = data[562]["A1"]

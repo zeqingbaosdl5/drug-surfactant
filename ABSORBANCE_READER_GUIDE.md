@@ -62,7 +62,7 @@ a1_value = data[450]["A1"]
 
 ### 2. Single Wavelength with Reference
 
-Reference wavelength readings are subtracted from sample readings for better accuracy.
+Reference wavelength readings are subtracted from sample readings for better accuracy. The module performs two reads and returns the reference-corrected values at the sample wavelength, plus the raw reference wavelength data.
 
 ```python
 absorbance_reader.initialize(
@@ -73,7 +73,13 @@ absorbance_reader.initialize(
 
 # ... load plate and read as above
 data = absorbance_reader.read(export_filename="ref_corrected")
+
+# Access corrected sample values and raw reference values
+corrected_value = data[450]["A1"]  # Reference-corrected value at 450nm
+reference_value = data[562]["A1"]  # Raw reference reading at 562nm
 ```
+
+**Note**: If you need to preserve both uncorrected sample and reference data for analysis, use multi-wavelength mode instead, which provides raw readings at all specified wavelengths without automatic correction.
 
 ### 3. Multiple Wavelengths
 

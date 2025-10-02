@@ -88,7 +88,9 @@ def run(protocol: protocol_api.ProtocolContext):
     absorbance_reader.close_lid()
 
     absorbance_data_ref = absorbance_reader.read(export_filename="single_with_reference_test")
-    protocol.comment(f"Measurement with reference complete. Sample data: A1={absorbance_data_ref[450]['A1']}")
+    protocol.comment("Measurement with reference complete.")
+    protocol.comment(f"Corrected sample (450nm), A1: {absorbance_data_ref[450]['A1']}")
+    protocol.comment(f"Reference (562nm), A1: {absorbance_data_ref[562]['A1']}")
 
     absorbance_reader.open_lid()
     protocol.move_labware(test_plate, "D1", use_gripper=True)
