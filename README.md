@@ -36,8 +36,6 @@ for trial_index, parameterization in parameterizations.items():
 
 See [FAILED_EXPERIMENT_HANDLING.md](FAILED_EXPERIMENT_HANDLING.md) for detailed documentation and [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) for updating existing workflows.
 
-**Quick Demo:** Run `python demo_failed_trials.py` to see the feature in action.
-
 ## Installation
 
 ```bash
