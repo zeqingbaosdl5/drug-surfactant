@@ -17,10 +17,11 @@ def get_api():
 def run_protocol(protocol_path: str):
     print(f"Running {protocol_path}...")
     protocol = get_api()
-    exec(open(protocol_path).read(), {"protocol": protocol})
+    with open(protocol_path) as f:
+        exec(f.read(), {"protocol": protocol})
     print("Protocol execution finished.")
 
-    if os.environ.get("OPENTRONS_MODE", "simulate").lower() == "simulate":
+    if os.environ.get("OPENTRONS_MODE", "simulate").lower() == "execute":
         print("Currently running on robot: processing csv data here")
 
 if __name__ == "__main__":
