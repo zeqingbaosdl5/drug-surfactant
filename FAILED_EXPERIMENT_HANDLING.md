@@ -31,7 +31,7 @@ if (df_vol['dmso'] < 0).any() or (df_vol['water'] < 0).any():
 A new helper function `safe_complete_trial` wraps the trial completion logic with error handling:
 
 ```python
-def safe_complete_trial(ax_client, trial_index, parameterization, 
+def safe_complete_trial(client, trial_index, parameterization, 
                         drug_stock_conc=50, drug_total_volume=0.12, 
                         surfactant_stock_conc=50, surfactant_total_volume=1):
     """
@@ -49,7 +49,7 @@ The function:
 1. Validates that the experimental parameters can produce valid volumes
 2. Runs the virtual experiment
 3. Completes the trial normally if valid
-4. Marks the trial as FAILED using `ax_client.mark_trial_failed()` if invalid
+4. Marks the trial as FAILED using `client.log_trial_failure()` if invalid
 
 ## Usage
 
@@ -62,7 +62,7 @@ for trial_index, parameterization in parameterizations.items():
     # ... extract all parameters ...
     
     results = hf.virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12)
-    ax_client.complete_trial(trial_index=trial_index, raw_data=results)
+    client.complete_trial(trial_index=trial_index, raw_data=results)
 ```
 
 Problems:
@@ -75,7 +75,7 @@ Problems:
 ```python
 for trial_index, parameterization in parameterizations.items():
     success = hf.safe_complete_trial(
-        ax_client=ax_client,
+        client=client,
         trial_index=trial_index,
         parameterization=parameterization
     )
@@ -101,13 +101,13 @@ See `example_safe_trials.py` for a complete working example.
 ### `safe_complete_trial`
 
 ```python
-def safe_complete_trial(ax_client, trial_index, parameterization, 
+def safe_complete_trial(client, trial_index, parameterization, 
                         drug_stock_conc=50, drug_total_volume=0.12, 
                         surfactant_stock_conc=50, surfactant_total_volume=1)
 ```
 
 **Parameters:**
-- `ax_client`: The Ax client instance
+- `client`: The Ax client instance
 - `trial_index`: Index of the trial to complete
 - `parameterization`: Dictionary of parameter values for the trial
 - `drug_stock_conc`: Stock concentration of drug (mg/mL), default: 50
@@ -129,7 +129,7 @@ def safe_complete_trial(ax_client, trial_index, parameterization,
 After using this feature, you can check trial statuses:
 
 ```python
-df = ax_client.get_trials_data_frame()
+df = client.get_trials_data_frame()
 print(df[['trial_index', 'trial_status']])
 ```
 
@@ -147,7 +147,7 @@ The validation works by:
 3. Checking for negative volumes (DMSO or water)
 4. Raising a ValueError if any volumes are negative
 
-Failed trials are marked using Ax's built-in `mark_trial_failed()` method, which:
+Failed trials are marked using Ax's built-in `log_trial_failure()` method, which:
 - Sets the trial status to FAILED
 - Excludes the trial from model training
 - Allows the optimization to continue with new trials

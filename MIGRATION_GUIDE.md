@@ -9,7 +9,7 @@ This guide shows how to update existing optimization workflows to use the new fa
 **Before:**
 ```python
 for i in range(num_iterations):
-    parameterizations, optimization_complete = ax_client.get_next_trials(batch_size)
+    parameterizations, optimization_complete = client.get_next_trials(batch_size)
     for trial_index, parameterization in list(parameterizations.items()):
         # Extract parameters
         s1 = parameterization["s1"]
@@ -20,17 +20,17 @@ for i in range(num_iterations):
         results = hf.virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12)
         
         # Complete trial
-        ax_client.complete_trial(trial_index=trial_index, raw_data=results)
+        client.complete_trial(trial_index=trial_index, raw_data=results)
 ```
 
 **After:**
 ```python
 for i in range(num_iterations):
-    parameterizations, optimization_complete = ax_client.get_next_trials(batch_size)
+    parameterizations, optimization_complete = client.get_next_trials(batch_size)
     for trial_index, parameterization in list(parameterizations.items()):
         # Use safe_complete_trial - no need to extract individual parameters
         success = hf.safe_complete_trial(
-            ax_client=ax_client,
+            client=client,
             trial_index=trial_index,
             parameterization=parameterization
         )
@@ -49,26 +49,26 @@ for i in range(num_iterations):
 import helper_functions as hf
 
 # Initialize
-ax_client = hf.optimizer_init()
-ax_client.save_to_json_file('optimizer/optimizer_init.json')
+client = hf.optimizer_init()
+client.save_to_json_file('optimizer/optimizer_init.json')
 
 optimizer_file_path = 'optimizer/optimizer_'
 
 # Run optimization
 for i in range(20):
     batch_size = 1
-    parameterizations, optimization_complete = ax_client.get_next_trials(batch_size)
+    parameterizations, optimization_complete = client.get_next_trials(batch_size)
     
     for trial_index, parameterization in list(parameterizations.items()):
         # NEW: Use safe_complete_trial instead of manual handling
         success = hf.safe_complete_trial(
-            ax_client=ax_client,
+            client=client,
             trial_index=trial_index,
             parameterization=parameterization
         )
         
         # Save after each trial
-        ax_client.save_to_json_file(optimizer_file_path + str(i) + '.json')
+        client.save_to_json_file(optimizer_file_path + str(i) + '.json')
         
         if success:
             print(f"Trial {trial_index} completed.")
@@ -76,7 +76,7 @@ for i in range(20):
             print(f"Trial {trial_index} failed.")
 
 # Get results (now includes trial status)
-df = ax_client.get_trials_data_frame()
+df = client.get_trials_data_frame()
 print(df[['trial_index', 'trial_status', 'complexity', 'cost', 'performance']])
 ```
 
@@ -86,7 +86,7 @@ print(df[['trial_index', 'trial_status', 'complexity', 'cost', 'performance']])
 # If you're using non-default stock concentrations
 for trial_index, parameterization in parameterizations.items():
     success = hf.safe_complete_trial(
-        ax_client=ax_client,
+        client=client,
         trial_index=trial_index,
         parameterization=parameterization,
         drug_stock_conc=100,      # Custom value
@@ -108,7 +108,7 @@ for trial_index, parameterization in parameterizations.items():
     print(f"  drug_conc: {parameterization['drug_conc']}")
     
     success = hf.safe_complete_trial(
-        ax_client=ax_client,
+        client=client,
         trial_index=trial_index,
         parameterization=parameterization
     )
@@ -136,7 +136,7 @@ print(f"  Failed: {len(failed_trials)}")
 2. **New function `safe_complete_trial()`:**
    - Wraps the trial completion logic
    - Validates parameters before running experiment
-   - Marks failed trials using `ax_client.mark_trial_failed()`
+   - Marks failed trials using `client.log_trial_failure()`
    - Returns `True`/`False` to indicate success
 
 ## Benefits of Migration
@@ -153,7 +153,7 @@ The old approach will still work, but won't benefit from automatic failure handl
 ```python
 # This still works but won't handle failures gracefully
 results = hf.virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12)
-ax_client.complete_trial(trial_index=trial_index, raw_data=results)
+client.complete_trial(trial_index=trial_index, raw_data=results)
 ```
 
 However, if you use `design_to_conc_to_vol()` separately with invalid parameters, it will now raise a `ValueError` instead of producing incorrect results.
@@ -172,7 +172,7 @@ This means the optimizer is suggesting parameters that are physically infeasible
 
 ```python
 # After optimization, check failed trials
-df = ax_client.get_trials_data_frame()
+df = client.get_trials_data_frame()
 failed_df = df[df['trial_status'] == 'FAILED']
 print("Failed trial parameters:")
 print(failed_df[['trial_index', 'surfactant_conc', 'drug_conc']])

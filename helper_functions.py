@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
-from ax.service.ax_client import AxClient, ObjectiveProperties
+from ax.api.client import Client
+from ax.api.configs import RangeParameterConfig
 import matplotlib.pyplot as plt
-from ax.modelbridge.factory import Models
-from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 import subprocess
 
 
@@ -16,47 +15,53 @@ def virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12):
 
 def optimizer_init():
     
-    # generation strategy
-    gs = GenerationStrategy(
-        steps=[
-            GenerationStep(
-                model=Models.SOBOL,
-                num_trials=8,  # how many sobol trials to perform (rule of thumb: 2 * number of params)
-                model_kwargs={"seed": 0},
-            ),
-            GenerationStep(
-                model=Models.SAASBO,
-                num_trials=-1,
-                model_kwargs={},
-            ),
-        ]
-    )
+    # Initialize the Client
+    client = Client()
 
-    # initialize the AxClient
-    ax_client = AxClient(generation_strategy=gs)
-
-    # create the design space and objective space
-    ax_client.create_experiment(
-
+    # Configure the experiment parameters
+    parameters = [
+        RangeParameterConfig(
+            name=f"s{i}",
+            bounds=(0, 20),
+            parameter_type="int"
+        ) for i in range(1, 13)
+    ] + [
+        RangeParameterConfig(
+            name="surfactant_conc",
+            bounds=(1, 50),
+            parameter_type="int"
+        ),
+        RangeParameterConfig(
+            name="drug_conc",
+            bounds=(1, 50),
+            parameter_type="int"
+        )
+    ]
+    
+    client.configure_experiment(
         name="drug_surfactant",
-        parameters = [
-            {"name": f"s{i}", "type": "range", "bounds": [0, 20], "value_type": "int"} for i in range(1, 13)] + 
-
-            [{"name": "surfactant_conc", "type": "range", "bounds": [1, 50], "value_type": "int"},
-             {"name": "drug_conc",       "type": "range", "bounds": [1, 50], "value_type": "int"}],
-
-        objectives={
-            'complexity': ObjectiveProperties(minimize=True, threshold=5),
-            'cost': ObjectiveProperties(minimize=True, threshold=0.5),
-            'performance': ObjectiveProperties(minimize=False),
-        },
-
+        parameters=parameters,
         parameter_constraints=[
-            "s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10 + s11 + s12 >= 1", 
+            "s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10 + s11 + s12 >= 1",
         ],
     )
+    
+    # Configure optimization with multi-objective
+    # Using minimize for complexity and cost, maximize for performance
+    # Thresholds are specified as outcome constraints
+    client.configure_optimization(
+        objectives={
+            "complexity": "minimize",
+            "cost": "minimize", 
+            "performance": "maximize"
+        },
+        objective_thresholds={
+            "complexity": 5,
+            "cost": 0.5,
+        },
+    )
 
-    return ax_client
+    return client
 
 
 def design_to_conc(df):
@@ -104,7 +109,7 @@ def design_to_conc_to_vol(df, drug_stock_conc=50, drug_total_volume=0.12, surfac
     return df_conc, df_vol
 
 
-def safe_complete_trial(ax_client, trial_index, parameterization, drug_stock_conc=50, drug_total_volume=0.12, 
+def safe_complete_trial(client, trial_index, parameterization, drug_stock_conc=50, drug_total_volume=0.12, 
                         surfactant_stock_conc=50, surfactant_total_volume=1):
     """
     Safely complete a trial with error handling for failed experiments.
@@ -113,7 +118,7 @@ def safe_complete_trial(ax_client, trial_index, parameterization, drug_stock_con
     the trial is marked as failed instead of completed.
     
     Args:
-        ax_client: The Ax client instance
+        client: The Ax client instance
         trial_index: Index of the trial to complete
         parameterization: Dictionary of parameter values for the trial
         drug_stock_conc: Stock concentration of drug (mg/mL)
@@ -149,12 +154,12 @@ def safe_complete_trial(ax_client, trial_index, parameterization, drug_stock_con
         )
         
         # If we get here, the experiment is valid
-        ax_client.complete_trial(trial_index=trial_index, raw_data=results)
+        client.complete_trial(trial_index=trial_index, raw_data=results)
         return True
         
     except (ValueError, KeyError, Exception) as e:
         # Mark trial as failed if any error occurs
-        ax_client.mark_trial_failed(trial_index=trial_index)
+        client.log_trial_failure(trial_index=trial_index)
         print(f"Trial {trial_index} marked as FAILED. Reason: {str(e)}")
         return False
 

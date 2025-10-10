@@ -17,12 +17,12 @@ When Ax suggests parameter combinations that are physically infeasible (e.g., co
 import helper_functions as hf
 
 # Initialize optimizer
-ax_client = hf.optimizer_init()
+client = hf.optimizer_init()
 
 # Run optimization with automatic failure handling
 for trial_index, parameterization in parameterizations.items():
     success = hf.safe_complete_trial(
-        ax_client=ax_client,
+        client=client,
         trial_index=trial_index,
         parameterization=parameterization
     )

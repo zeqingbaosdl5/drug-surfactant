@@ -6,7 +6,7 @@ The issue was that when Bayesian optimization with Ax suggests parameter combina
 
 ## Solution Implemented
 
-Added robust error handling using Ax's built-in trial failure mechanism (`mark_trial_failed()`). This allows the optimization loop to gracefully handle invalid parameter combinations and continue with new trials while learning to avoid problematic regions.
+Added robust error handling using Ax's built-in trial failure mechanism (`log_trial_failure()`). This allows the optimization loop to gracefully handle invalid parameter combinations and continue with new trials while learning to avoid problematic regions.
 
 ## Changes Made
 
@@ -23,7 +23,7 @@ if (df_vol['dmso'] < 0).any() or (df_vol['water'] < 0).any():
 #### Added new `safe_complete_trial()` function (lines 107-159)
 - Wraps trial completion with error handling
 - Validates parameters before running experiments
-- Uses `ax_client.mark_trial_failed()` for invalid trials
+- Uses `client.log_trial_failure()` for invalid trials
 - Returns boolean to indicate success/failure
 
 ### 2. Added Documentation
@@ -40,7 +40,7 @@ if (df_vol['dmso'] < 0).any() or (df_vol['water'] < 0).any():
 ## Key Features
 
 1. **Automatic failure detection**: Invalid parameters are caught before causing crashes
-2. **Proper Ax integration**: Failed trials are marked using `mark_trial_failed()`
+2. **Proper Ax integration**: Failed trials are marked using `log_trial_failure()`
 3. **Learning from failures**: Optimizer learns to avoid problematic parameter regions
 4. **Backward compatible**: Old code still works (but without automatic failure handling)
 5. **Simple to use**: Single function call replaces manual parameter extraction
@@ -53,14 +53,14 @@ for trial_index, parameterization in parameterizations.items():
     s1 = parameterization["s1"]
     # ... extract all 12 parameters ...
     results = hf.virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12)
-    ax_client.complete_trial(trial_index=trial_index, raw_data=results)
+    client.complete_trial(trial_index=trial_index, raw_data=results)
 ```
 
 **After:**
 ```python
 for trial_index, parameterization in parameterizations.items():
     success = hf.safe_complete_trial(
-        ax_client=ax_client,
+        client=client,
         trial_index=trial_index,
         parameterization=parameterization
     )
