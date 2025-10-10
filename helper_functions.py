@@ -8,17 +8,50 @@ import subprocess
 
 
 def virtual_exp(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12, surfactant_conc=None):
-
+    """
+    Virtual experiment function for evaluating drug-surfactant formulations.
+    
+    Args:
+        s1-s12: Surfactant ratios (parameters)
+        surfactant_conc: Total surfactant concentration (parameter)
+    
+    Returns:
+        dict with objectives:
+        - complexity: Number of surfactants used (minimize)
+        - cost: Sum of surfactant ratios (minimize) 
+        - performance: Formulation performance metric (maximize)
+        - obj_surf_conc: ANALYTIC deterministic objective (minimize)
+                        Equals surfactant_conc parameter directly
+    """
     complexity = sum(1 for x in [s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12] if x != 0)
     cost = s1+s2+s3+s4+s5+s6+s7+s8+s9+s10+s11+s12
     performance = 0.3*s1*(1+s2) - 0.5*s3*s4 + s5**2 + 0.8*s9 - s10*s11 + 0.2*s12
     
-    # obj_surf_conc is the total surfactant concentration (deterministic outcome to minimize)
+    # obj_surf_conc is an ANALYTIC deterministic objective (not black-box)
+    # It equals the surfactant_conc parameter - no modeling needed, exact relationship
     obj_surf_conc = surfactant_conc if surfactant_conc is not None else 0
     
     return {'complexity': complexity, 'cost': cost, 'performance': performance, 'obj_surf_conc': obj_surf_conc}
 
-def optimizer_init():
+def optimizer_init(stability_threshold=0.06):
+    """
+    Initialize the Ax optimizer for drug-surfactant formulation optimization.
+    
+    Args:
+        stability_threshold: Absorbance threshold for stability constraint (default: 0.06).
+                           Formulations with absorbance <= threshold are considered stable.
+                           Adjust this value based on module conditions.
+    
+    Returns:
+        AxClient configured for multi-objective optimization
+    
+    Note:
+        obj_surf_conc is an ANALYTIC deterministic objective (not black-box):
+        - It equals the surfactant_conc parameter directly
+        - No experimental measurement needed
+        - Known mathematical relationship: obj_surf_conc = surfactant_conc
+        - Ax will still model it but the relationship is exact
+    """
     
     # generation strategy
     gs = GenerationStrategy(
@@ -53,12 +86,15 @@ def optimizer_init():
             'complexity': ObjectiveProperties(minimize=True, threshold=5),
             'cost': ObjectiveProperties(minimize=True, threshold=0.5),
             'performance': ObjectiveProperties(minimize=False),
-            'obj_surf_conc': ObjectiveProperties(minimize=True),
+            'obj_surf_conc': ObjectiveProperties(minimize=True),  # Analytic: equals surfactant_conc
         },
 
         parameter_constraints=[
             "s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 + s10 + s11 + s12 >= 1", 
         ],
+        
+        # Outcome constraints can be added when stability measurements are available:
+        # outcome_constraints=[f"stability <= {stability_threshold}"]
     )
 
     return ax_client
