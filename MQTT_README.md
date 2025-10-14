@@ -18,6 +18,9 @@ The implementation follows a publish-subscribe pattern where:
 - `mqtt_otflex_device.py` - OT-Flex robot simulation that handles experiment requests
 - `mqtt_otflex_orchestrator.py` - Orchestrator that sends experiment requests and receives absorbance data
 
+### Testing
+- `test_mqtt_all_stages.py` - Comprehensive test script that runs all three stages of the implementation
+
 ## Setup
 
 ### Prerequisites
@@ -69,6 +72,18 @@ The orchestrator sends an experiment request with drug-surfactant formulation pa
 - Reading absorbance at 600nm
 
 Results are saved to `otflex_experiment_results.json`.
+
+### Running All Tests
+
+To run all three stages sequentially:
+```bash
+python test_mqtt_all_stages.py
+```
+
+This script will:
+1. Test basic device-orchestrator communication
+2. Verify JSON message passing (integrated in stage 1)
+3. Test OT-Flex integration with experiment requests and absorbance results
 
 ## MQTT Topics
 
