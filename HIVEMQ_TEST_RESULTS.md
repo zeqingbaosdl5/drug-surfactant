@@ -13,8 +13,8 @@ Successfully tested HiveMQ broker connection with the provided credentials. The 
 ```
 Testing HiveMQ Connection
 ==================================================
-Host: 248cc294c37642359297f75b7b023374.s2.eu.hivemq.cloud
-Username: sgbaird
+Host: your-broker-host.hivemq.cloud
+Username: your-username
 Password: ***************
 ==================================================
 
