@@ -261,90 +261,73 @@ def run_otflex_experiment(experiment_request):
     return response
 
 
-def run_otflex_device(host, username, password, device_id="otflex_001"):
-    """
-    Run the OT-Flex MQTT device.
-    
-    Parameters
-    ----------
-    host : str
-        MQTT broker hostname
-    username : str
-        MQTT username
-    password : str
-        MQTT password
-    device_id : str
-        Unique device identifier
-    """
-    command_topic = f"sdl/otflex/{device_id}/experiment/request"
-    data_topic = f"sdl/otflex/{device_id}/experiment/results"
-    
-    userdata = {
-        'connected': False,
-        'command_topic': command_topic,
-        'data_topic': data_topic
-    }
-    
-    client = mqtt.Client(
-        client_id=f"{device_id}_client",
-        userdata=userdata,
-        protocol=mqtt.MQTTv5
-    )
-    
-    client.on_connect = on_connect
-    client.on_disconnect = on_disconnect
-    client.on_message = on_message
-    
-    client.username_pw_set(username, password)
-    client.tls_set()
-    
-    try:
-        print(f"OT-Flex Device connecting to {host}...")
-        client.connect(host, 8883, 60)
-        
-        client.loop_start()
-        
-        timeout = 10
-        start_time = time.time()
-        while not userdata['connected'] and (time.time() - start_time) < timeout:
-            time.sleep(0.1)
-        
-        if not userdata['connected']:
-            print("OT-Flex Device connection timeout")
-            return False
-        
-        print("\n" + "="*60)
-        print("OT-Flex Device is ready and waiting for experiments")
-        print(f"Request topic:  {command_topic}")
-        print(f"Results topic:  {data_topic}")
-        print("="*60 + "\n")
-        
-        try:
-            while True:
-                time.sleep(1)
-        except KeyboardInterrupt:
-            print("\nOT-Flex Device shutting down...")
-        
-        client.loop_stop()
-        client.disconnect()
-        return True
-        
-    except Exception as e:
-        print(f"OT-Flex Device error: {e}")
-        return False
+# Get credentials from environment variables
+host = os.environ.get('HIVEMQ_HOST')
+username = os.environ.get('HIVEMQ_USERNAME')
+password = os.environ.get('HIVEMQ_PASSWORD')
+device_id = "otflex_001"
 
+if not all([host, username, password]):
+    print("Error: Missing required environment variables")
+    print(f"  HIVEMQ_HOST: {'✓' if host else '✗'}")
+    print(f"  HIVEMQ_USERNAME: {'✓' if username else '✗'}")
+    print(f"  HIVEMQ_PASSWORD: {'✓' if password else '✗'}")
+    sys.exit(1)
 
-if __name__ == "__main__":
-    host = os.environ.get('HIVEMQ_HOST')
-    username = os.environ.get('HIVEMQ_USERNAME')
-    password = os.environ.get('HIVEMQ_PASSWORD')
+command_topic = f"sdl/otflex/{device_id}/experiment/request"
+data_topic = f"sdl/otflex/{device_id}/experiment/results"
+
+userdata = {
+    'connected': False,
+    'command_topic': command_topic,
+    'data_topic': data_topic
+}
+
+client = mqtt.Client(
+    client_id=f"{device_id}_client",
+    userdata=userdata,
+    protocol=mqtt.MQTTv5
+)
+
+client.on_connect = on_connect
+client.on_disconnect = on_disconnect
+client.on_message = on_message
+
+client.username_pw_set(username, password)
+client.tls_set()
+
+try:
+    print(f"OT-Flex Device connecting to {host}...")
+    client.connect(host, 8883, 60)
     
-    if not all([host, username, password]):
-        print("Error: Missing required environment variables")
-        print(f"  HIVEMQ_HOST: {'✓' if host else '✗'}")
-        print(f"  HIVEMQ_USERNAME: {'✓' if username else '✗'}")
-        print(f"  HIVEMQ_PASSWORD: {'✓' if password else '✗'}")
+    client.loop_start()
+    
+    timeout = 10
+    start_time = time.time()
+    while not userdata['connected'] and (time.time() - start_time) < timeout:
+        time.sleep(0.1)
+    
+    if not userdata['connected']:
+        print("OT-Flex Device connection timeout")
         sys.exit(1)
     
-    success = run_otflex_device(host, username, password)
-    sys.exit(0 if success else 1)
+    print("\n" + "="*60)
+    print("OT-Flex Device is ready and waiting for experiments")
+    print(f"Request topic:  {command_topic}")
+    print(f"Results topic:  {data_topic}")
+    print("="*60 + "\n")
+    
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\nOT-Flex Device shutting down...")
+    
+    client.loop_stop()
+    client.disconnect()
+    sys.exit(0)
+    
+except Exception as e:
+    print(f"OT-Flex Device error: {e}")
+    sys.exit(1)
+
