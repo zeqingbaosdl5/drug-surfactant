@@ -42,4 +42,4 @@
 - Set environment variables `PIP_TIMEOUT=600` and `PIP_RETRIES=2` prior to `conda` or `pip` installs
 - Include plots directly in your comment reply via `![image name](https://github.com/<user/org>/<repo>/blob/<shortened-commit-hash>/<filename>?raw=true)`. Truncate the commit hash to the first 7 characters only. For example, `https://github.com/AccelerationConsortium/evaluation-metrics/blob/52754e7/scripts/bo_benchmarks/demonstrations/branin_campaign_demonstration_results.png?raw=true`. For provenance, ensure you use the shortened (7-character) commit hash, not the branch name
 - If you mention files in your comment reply, add direct hyperlinks based on the shortened (7-character) commit hash
-- Use the following environment secrets: `COPILOT_MCP_HIVEMQ_HOST`, `COPILOT_MCP_HIVEMQ_USERNAME`, and `COPILOT_MCP_HIVEMQ_PASSWORD` for testing. Never echo or expose these, even in your logs
+- Use the following environment secrets: `HIVEMQ_HOST`, `HIVEMQ_USERNAME`, and `HIVEMQ_PASSWORD` for testing. Never echo or expose these, even in your logs
