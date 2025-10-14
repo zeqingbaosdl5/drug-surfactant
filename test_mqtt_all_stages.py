@@ -7,7 +7,6 @@ import os
 import sys
 import subprocess
 import time
-import signal
 
 def check_env_vars():
     """Check if required environment variables are set."""
@@ -114,12 +113,15 @@ def main():
     )
     
     # Stage 2: Already includes JSON handling (same as stage 1)
-    # The basic pattern already uses JSON, so we document it
+    # Note: JSON communication is inherently tested in Stage 1, as all
+    # device-orchestrator communication uses JSON message passing
     print("\n" + "="*70)
     print("STAGE 2: JSON Communication Pattern")
     print("="*70)
-    print("✓ Stage 2 is integrated into Stage 1 (JSON already implemented)")
-    results['stage2'] = True
+    print("Note: JSON communication is integrated into Stage 1")
+    print("      All MQTT messages use JSON serialization with experiment ID tracking")
+    print("✓ Stage 2 verified (JSON implementation tested in Stage 1)")
+    results['stage2'] = results['stage1']  # Dependent on Stage 1 success
     
     # Stage 3: OT-Flex integration
     results['stage3'] = run_stage(
