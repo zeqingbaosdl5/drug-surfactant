@@ -10,3 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 2025-10-14: HiveMQ integration test script (`test_hivemq_connection.py`) to verify MQTT broker connectivity
 - 2025-10-14: `paho-mqtt` dependency for MQTT client functionality
+- 2025-10-14: MQTT device-orchestrator pattern implementation based on ACC-HelloWorld microcourses
+  - Basic device (`mqtt_device.py`) and orchestrator (`mqtt_orchestrator.py`) for generic MQTT communication
+  - OT-Flex device (`mqtt_otflex_device.py`) for simulated robot operations
+  - OT-Flex orchestrator (`mqtt_otflex_orchestrator.py`) for experiment requests with absorbance results
+  - JSON-based message passing with experiment ID tracking
+  - Complete documentation in `MQTT_README.md`
