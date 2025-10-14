@@ -20,6 +20,7 @@ The implementation follows a publish-subscribe pattern where:
 
 ### Testing
 - `test_mqtt_all_stages.py` - Comprehensive test script that runs all three stages of the implementation
+- `test_async_absorbance.py` - Test script demonstrating async absorbance reading capability
 
 ## Setup
 
@@ -84,6 +85,27 @@ This script will:
 1. Test basic device-orchestrator communication
 2. Verify JSON message passing (integrated in stage 1)
 3. Test OT-Flex integration with experiment requests and absorbance results
+
+### Testing Async Absorbance Reading
+
+To test standalone absorbance reading capability:
+
+1. Start the OT-Flex device:
+```bash
+python mqtt_otflex_device.py
+```
+
+2. In another terminal, run the async test:
+```bash
+python test_async_absorbance.py
+```
+
+This demonstrates three async reading scenarios:
+- Reading all 96 wells at a single wavelength
+- Reading specific wells at multiple wavelengths (450-650nm)
+- Reading a single well
+
+Results are saved to `async_absorbance_results.json`.
 
 ## MQTT Topics
 
@@ -160,6 +182,41 @@ This script will:
 }
 ```
 
+### Async Absorbance Request
+```json
+{
+  "experiment_id": "0433597597317b4f",
+  "operation": "read_absorbance",
+  "params": {
+    "wavelengths": [450, 500, 550, 600, 650],
+    "wells": ["A1", "A2", "B1", "B2"]
+  }
+}
+```
+
+### Async Absorbance Response
+```json
+{
+  "experiment_id": "0433597597317b4f",
+  "operation": "read_absorbance",
+  "absorbance_spectra": {
+    "A1": {
+      "450": 0.3797,
+      "500": 0.3227,
+      "550": 0.3141,
+      "600": 0.4454,
+      "650": 0.3705
+    },
+    "A2": {...}
+  },
+  "wavelengths": [450, 500, 550, 600, 650],
+  "num_wells": 4,
+  "status": "completed",
+  "timestamp": 1760484800.123,
+  "device_id": "otflex_001"
+}
+```
+
 ## Key Features
 
 - ✅ Secure TLS/SSL connection to HiveMQ Cloud
@@ -169,6 +226,9 @@ This script will:
 - ✅ Queue-based message handling
 - ✅ Timeout and error handling
 - ✅ Simulated OT-Flex operations (liquid handling, shaking, absorbance reading)
+- ✅ **Async absorbance reading** - Read plate independently at any time
+- ✅ **Multi-wavelength spectra** - Support for reading at multiple wavelengths simultaneously
+- ✅ **Flexible well selection** - Read all wells, specific wells, or single wells
 
 ## References
 

@@ -36,15 +36,22 @@ def on_message(client, userdata, msg):
         topic = msg.topic
         payload = msg.payload.decode()
         print(f"\n{'='*60}")
-        print(f"OT-Flex Device received experiment request")
+        print(f"OT-Flex Device received request")
         print(f"Topic: {topic}")
         print(f"{'='*60}")
         
-        experiment_request = json.loads(payload)
-        print(f"Experiment ID: {experiment_request.get('experiment_id')}")
-        print(f"Parameters: {json.dumps(experiment_request.get('params', {}), indent=2)}")
+        request = json.loads(payload)
+        operation = request.get('operation', 'unknown')
+        print(f"Operation: {operation}")
+        print(f"Request ID: {request.get('experiment_id')}")
         
-        response = run_otflex_experiment(experiment_request)
+        # Route to appropriate handler based on operation
+        if operation == 'read_absorbance':
+            response = read_absorbance_only(request)
+        else:
+            # Default to full experiment
+            print(f"Parameters: {json.dumps(request.get('params', {}), indent=2)}")
+            response = run_otflex_experiment(request)
         
         data_topic = userdata.get('data_topic')
         if data_topic:
@@ -67,8 +74,8 @@ def simulate_absorbance_reading(well_data):
         
     Returns
     -------
-    dict
-        Absorbance values at 600nm for different wells
+    float
+        Absorbance value at 600nm
     """
     # Simulate absorbance based on concentrations
     # In reality, this would come from the plate reader module
@@ -85,6 +92,102 @@ def simulate_absorbance_reading(well_data):
     absorbance = max(0.0, base_absorbance + noise)
     
     return round(absorbance, 4)
+
+
+def read_absorbance_only(request):
+    """
+    Perform standalone absorbance reading without running full protocol.
+    This allows asynchronous plate reading at any time.
+    
+    Parameters
+    ----------
+    request : dict
+        Request with parameters for absorbance reading
+        
+    Returns
+    -------
+    dict
+        Response with absorbance spectra
+    """
+    import random
+    
+    experiment_id = request.get('experiment_id')
+    params = request.get('params', {})
+    
+    wavelengths = params.get('wavelengths', [600])
+    wells = params.get('wells', 'all')  # Can be 'all', list of wells, or specific well IDs
+    
+    print("\n--- Standalone Absorbance Reading ---")
+    print(f"Wavelengths: {wavelengths}")
+    print(f"Wells: {wells}")
+    print("Step 1: Moving plate to reader...")
+    time.sleep(0.3)
+    
+    print("Step 2: Initializing plate reader...")
+    time.sleep(0.3)
+    
+    print("Step 3: Reading absorbance...")
+    time.sleep(0.5)
+    
+    # Simulate reading a 96-well plate or specific wells
+    absorbance_data = {}
+    
+    if wells == 'all':
+        # Read all 96 wells (simplified to first 12 for demo)
+        rows = 'ABCDEFGH'
+        cols = range(1, 13)
+        for row in rows[:8]:  # First 8 rows
+            for col in cols[:12]:  # All 12 columns
+                well_id = f"{row}{col}"
+                # Simulate multi-wavelength reading
+                spectra = {}
+                for wavelength in wavelengths:
+                    # Each wavelength gets a different absorbance pattern
+                    base_value = 0.1 + random.uniform(0, 0.5)
+                    spectra[wavelength] = round(base_value + random.uniform(-0.05, 0.05), 4)
+                absorbance_data[well_id] = spectra
+    elif isinstance(wells, list):
+        # Read specific wells
+        for well_id in wells:
+            spectra = {}
+            for wavelength in wavelengths:
+                base_value = 0.1 + random.uniform(0, 0.5)
+                spectra[wavelength] = round(base_value + random.uniform(-0.05, 0.05), 4)
+            absorbance_data[well_id] = spectra
+    else:
+        # Read single well
+        well_id = wells
+        spectra = {}
+        for wavelength in wavelengths:
+            base_value = 0.1 + random.uniform(0, 0.5)
+            spectra[wavelength] = round(base_value + random.uniform(-0.05, 0.05), 4)
+        absorbance_data[well_id] = spectra
+    
+    print(f"Reading complete: {len(absorbance_data)} wells")
+    
+    # Show sample of first few wells
+    sample_wells = list(absorbance_data.keys())[:3]
+    for well_id in sample_wells:
+        spectra_str = ", ".join([f"{wl}nm: {abs}" for wl, abs in absorbance_data[well_id].items()])
+        print(f"  {well_id}: {spectra_str}")
+    if len(absorbance_data) > 3:
+        print(f"  ... and {len(absorbance_data) - 3} more wells")
+    
+    print("-----------------------------------\n")
+    
+    response = {
+        'experiment_id': experiment_id,
+        'operation': 'read_absorbance',
+        'command': request,
+        'absorbance_spectra': absorbance_data,
+        'wavelengths': wavelengths,
+        'num_wells': len(absorbance_data),
+        'status': 'completed',
+        'timestamp': time.time(),
+        'device_id': 'otflex_001'
+    }
+    
+    return response
 
 
 def run_otflex_experiment(experiment_request):

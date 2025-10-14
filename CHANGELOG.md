@@ -16,3 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - OT-Flex orchestrator (`mqtt_otflex_orchestrator.py`) for experiment requests with absorbance results
   - JSON-based message passing with experiment ID tracking
   - Complete documentation in `MQTT_README.md`
+- 2025-10-14: Async absorbance reading capability
+  - Independent plate reading at any time without running full experiments
+  - Multi-wavelength spectra support (e.g., 450-650nm)
+  - Flexible well selection (all wells, specific wells, or single well)
+  - Test script (`test_async_absorbance.py`) demonstrating async reading
