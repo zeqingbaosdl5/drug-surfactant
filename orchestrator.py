@@ -343,23 +343,8 @@ class DrugSurfactantOrchestrator:
         surfactant_stock_conc = 100
         drug_stock_conc = 25
         
-        # Create generation strategy
-        gs = GenerationStrategy(
-            steps=[
-                GenerationStep(
-                    model="Sobol",
-                    num_trials=20,  # Sobol trials first
-                    model_kwargs={"seed": 0},
-                ),
-                GenerationStep(
-                    model="BOTORCH_MODULAR",
-                    num_trials=-1,  # Then BO
-                ),
-            ]
-        )
-        
-        # Initialize AxClient
-        ax_client = AxClient(generation_strategy=gs)
+        # Initialize AxClient with default generation strategy
+        ax_client = AxClient()
         
         # Create experiment
         ax_client.create_experiment(
@@ -467,7 +452,7 @@ class DrugSurfactantOrchestrator:
             
             # Calculate objective value (from helper_functions.py logic)
             # obj_surf_conc = surfactant_stock_conc if success == 0, else actual surf_conc
-            surfactant_stock_conc = hf.surfactant_stock_conc
+            surfactant_stock_conc = 100  # From helper_functions.py constants
             obj_surf_conc = surfactant_stock_conc if success == 0 else result.get('surf_conc', surfactant_stock_conc)
             
             formatted_data.append({
