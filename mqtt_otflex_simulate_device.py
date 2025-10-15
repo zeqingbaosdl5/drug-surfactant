@@ -56,17 +56,17 @@ print("Initializing simulated OT-Flex device...")
 
 # Load labware and modules (similar to AC dev lab pattern and template)
 # Load heater shaker first (required for proper deck configuration)
-hs_mod = protocol.load_module("heaterShakerModuleV1", "D3")
+hs_mod = protocol.load_module("heaterShakerModuleV1", "D1")
 hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
-print("Heater shaker with adapter loaded in slot D3")
+print("Heater shaker with adapter loaded in slot D1")
 
-# Load absorbance reader module in slot C3 (as per OT-Flex template)
-pr_mod = protocol.load_module("absorbanceReaderV1", "C3")
-print("Absorbance reader loaded in slot C3")
+# Load absorbance reader module in slot D3 (valid slots: D3, C3, B3, or A3)
+pr_mod = protocol.load_module("absorbanceReaderV1", "D3")
+print("Absorbance reader loaded in slot D3")
 
 # Load plate
-plate = protocol.load_labware("corning_96_wellplate_360ul_flat", "D1")
-print("Plate loaded in slot D1")
+plate = protocol.load_labware("corning_96_wellplate_360ul_flat", "D2")
+print("Plate loaded in slot D2")
 
 print("Labware loaded successfully")
 

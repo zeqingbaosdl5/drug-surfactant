@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Uses opentrons functions directly instead of creating protocol strings
   - Queue-based command processing with MQTT integration
   - Directly calls protocol API methods (pr_mod.close_lid(), pr_mod.initialize(), pr_mod.read())
-  - **Note**: Absorbance reader module has placement restrictions in simulation mode
+  - Uses correct slot D3 for absorbance reader (valid slots: D3, C3, B3, A3)
 - 2025-10-15: Created `test_mqtt_simulate_orchestrator.py` - Test orchestrator for simulation device
   - Demonstrates sending commands and receiving simulated results
   - Tests single wavelength, multi-wavelength, and single well scenarios
