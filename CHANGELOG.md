@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 2025-10-15: Added `opentrons` to requirements.txt for protocol simulation and testing
+- 2025-10-15: Created `test_opentrons_simulate.py` demonstrating protocol validation with opentrons.simulate
+  - Shows how to validate OT-Flex protocol syntax before execution
+  - Demonstrates single and multi-wavelength absorbance reader simulation
+  - Provides examples for testing protocol commands
+
 ### Changed
 - 2025-10-15: Refactored error handling in all MQTT scripts to raise exceptions naturally
   - Replaced `sys.exit()` calls with proper exception raising (`ValueError`, `ConnectionError`)

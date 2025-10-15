@@ -230,8 +230,28 @@ Results are saved to `async_absorbance_results.json`.
 - ✅ **Multi-wavelength spectra** - Support for reading at multiple wavelengths simultaneously
 - ✅ **Flexible well selection** - Read all wells, specific wells, or single wells
 
+## Protocol Simulation and Testing
+
+For testing OT-Flex protocols before hardware deployment, see `OPENTRONS_SIMULATE.md` for:
+- Using `opentrons.simulate` for protocol validation
+- Testing absorbance reader commands
+- Example simulation scripts
+
+Run the test script:
+```bash
+python test_opentrons_simulate.py
+```
+
 ## References
 
 - [ACC-HelloWorld Hardware-Software Communication](https://github.com/ACC-HelloWorld/4-hardware-software-communication)
 - [AC Microcourses - Hello World](https://github.com/AccelerationConsortium/ac-microcourses)
 - [HiveMQ MQTT Broker](https://www.hivemq.com/)
+- [Opentrons Python API Documentation](https://docs.opentrons.com/v2/)
+
+## See Also
+
+- `mqtt_otflex_device.py` - MQTT device for OT-Flex operations
+- `test_opentrons_simulate.py` - Example simulation scripts using opentrons.simulate
+- `OPENTRONS_SIMULATE.md` - Complete guide to protocol simulation and testing
+- `MQTT_README.md` - MQTT communication patterns
