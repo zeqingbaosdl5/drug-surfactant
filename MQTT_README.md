@@ -1,32 +1,24 @@
 # MQTT Device-Orchestrator Pattern Implementation
 
-This directory contains a Minimum Working Example (MWE) of the MQTT device-orchestrator pattern for self-driving laboratories, based on the [ACC-HelloWorld microcourses](https://github.com/AccelerationConsortium/ac-microcourses).
+This directory contains an MQTT device-orchestrator pattern for self-driving laboratories with OT-Flex integration, based on the [ACC-HelloWorld microcourses](https://github.com/AccelerationConsortium/ac-microcourses) and [AC dev lab OT2mqtt.py](https://github.com/AccelerationConsortium/ac-dev-lab/blob/main/src/ac_training_lab/ot-2/_scripts/OT2mqtt.py).
 
 ## Overview
 
-The implementation follows a publish-subscribe pattern where:
-- **Device**: Receives commands via MQTT, executes operations, and publishes results
-- **Orchestrator**: Sends commands to devices and receives/processes results
+The implementation provides MQTT-based control of OT-Flex robots with protocol simulation using opentrons.simulate:
+- **Device**: Uses `opentrons.simulate.get_protocol_api()` to validate protocols and simulate absorbance reading
+- **Orchestrator**: Sends experiment commands and receives results via MQTT
 
 ## Files
 
-### Basic Device-Orchestrator Pattern
-- `mqtt_device.py` - Generic MQTT device that responds to commands with sensor data
-- `mqtt_orchestrator.py` - Generic orchestrator that sends commands and collects results
+- `mqtt_otflex_simulate_device.py` - MQTT device using opentrons.simulate for protocol validation
+- `test_mqtt_simulate_orchestrator.py` - Test orchestrator demonstrating absorbance reading commands
 
-### OT-Flex Integration
-- `mqtt_otflex_device.py` - OT-Flex robot simulation that handles experiment requests
-- `mqtt_otflex_orchestrator.py` - Orchestrator that sends experiment requests and receives absorbance data
-
-### Testing
-- `test_mqtt_all_stages.py` - Comprehensive test script that runs all three stages of the implementation
-- `test_async_absorbance.py` - Test script demonstrating async absorbance reading capability
 
 ## Setup
 
 ### Prerequisites
 ```bash
-pip install paho-mqtt>=2.1.0
+pip install paho-mqtt>=2.1.0 opentrons>=7.0.0
 ```
 
 ### Environment Variables
@@ -39,150 +31,34 @@ export HIVEMQ_PASSWORD="your-password"
 
 ## Usage
 
-### Testing Basic Communication
+### Running the Device and Orchestrator
 
 1. Start the device in one terminal:
 ```bash
-python mqtt_device.py
+python mqtt_otflex_simulate_device.py
 ```
 
 2. Run the orchestrator in another terminal:
 ```bash
-python mqtt_orchestrator.py
+python test_mqtt_simulate_orchestrator.py
 ```
 
-The orchestrator will send test commands and the device will respond with simulated sensor data.
+The orchestrator demonstrates:
+- Single wavelength absorbance reading (600nm) for all 96 wells
+- Multi-wavelength reading (450-650nm) for specific wells
+- Single well reading
 
-### Testing OT-Flex Integration
+Results are printed to console and saved to `simulate_absorbance_results.json`.
 
-1. Start the OT-Flex device:
-```bash
-python mqtt_otflex_device.py
-```
-
-2. Run the OT-Flex orchestrator:
-```bash
-python mqtt_otflex_orchestrator.py
-```
-
-The orchestrator sends an experiment request with drug-surfactant formulation parameters, and the device simulates:
-- Loading the protocol
-- Preparing reagents
-- Dispensing liquids
-- Shaking the plate
-- Reading absorbance at 600nm
-
-Results are saved to `otflex_experiment_results.json`.
-
-### Running All Tests
-
-To run all three stages sequentially:
-```bash
-python test_mqtt_all_stages.py
-```
-
-This script will:
-1. Test basic device-orchestrator communication
-2. Verify JSON message passing (integrated in stage 1)
-3. Test OT-Flex integration with experiment requests and absorbance results
-
-### Testing Async Absorbance Reading
-
-To test standalone absorbance reading capability:
-
-1. Start the OT-Flex device:
-```bash
-python mqtt_otflex_device.py
-```
-
-2. In another terminal, run the async test:
-```bash
-python test_async_absorbance.py
-```
-
-This demonstrates three async reading scenarios:
-- Reading all 96 wells at a single wavelength
-- Reading specific wells at multiple wavelengths (450-650nm)
-- Reading a single well
-
-Results are saved to `async_absorbance_results.json`.
 
 ## MQTT Topics
 
-### Basic Pattern
-- Command topic: `sdl/device/{device_id}/command`
-- Data topic: `sdl/device/{device_id}/data`
-
-### OT-Flex Pattern
 - Request topic: `sdl/otflex/{device_id}/experiment/request`
 - Results topic: `sdl/otflex/{device_id}/experiment/results`
 
 ## Message Format
 
-### Basic Device Commands
-```json
-{
-  "operation": "read_temperature",
-  "params": {},
-  "experiment_id": "d8600f87"
-}
-```
-
-### Basic Device Response
-```json
-{
-  "command": {...},
-  "sensor_data": {"temperature": 25.5},
-  "experiment_id": "d8600f87",
-  "timestamp": 1760484171.996
-}
-```
-
-### OT-Flex Experiment Request
-```json
-{
-  "experiment_id": "45b523efb898589a",
-  "operation": "run_drug_surfactant_protocol",
-  "params": {
-    "data": [
-      {
-        "trial_index": "0",
-        "drug_name": "IBP",
-        "s1": "120.0",
-        "s6": "168.0",
-        "water": "396.0",
-        "IBP": "180.0",
-        ...
-      }
-    ],
-    "wavelength": 600,
-    "shake_speed": 1000,
-    "shake_time": 5
-  }
-}
-```
-
-### OT-Flex Results
-```json
-{
-  "experiment_id": "45b523efb898589a",
-  "status": "completed",
-  "absorbance_data": {
-    "well_1": {
-      "absorbance_600nm": 0.5601,
-      "parameters": {...}
-    },
-    "well_2": {
-      "absorbance_600nm": 0.6204,
-      "parameters": {...}
-    }
-  },
-  "device_id": "otflex_001",
-  "timestamp": 1760484323.603
-}
-```
-
-### Async Absorbance Request
+### Absorbance Reading Request
 ```json
 {
   "experiment_id": "0433597597317b4f",
@@ -194,7 +70,7 @@ Results are saved to `async_absorbance_results.json`.
 }
 ```
 
-### Async Absorbance Response
+### Absorbance Reading Response
 ```json
 {
   "experiment_id": "0433597597317b4f",
@@ -223,38 +99,20 @@ Results are saved to `async_absorbance_results.json`.
 - ✅ MQTT v5 protocol support
 - ✅ JSON message serialization
 - ✅ Experiment ID tracking for request-response matching
-- ✅ Queue-based message handling
-- ✅ Timeout and error handling
-- ✅ Simulated OT-Flex operations (liquid handling, shaking, absorbance reading)
-- ✅ **Async absorbance reading** - Read plate independently at any time
-- ✅ **Multi-wavelength spectra** - Support for reading at multiple wavelengths simultaneously
-- ✅ **Flexible well selection** - Read all wells, specific wells, or single wells
+- ✅ Queue-based message handling with timeouts
+- ✅ Protocol validation with opentrons.simulate
+- ✅ Multi-wavelength absorbance reading
+- ✅ Flexible well selection (all wells, specific wells, single well)
+- ✅ Mock absorbance reader for simulation testing
 
-## Protocol Simulation and Testing
+## Implementation Notes
 
-For testing OT-Flex protocols before hardware deployment, see `OPENTRONS_SIMULATE.md` for:
-- Using `opentrons.simulate` for protocol validation
-- Testing absorbance reader commands
-- Example simulation scripts
-
-Run the test script:
-```bash
-python test_opentrons_simulate.py
-```
+The device uses `opentrons.simulate.get_protocol_api()` to directly call opentrons functions following the [AC dev lab OT2mqtt.py pattern](https://github.com/AccelerationConsortium/ac-dev-lab/blob/main/src/ac_training_lab/ot-2/_scripts/OT2mqtt.py). The absorbance reader is mocked during simulation because opentrons.simulate cannot load the actual module.
 
 ## References
 
-- [ACC-HelloWorld Hardware-Software Communication](https://github.com/ACC-HelloWorld/4-hardware-software-communication)
-- [AC Microcourses - Hello World](https://github.com/AccelerationConsortium/ac-microcourses)
-- [HiveMQ MQTT Broker](https://www.hivemq.com/)
+- [ACC-HelloWorld Microcourses](https://ac-microcourses.readthedocs.io/en/latest/courses/hello-world/)
+- [AC Dev Lab OT2mqtt.py](https://github.com/AccelerationConsortium/ac-dev-lab/blob/main/src/ac_training_lab/ot-2/_scripts/OT2mqtt.py)
 - [Opentrons Python API Documentation](https://docs.opentrons.com/v2/)
+- [HiveMQ MQTT Broker](https://www.hivemq.com/)
 
-## See Also
-
-- `mqtt_device.py` - Basic MQTT device pattern
-- `mqtt_otflex_device.py` - MQTT device for OT-Flex operations (mock simulation)
-- `mqtt_otflex_simulate_device.py` - MQTT device using opentrons.simulate (protocol validation)
-- `test_opentrons_simulate.py` - Standalone protocol simulation examples
-- `test_mqtt_simulate_orchestrator.py` - Test orchestrator for simulation device
-- `OPENTRONS_SIMULATE.md` - Complete guide to protocol simulation and testing
-- `MQTT_README.md` - MQTT communication patterns

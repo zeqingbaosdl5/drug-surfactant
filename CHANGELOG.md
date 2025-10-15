@@ -8,47 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- 2025-10-15: Created `mqtt_otflex_simulate_device.py` - MQTT device using opentrons.simulate
-  - Follows AC dev lab OT2mqtt.py pattern using `opentrons.simulate.get_protocol_api()`
-  - Uses opentrons functions directly instead of creating protocol strings
-  - Queue-based command processing with MQTT integration
-  - Directly calls protocol API methods
-  - Uses mock absorbance reader due to simulation limitations (reader module not fully supported in simulate mode)
-  - Real hardware would use absorbance reader in slot C3 (valid slots: D3, C3, B3, A3 per Opentrons docs)
-- 2025-10-15: Created `test_mqtt_simulate_orchestrator.py` - Test orchestrator for simulation device
-  - Demonstrates sending commands and receiving simulated results
-  - Tests single wavelength, multi-wavelength, and single well scenarios
-- 2025-10-15: Added `opentrons` to requirements.txt for protocol simulation and testing
-- 2025-10-15: Created `test_opentrons_simulate.py` demonstrating protocol validation with opentrons.simulate
-  - Checks if opentrons is installed and exits gracefully if not
-  - Shows how to validate OT-Flex protocol syntax before execution
-  - Demonstrates single and multi-wavelength absorbance reader simulation
-  - Uses correct API level (2.21) and proper initialization sequence (close_lid before initialize)
-  - Provides examples for testing protocol commands
-
-### Changed
-- 2025-10-15: Refactored error handling in all MQTT scripts to raise exceptions naturally
-  - Replaced `sys.exit()` calls with proper exception raising (`ValueError`, `ConnectionError`)
-  - Removed print statements for errors in favor of natural exception propagation
-  - Improved error messages to be more descriptive
-  - Scripts now follow Python best practices for error handling
-
-- 2025-10-14: Refactored MQTT client scripts to be top-level scripts without function wrappers
-  - Removed `if __name__ == "__main__"` pattern from all MQTT scripts
-  - Converted `run_*` wrapper functions to direct top-level code execution
-  - Scripts now run directly when executed: `mqtt_device.py`, `mqtt_orchestrator.py`, `mqtt_otflex_device.py`, `mqtt_otflex_orchestrator.py`
-
-### Added
+- 2025-10-15: MQTT device-orchestrator pattern for OT-Flex integration
+  - `mqtt_otflex_simulate_device.py`: MQTT device using opentrons.simulate following AC dev lab OT2mqtt.py pattern
+    - Uses `opentrons.simulate.get_protocol_api()` for direct opentrons function calls
+    - Queue-based MQTT command processing
+    - Mock absorbance reader (opentrons.simulate cannot load real module)
+    - Multi-wavelength absorbance reading support
+    - Flexible well selection (all wells, specific wells, single well)
+  - `test_mqtt_simulate_orchestrator.py`: Test orchestrator demonstrating absorbance commands
+  - `MQTT_README.md`: Documentation for MQTT communication pattern
+  - `requirements.txt`: Added paho-mqtt>=2.1.0 and opentrons>=7.0.0
 - 2025-10-14: HiveMQ integration test script (`test_hivemq_connection.py`) to verify MQTT broker connectivity
-- 2025-10-14: `paho-mqtt` dependency for MQTT client functionality
-- 2025-10-14: MQTT device-orchestrator pattern implementation based on ACC-HelloWorld microcourses
-  - Basic device (`mqtt_device.py`) and orchestrator (`mqtt_orchestrator.py`) for generic MQTT communication
-  - OT-Flex device (`mqtt_otflex_device.py`) for simulated robot operations
-  - OT-Flex orchestrator (`mqtt_otflex_orchestrator.py`) for experiment requests with absorbance results
-  - JSON-based message passing with experiment ID tracking
-  - Complete documentation in `MQTT_README.md`
-- 2025-10-14: Async absorbance reading capability
-  - Independent plate reading at any time without running full experiments
-  - Multi-wavelength spectra support (e.g., 450-650nm)
-  - Flexible well selection (all wells, specific wells, or single well)
-  - Test script (`test_async_absorbance.py`) demonstrating async reading
+
+### Implementation Details
+- Natural error handling with proper exceptions (ValueError, ConnectionError)
+- No sys.exit() or print-based error handling
+- Top-level scripts without `if __name__ == "__main__"` wrappers
+- Secure TLS/SSL connection to HiveMQ Cloud (MQTT v5)
+- JSON message serialization with experiment ID tracking
+- Queue-based message handling with timeouts
