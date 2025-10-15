@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- 2025-10-15: Created `mqtt_otflex_simulate_device.py` - MQTT device using opentrons.simulate
+  - Follows AC dev lab OT2mqtt.py pattern but uses simulate instead of execute
+  - Queue-based command processing with MQTT integration
+  - Protocol generation and simulation for absorbance reading
+  - Supports single and multi-wavelength reads with flexible well selection
+- 2025-10-15: Created `test_mqtt_simulate_orchestrator.py` - Test orchestrator for simulation device
+  - Demonstrates sending commands and receiving simulated results
+  - Tests single wavelength, multi-wavelength, and single well scenarios
 - 2025-10-15: Added `opentrons` to requirements.txt for protocol simulation and testing
 - 2025-10-15: Created `test_opentrons_simulate.py` demonstrating protocol validation with opentrons.simulate
   - Checks if opentrons is installed and exits gracefully if not

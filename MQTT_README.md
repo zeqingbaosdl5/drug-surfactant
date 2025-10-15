@@ -251,7 +251,10 @@ python test_opentrons_simulate.py
 
 ## See Also
 
-- `mqtt_otflex_device.py` - MQTT device for OT-Flex operations
-- `test_opentrons_simulate.py` - Example simulation scripts using opentrons.simulate
+- `mqtt_device.py` - Basic MQTT device pattern
+- `mqtt_otflex_device.py` - MQTT device for OT-Flex operations (mock simulation)
+- `mqtt_otflex_simulate_device.py` - MQTT device using opentrons.simulate (protocol validation)
+- `test_opentrons_simulate.py` - Standalone protocol simulation examples
+- `test_mqtt_simulate_orchestrator.py` - Test orchestrator for simulation device
 - `OPENTRONS_SIMULATE.md` - Complete guide to protocol simulation and testing
 - `MQTT_README.md` - MQTT communication patterns
