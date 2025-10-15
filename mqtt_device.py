@@ -103,11 +103,15 @@ password = os.environ.get('HIVEMQ_PASSWORD')
 device_id = "device_001"
 
 if not all([host, username, password]):
-    print("Error: Missing required environment variables")
-    print(f"  HIVEMQ_HOST: {'✓' if host else '✗'}")
-    print(f"  HIVEMQ_USERNAME: {'✓' if username else '✗'}")
-    print(f"  HIVEMQ_PASSWORD: {'✓' if password else '✗'}")
-    sys.exit(1)
+    missing = []
+    if not host:
+        missing.append('HIVEMQ_HOST')
+    if not username:
+        missing.append('HIVEMQ_USERNAME')
+    if not password:
+        missing.append('HIVEMQ_PASSWORD')
+    raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+
 
 # Define topics
 command_topic = f"sdl/device/{device_id}/command"
@@ -138,40 +142,52 @@ client.username_pw_set(username, password)
 # Enable TLS for secure connection
 client.tls_set()
 
+# Create MQTT client
+client = mqtt.Client(
+    client_id=f"{device_id}_client",
+    userdata=userdata,
+    protocol=mqtt.MQTTv5
+)
+
+# Set callbacks
+client.on_connect = on_connect
+client.on_disconnect = on_disconnect
+client.on_message = on_message
+
+# Set username and password
+client.username_pw_set(username, password)
+
+# Enable TLS for secure connection
+client.tls_set()
+
+print(f"Device connecting to {host}...")
+client.connect(host, 8883, 60)
+
+# Start network loop
+client.loop_start()
+
+# Wait for connection
+timeout = 10
+start_time = time.time()
+while not userdata['connected'] and (time.time() - start_time) < timeout:
+    time.sleep(0.1)
+
+if not userdata['connected']:
+    raise ConnectionError("Device connection timeout - failed to connect to MQTT broker")
+
+print("Device is ready and listening for commands...")
+print(f"  Command topic: {command_topic}")
+print(f"  Data topic: {data_topic}")
+
+# Keep running
 try:
-    print(f"Device connecting to {host}...")
-    client.connect(host, 8883, 60)
-    
-    # Start network loop
-    client.loop_start()
-    
-    # Wait for connection
-    timeout = 10
-    start_time = time.time()
-    while not userdata['connected'] and (time.time() - start_time) < timeout:
-        time.sleep(0.1)
-    
-    if not userdata['connected']:
-        print("Device connection timeout")
-        sys.exit(1)
-    
-    print("Device is ready and listening for commands...")
-    print(f"  Command topic: {command_topic}")
-    print(f"  Data topic: {data_topic}")
-    
-    # Keep running
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        print("\nDevice shutting down...")
-    
-    # Clean disconnect
-    client.loop_stop()
-    client.disconnect()
-    sys.exit(0)
-    
-except Exception as e:
-    print(f"Device error: {e}")
-    sys.exit(1)
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("\nDevice shutting down...")
+
+# Clean disconnect
+client.loop_stop()
+client.disconnect()
+
 

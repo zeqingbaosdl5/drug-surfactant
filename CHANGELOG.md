@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- 2025-10-15: Refactored error handling in all MQTT scripts to raise exceptions naturally
+  - Replaced `sys.exit()` calls with proper exception raising (`ValueError`, `ConnectionError`)
+  - Removed print statements for errors in favor of natural exception propagation
+  - Improved error messages to be more descriptive
+  - Scripts now follow Python best practices for error handling
+
 - 2025-10-14: Refactored MQTT client scripts to be top-level scripts without function wrappers
   - Removed `if __name__ == "__main__"` pattern from all MQTT scripts
   - Converted `run_*` wrapper functions to direct top-level code execution

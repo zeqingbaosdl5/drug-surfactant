@@ -133,11 +133,15 @@ password = os.environ.get('HIVEMQ_PASSWORD')
 device_id = "device_001"
 
 if not all([host, username, password]):
-    print("Error: Missing required environment variables")
-    print(f"  HIVEMQ_HOST: {'✓' if host else '✗'}")
-    print(f"  HIVEMQ_USERNAME: {'✓' if username else '✗'}")
-    print(f"  HIVEMQ_PASSWORD: {'✓' if password else '✗'}")
-    sys.exit(1)
+    missing = []
+    if not host:
+        missing.append('HIVEMQ_HOST')
+    if not username:
+        missing.append('HIVEMQ_USERNAME')
+    if not password:
+        missing.append('HIVEMQ_PASSWORD')
+    raise ValueError(f"Missing required environment variables: {', '.join(missing)}")
+
 
 # Define topics
 command_topic = f"sdl/device/{device_id}/command"
@@ -174,70 +178,64 @@ client.username_pw_set(username, password)
 # Enable TLS for secure connection
 client.tls_set()
 
-try:
-    print(f"Orchestrator connecting to {host}...")
-    client.connect(host, 8883, 60)
+print(f"Orchestrator connecting to {host}...")
+client.connect(host, 8883, 60)
+
+# Start network loop
+client.loop_start()
+
+# Wait for connection
+if not connected_event.wait(timeout=10.0):
+    raise ConnectionError("Orchestrator connection timeout - failed to connect to MQTT broker")
+
+print("Orchestrator is ready")
+print(f"  Command topic: {command_topic}")
+print(f"  Data topic: {data_topic}")
+
+# Wait a bit for device to be ready
+time.sleep(2)
+
+# Define test commands
+commands = [
+    {'operation': 'read_temperature', 'params': {}},
+    {'operation': 'blink_led', 'params': {'color': 'red'}},
+    {'operation': 'blink_led', 'params': {'color': 'green'}},
+]
+
+results_list = []
+
+# Run experiments
+for i, command in enumerate(commands):
+    # Add unique experiment ID
+    experiment_id = secrets.token_hex(4)
+    command['experiment_id'] = experiment_id
     
-    # Start network loop
-    client.loop_start()
+    print(f"\n--- Experiment {i+1}/{len(commands)} ---")
+    print(f"Sending command: {command}")
     
-    # Wait for connection
-    if not connected_event.wait(timeout=10.0):
-        print("Orchestrator connection timeout")
-        sys.exit(1)
+    try:
+        result = run_experiment(client, queue, command_topic, command, 
+                               queue_timeout=10, function_timeout=30)
+        print(f"Received result: {result}")
+        results_list.append(result)
+    except (Empty, TimeoutError) as e:
+        print(f"Experiment failed: {e}")
+        results_list.append({'error': str(e), 'command': command})
     
-    print("Orchestrator is ready")
-    print(f"  Command topic: {command_topic}")
-    print(f"  Data topic: {data_topic}")
-    
-    # Wait a bit for device to be ready
-    time.sleep(2)
-    
-    # Define test commands
-    commands = [
-        {'operation': 'read_temperature', 'params': {}},
-        {'operation': 'blink_led', 'params': {'color': 'red'}},
-        {'operation': 'blink_led', 'params': {'color': 'green'}},
-    ]
-    
-    results_list = []
-    
-    # Run experiments
-    for i, command in enumerate(commands):
-        # Add unique experiment ID
-        experiment_id = secrets.token_hex(4)
-        command['experiment_id'] = experiment_id
-        
-        print(f"\n--- Experiment {i+1}/{len(commands)} ---")
-        print(f"Sending command: {command}")
-        
-        try:
-            result = run_experiment(client, queue, command_topic, command, 
-                                   queue_timeout=10, function_timeout=30)
-            print(f"Received result: {result}")
-            results_list.append(result)
-        except (Empty, TimeoutError) as e:
-            print(f"Experiment failed: {e}")
-            results_list.append({'error': str(e), 'command': command})
-        
-        time.sleep(1)
-    
-    print("\n" + "=" * 50)
-    print("All experiments completed")
-    print(f"Total: {len(results_list)} results")
-    print("=" * 50)
-    
-    # Save results
-    with open('orchestrator_results.json', 'w') as f:
-        json.dump(results_list, f, indent=2)
-    print("\nResults saved to orchestrator_results.json")
-    
-    # Clean disconnect
-    client.loop_stop()
-    client.disconnect()
-    sys.exit(0)
-    
-except Exception as e:
-    print(f"Orchestrator error: {e}")
-    sys.exit(1)
+    time.sleep(1)
+
+print("\n" + "=" * 50)
+print("All experiments completed")
+print(f"Total: {len(results_list)} results")
+print("=" * 50)
+
+# Save results
+with open('orchestrator_results.json', 'w') as f:
+    json.dump(results_list, f, indent=2)
+print("\nResults saved to orchestrator_results.json")
+
+# Clean disconnect
+client.loop_stop()
+client.disconnect()
+
 
