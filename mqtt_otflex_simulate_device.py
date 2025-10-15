@@ -2,13 +2,13 @@
 """
 MQTT OT-Flex Device with Protocol Simulation
 Based on AC dev lab OT2mqtt.py pattern but using opentrons.simulate instead of opentrons.execute.
-This allows testing protocol logic without physical hardware.
+This directly uses opentrons functions rather than creating protocol strings.
 """
 import json
 import sys
 from queue import Empty, Queue
 from time import sleep
-from io import StringIO
+import os
 
 # Check if opentrons is installed
 try:
@@ -20,11 +20,13 @@ except ImportError:
 
 import paho.mqtt.client as mqtt
 
+# Get protocol API for simulation (similar to opentrons.execute.get_protocol_api())
+protocol = opentrons.simulate.get_protocol_api("2.21")
+
 # Device configuration
 DEVICE_ID = "otflex_sim_001"
 
 # MQTT Broker Configuration (using environment variables)
-import os
 host = os.environ.get('HIVEMQ_HOST')
 username = os.environ.get('HIVEMQ_USERNAME')
 password = os.environ.get('HIVEMQ_PASSWORD')
@@ -49,6 +51,24 @@ client.tls_set()
 client.username_pw_set(username, password)
 
 command_queue = Queue()
+
+print("Initializing simulated OT-Flex device...")
+
+# Load labware and modules (similar to AC dev lab pattern and template)
+# Load heater shaker first (required for proper deck configuration)
+hs_mod = protocol.load_module("heaterShakerModuleV1", "D3")
+hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
+print("Heater shaker with adapter loaded in slot D3")
+
+# Load absorbance reader module in slot C3 (as per OT-Flex template)
+pr_mod = protocol.load_module("absorbanceReaderV1", "C3")
+print("Absorbance reader loaded in slot C3")
+
+# Load plate
+plate = protocol.load_labware("corning_96_wellplate_360ul_flat", "D1")
+print("Plate loaded in slot D1")
+
+print("Labware loaded successfully")
 
 
 # MQTT Callbacks
@@ -76,99 +96,88 @@ client.loop_start()
 print("MQTT client connected and ready")
 
 
-def create_absorbance_protocol(wavelengths, wells):
+def read_absorbance(wavelengths, wells):
     """
-    Create an Opentrons protocol for absorbance reading.
+    Read absorbance using opentrons functions directly.
     
     Parameters
     ----------
     wavelengths : list
-        List of wavelengths to read (e.g., [450, 500, 600])
+        List of wavelengths to read
     wells : str or list
-        Wells to read ('all' or list like ['A1', 'A2'])
+        Wells to read ('all' or list of well names)
     
     Returns
     -------
-    str
-        Protocol text ready for simulation
+    dict
+        Absorbance data organized by well
     """
-    wells_str = repr(wells) if isinstance(wells, list) else f"'{wells}'"
-    
-    protocol_text = f"""
-from opentrons import protocol_api
-
-metadata = {{
-    'protocolName': 'Absorbance Reading Protocol',
-    'author': 'MQTT Device',
-}}
-
-requirements = {{"robotType": "Flex", "apiLevel": "2.21"}}
-
-def run(protocol: protocol_api.ProtocolContext):
-    # Load absorbance reader module
-    pr_mod = protocol.load_module("absorbanceReaderV1", "C3")
-    
-    # Load plate
-    plate = protocol.load_labware("corning_96_wellplate_360ul_flat", "D1")
+    print(f"Reading absorbance:")
+    print(f"  Wavelengths: {wavelengths}")
+    print(f"  Wells: {wells}")
     
     # Close lid before initialization (required)
     pr_mod.close_lid()
+    print("  Lid closed")
     
     # Initialize for wavelength(s)
-    wavelengths = {wavelengths}
     if len(wavelengths) == 1:
         pr_mod.initialize(mode="single", wavelengths=wavelengths)
+        print(f"  Initialized in single mode: {wavelengths}")
     else:
         pr_mod.initialize(mode="multi", wavelengths=wavelengths)
+        print(f"  Initialized in multi mode: {wavelengths}")
     
     # Open lid to load plate (would use gripper on real robot)
     pr_mod.open_lid()
-    protocol.comment("Place plate on reader")
+    print("  Lid opened for plate loading")
     
     # Close lid for reading
     pr_mod.close_lid()
+    print("  Lid closed for reading")
     
-    # Read the plate
+    # Read the plate - this returns actual data structure from opentrons
     pr_data = pr_mod.read()
-    
-    # Log some results
-    wells = {wells_str}
-    if wells == 'all':
-        protocol.comment(f"Read all wells at wavelengths: {{wavelengths}}")
-    else:
-        for well in wells:
-            protocol.comment(f"Read well {{well}} at wavelengths: {{wavelengths}}")
+    print(f"  Plate read complete")
     
     # Open lid when done
     pr_mod.open_lid()
+    print("  Lid opened after reading")
     
-    protocol.comment("Protocol complete")
-"""
-    return protocol_text
-
-
-def simulate_protocol(protocol_text):
-    """
-    Simulate an Opentrons protocol.
+    # Process the data based on wells requested
+    absorbance_data = {}
     
-    Parameters
-    ----------
-    protocol_text : str
-        The protocol code to simulate
-        
-    Returns
-    -------
-    tuple
-        (runlog, bundle) from simulation
-    """
-    protocol_file = StringIO(protocol_text)
-    runlog, bundle = opentrons.simulate.simulate(protocol_file)
-    return runlog, bundle
+    if wells == 'all':
+        # Read all 96 wells
+        for row in 'ABCDEFGH':
+            for col in range(1, 13):
+                well_id = f"{row}{col}"
+                absorbance_data[well_id] = {}
+                for wl in wavelengths:
+                    # In simulation, pr_data may be empty or have mock values
+                    # Access: pr_data[wavelength][well_name]
+                    if pr_data and wl in pr_data and well_id in pr_data[wl]:
+                        absorbance_data[well_id][wl] = pr_data[wl][well_id]
+                    else:
+                        # Mock data for simulation
+                        absorbance_data[well_id][wl] = round(0.1 + (hash(f"{well_id}{wl}") % 100) / 200, 4)
+    else:
+        # Read specific wells
+        for well_id in wells:
+            absorbance_data[well_id] = {}
+            for wl in wavelengths:
+                if pr_data and wl in pr_data and well_id in pr_data[wl]:
+                    absorbance_data[well_id][wl] = pr_data[wl][well_id]
+                else:
+                    # Mock data for simulation
+                    absorbance_data[well_id][wl] = round(0.1 + (hash(f"{well_id}{wl}") % 100) / 200, 4)
+    
+    return absorbance_data
 
 
 def handle_absorbance_command(payload):
     """
-    Handle absorbance reading command by simulating protocol.
+    Handle absorbance reading command using opentrons functions directly.
     
     Parameters
     ----------
@@ -182,41 +191,16 @@ def handle_absorbance_command(payload):
     wavelengths = command.get("wavelengths", [600])
     wells = command.get("wells", "all")
     
-    print(f"Processing absorbance command:")
-    print(f"  Wavelengths: {wavelengths}")
-    print(f"  Wells: {wells}")
+    print(f"\nProcessing absorbance command:")
     print(f"  Experiment ID: {experiment_id}")
+    print(f"  Session ID: {session_id}")
     
     try:
-        # Create protocol
-        protocol_text = create_absorbance_protocol(wavelengths, wells)
+        # Use opentrons functions directly
+        absorbance_data = read_absorbance(wavelengths, wells)
         
-        # Simulate protocol
-        print("Simulating protocol...")
-        runlog, bundle = simulate_protocol(protocol_text)
-        
-        print(f"Protocol simulation completed successfully")
-        print(f"  Commands executed: {len(runlog)}")
-        
-        # In real implementation, would get actual absorbance data
-        # For simulation, create mock data
-        absorbance_data = {}
-        if wells == 'all':
-            # Mock data for all 96 wells
-            for row in 'ABCDEFGH':
-                for col in range(1, 13):
-                    well_id = f"{row}{col}"
-                    absorbance_data[well_id] = {
-                        wl: round(0.1 + (hash(f"{well_id}{wl}") % 100) / 200, 4)
-                        for wl in wavelengths
-                    }
-        else:
-            # Mock data for specific wells
-            for well_id in wells:
-                absorbance_data[well_id] = {
-                    wl: round(0.1 + (hash(f"{well_id}{wl}") % 100) / 200, 4)
-                    for wl in wavelengths
-                }
+        print(f"Absorbance read completed successfully")
+        print(f"  Wells read: {len(absorbance_data)}")
         
         # Send results back
         response_payload = {
@@ -225,13 +209,12 @@ def handle_absorbance_command(payload):
             "session_id": session_id,
             "absorbance_data": absorbance_data,
             "wavelengths": wavelengths,
-            "num_wells": len(absorbance_data),
-            "protocol_commands": len(runlog)
+            "num_wells": len(absorbance_data)
         }
         
         response = json.dumps(response_payload)
         client.publish(STATUS_TOPIC, response, qos=2)
-        print(f"Results published to {STATUS_TOPIC}")
+        print(f"Results published to {STATUS_TOPIC}\n")
         
     except Exception as e:
         print(f"Error processing command: {e}")
@@ -257,10 +240,11 @@ def handle_command(payload):
     command = payload.get("command", {})
     
     if "wavelengths" in command:
-        print(f"Handling absorbance read command: {payload}")
+        print(f"Handling absorbance read command")
         handle_absorbance_command(payload)
     else:
         print(f"Unknown command type: {command}")
+
 
 
 print(f"OT-Flex simulation device ready")
