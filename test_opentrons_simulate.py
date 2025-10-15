@@ -6,8 +6,19 @@ This script shows how to validate protocol syntax and simulate execution.
 Usage:
     python test_opentrons_simulate.py
 """
+import sys
+
+# Check if opentrons is installed
+try:
+    import opentrons.simulate
+except ImportError:
+    print("Opentrons package is not installed.")
+    print("To install: pip install opentrons>=7.0.0")
+    print("Exiting without running tests.")
+    sys.exit(0)
+
 import json
-from opentrons import simulate
+from io import StringIO
 
 
 def create_simple_protocol():
@@ -23,7 +34,7 @@ metadata = {
     'description': 'Simple protocol to test absorbance reader simulation'
 }
 
-requirements = {"robotType": "Flex", "apiLevel": "2.19"}
+requirements = {"robotType": "Flex", "apiLevel": "2.21"}
 
 def run(protocol: protocol_api.ProtocolContext):
     # Load absorbance reader module
@@ -37,6 +48,9 @@ def run(protocol: protocol_api.ProtocolContext):
         load_name="corning_96_wellplate_360ul_flat",
         location='D1'
     )
+    
+    # Close lid before initialization (required for absorbance reader)
+    pr_mod.close_lid()
     
     # Initialize the plate reader for single wavelength
     pr_mod.initialize(mode="single", wavelengths=[600])
@@ -79,24 +93,27 @@ def test_protocol_simulation():
     
     try:
         # Run the simulation
-        # The simulate.simulate() function takes protocol text and returns
-        # a tuple of (protocol_context, bundle)
-        protocol, bundle = simulate.simulate(protocol_text)
+        # The opentrons.simulate.simulate() function takes a file-like object
+        protocol_file = StringIO(protocol_text)
+        runlog, bundle = opentrons.simulate.simulate(protocol_file)
         
         print("\n✓ Protocol simulation successful!")
-        print(f"\n  Protocol name: {bundle.metadata.get('protocolName', 'N/A')}")
-        print(f"  API Level: {bundle.metadata.get('apiLevel', 'N/A')}")
+        
+        if bundle:
+            print(f"\n  Protocol name: {bundle.metadata.get('protocolName', 'N/A')}")
+            print(f"  API Level: {bundle.metadata.get('apiLevel', 'N/A')}")
         
         # Display commands that would be executed
-        print(f"\n  Commands executed: {len(bundle.commands)}")
+        print(f"\n  Commands executed: {len(runlog)}")
         
         # Show first few commands as examples
         print("\n  Example commands:")
-        for i, cmd in enumerate(bundle.commands[:5]):
-            print(f"    {i+1}. {cmd.get('commandType', 'unknown')}")
+        for i, cmd in enumerate(runlog[:5]):
+            cmd_type = cmd.get('payload', {}).get('text', cmd.get('$', 'unknown'))
+            print(f"    {i+1}. {cmd_type}")
         
-        if len(bundle.commands) > 5:
-            print(f"    ... and {len(bundle.commands) - 5} more commands")
+        if len(runlog) > 5:
+            print(f"    ... and {len(runlog) - 5} more commands")
         
         print("\n" + "="*60)
         print("Simulation demonstrates protocol is syntactically valid")
@@ -119,11 +136,14 @@ def create_absorbance_multi_wavelength_protocol():
 from opentrons import protocol_api
 
 metadata = {'protocolName': 'Multi-Wavelength Absorbance Test'}
-requirements = {"robotType": "Flex", "apiLevel": "2.19"}
+requirements = {"robotType": "Flex", "apiLevel": "2.21"}
 
 def run(protocol: protocol_api.ProtocolContext):
     pr_mod = protocol.load_module("absorbanceReaderV1", "C3")
     plate = protocol.load_labware("corning_96_wellplate_360ul_flat", 'D1')
+    
+    # Close lid before initialization (required)
+    pr_mod.close_lid()
     
     # Multi-wavelength read
     pr_mod.initialize(mode="multi", wavelengths=[450, 500, 550, 600, 650])
@@ -152,9 +172,10 @@ def test_multi_wavelength_simulation():
     protocol_text = create_absorbance_multi_wavelength_protocol()
     
     try:
-        protocol, bundle = simulate.simulate(protocol_text)
+        protocol_file = StringIO(protocol_text)
+        runlog, bundle = opentrons.simulate.simulate(protocol_file)
         print("\n✓ Multi-wavelength protocol simulation successful!")
-        print(f"  Commands: {len(bundle.commands)}")
+        print(f"  Commands: {len(runlog)}")
         return True
     except Exception as e:
         print(f"\n✗ Multi-wavelength simulation failed: {e}")

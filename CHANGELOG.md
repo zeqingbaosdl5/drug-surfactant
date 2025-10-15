@@ -10,8 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 2025-10-15: Added `opentrons` to requirements.txt for protocol simulation and testing
 - 2025-10-15: Created `test_opentrons_simulate.py` demonstrating protocol validation with opentrons.simulate
+  - Checks if opentrons is installed and exits gracefully if not
   - Shows how to validate OT-Flex protocol syntax before execution
   - Demonstrates single and multi-wavelength absorbance reader simulation
+  - Uses correct API level (2.21) and proper initialization sequence (close_lid before initialize)
   - Provides examples for testing protocol commands
 
 ### Changed

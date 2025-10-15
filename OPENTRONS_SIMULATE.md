@@ -22,18 +22,20 @@ pip install opentrons>=7.0.0
 ### Simulating a Protocol File
 
 ```python
-from opentrons import simulate
+import opentrons.simulate
 
 # Read protocol from file
 with open('protocol.py', 'r') as f:
     protocol_text = f.read()
 
-# Simulate the protocol
-protocol, bundle = simulate.simulate(protocol_text)
+# Simulate the protocol using StringIO for file-like object
+from io import StringIO
+protocol_file = StringIO(protocol_text)
+runlog, bundle = opentrons.simulate.simulate(protocol_file)
 
 # Access simulation results
-print(f"Protocol: {bundle.metadata.get('protocolName')}")
-print(f"Commands: {len(bundle.commands)}")
+print(f"Protocol: {bundle.metadata.get('protocolName') if bundle else 'N/A'}")
+print(f"Commands: {len(runlog)}")
 ```
 
 ### What Gets Simulated
@@ -53,14 +55,20 @@ The simulator:
 ### Single Wavelength
 
 ```python
+import opentrons.simulate
+from io import StringIO
+
 protocol_text = """
 from opentrons import protocol_api
 
-requirements = {"robotType": "Flex", "apiLevel": "2.19"}
+requirements = {"robotType": "Flex", "apiLevel": "2.21"}
 
 def run(protocol: protocol_api.ProtocolContext):
     pr_mod = protocol.load_module("absorbanceReaderV1", "C3")
     plate = protocol.load_labware("corning_96_wellplate_360ul_flat", "D1")
+    
+    # Close lid before initialization (required)
+    pr_mod.close_lid()
     
     # Initialize for single wavelength
     pr_mod.initialize(mode="single", wavelengths=[600])
@@ -74,12 +82,16 @@ def run(protocol: protocol_api.ProtocolContext):
     pr_mod.open_lid()
 """
 
-protocol, bundle = simulate.simulate(protocol_text)
+protocol_file = StringIO(protocol_text)
+runlog, bundle = opentrons.simulate.simulate(protocol_file)
 ```
 
 ### Multi-Wavelength
 
 ```python
+# Close lid before initialization (required)
+pr_mod.close_lid()
+
 # Initialize for multiple wavelengths
 pr_mod.initialize(mode="multi", wavelengths=[450, 500, 550, 600, 650])
 
@@ -117,14 +129,16 @@ The MQTT OT-Flex device (`mqtt_otflex_device.py`) simulates absorbance readings.
 Example workflow:
 
 ```python
-from opentrons import simulate, execute
+import opentrons.simulate
+from io import StringIO
 
 # 1. Generate protocol from MQTT request
 protocol_text = generate_protocol(experiment_request)
 
 # 2. Validate with simulate
 try:
-    protocol, bundle = simulate.simulate(protocol_text)
+    protocol_file = StringIO(protocol_text)
+    runlog, bundle = opentrons.simulate.simulate(protocol_file)
     print("Protocol is valid")
 except Exception as e:
     raise ValueError(f"Invalid protocol: {e}")
@@ -169,7 +183,13 @@ ImportError: No module named 'opentrons'
 ```
 Error: API level 2.19 not supported
 ```
-**Solution**: Update opentrons package or adjust `apiLevel` in protocol
+**Solution**: Update to API level 2.21 or higher for absorbance reader support
+
+### Module Initialization Error
+```
+CannotPerformModuleAction: Cannot perform Initialize action on Absorbance Reader without calling `.close_lid()` first.
+```
+**Solution**: Call `pr_mod.close_lid()` before `pr_mod.initialize()`
 
 ### Module Not Found
 ```
