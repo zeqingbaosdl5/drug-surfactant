@@ -12,8 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Follows AC dev lab OT2mqtt.py pattern using `opentrons.simulate.get_protocol_api()`
   - Uses opentrons functions directly instead of creating protocol strings
   - Queue-based command processing with MQTT integration
-  - Directly calls protocol API methods (pr_mod.close_lid(), pr_mod.initialize(), pr_mod.read())
-  - Uses correct slot D3 for absorbance reader (valid slots: D3, C3, B3, A3)
+  - Directly calls protocol API methods
+  - Uses mock absorbance reader due to simulation limitations (reader module not fully supported in simulate mode)
+  - Real hardware would use absorbance reader in slot C3 (valid slots: D3, C3, B3, A3 per Opentrons docs)
 - 2025-10-15: Created `test_mqtt_simulate_orchestrator.py` - Test orchestrator for simulation device
   - Demonstrates sending commands and receiving simulated results
   - Tests single wavelength, multi-wavelength, and single well scenarios

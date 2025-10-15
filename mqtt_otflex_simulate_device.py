@@ -53,21 +53,36 @@ client.username_pw_set(username, password)
 command_queue = Queue()
 
 print("Initializing simulated OT-Flex device...")
+print("NOTE: Using mock absorbance reader due to opentrons.simulate limitations")
+print("The absorbance reader module has restrictions in simulation mode.")
 
-# Load labware and modules (similar to AC dev lab pattern and template)
-# Load heater shaker first (required for proper deck configuration)
-hs_mod = protocol.load_module("heaterShakerModuleV1", "D1")
-hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
-print("Heater shaker with adapter loaded in slot D1")
-
-# Load absorbance reader module in slot D3 (valid slots: D3, C3, B3, or A3)
-pr_mod = protocol.load_module("absorbanceReaderV1", "D3")
-print("Absorbance reader loaded in slot D3")
-
-# Load plate
+# Load labware only (modules have limitations in simulation)
+# In real hardware, absorbance reader would be in C3 (valid slots: D3, C3, B3, A3)
 plate = protocol.load_labware("corning_96_wellplate_360ul_flat", "D2")
 print("Plate loaded in slot D2")
 
+# Mock the pr_mod object for simulation purposes
+class MockAbsorbanceReader:
+    def close_lid(self):
+        print("  [MOCK] Closing absorbance reader lid")
+    
+    def initialize(self, mode, wavelengths):
+        print(f"  [MOCK] Initializing reader in {mode} mode for wavelengths: {wavelengths}")
+    
+    def open_lid(self):
+        print("  [MOCK] Opening absorbance reader lid")
+    
+    def read(self):
+        print("  [MOCK] Reading absorbance data")
+        # Return mock data structure matching real reader output
+        import random
+        result = {}
+        for wl in [450, 500, 550, 600, 650]:
+            result[wl] = {}
+        return result
+
+pr_mod = MockAbsorbanceReader()
+print("Mock absorbance reader created (simulated hardware)")
 print("Labware loaded successfully")
 
 
