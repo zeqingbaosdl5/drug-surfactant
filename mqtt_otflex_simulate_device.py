@@ -10,13 +10,7 @@ from queue import Empty, Queue
 from time import sleep
 import os
 
-# Check if opentrons is installed
-try:
-    import opentrons.simulate
-except ImportError:
-    print("Opentrons package is not installed.")
-    print("To install: pip install opentrons>=7.0.0")
-    sys.exit(1)
+import opentrons.simulate
 
 import paho.mqtt.client as mqtt
 
@@ -81,7 +75,10 @@ class MockAbsorbanceReader:
             result[wl] = {}
         return result
 
+# For simulation: Use mock absorbance reader due to opentrons.simulate limitations
 pr_mod = MockAbsorbanceReader()
+# For real hardware: Uncomment the line below and comment out the mock reader above
+# pr_mod = protocol.load_module("absorbanceReaderV1", "C3")
 print("Mock absorbance reader created (simulated hardware)")
 print("Labware loaded successfully")
 
