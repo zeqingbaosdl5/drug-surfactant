@@ -17,11 +17,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Multi-wavelength absorbance reading support
     - Flexible well selection (all wells, specific wells, single well)
     - **Independent absorbance measurements** without requiring mixing experiments
-    - **Independent mixing experiments** with drug-surfactant formulations
+    - **Independent mixing experiments using real Opentrons API operations**
+      - Real pipette transfers with volume-based pipette selection (50µL and 1000µL)
+      - Proper well bottom clearances (aspirate: 2mm, dispense: 25mm)
+      - Air gap handling (55µL for 1000µL pipette, 10µL for 50µL pipette)
+      - Blow out and touch tip operations following drug_surfactant_otflex_template.py
+      - Heater-shaker integration for mixing (1000 rpm for 5 minutes)
+      - Component transfers from source wells to target deepplate well
+      - Based on real protocol patterns from experiments/20250917_closed_loop/
     - Both operations can be triggered independently via MQTT commands
   - `test_mqtt_simulate_orchestrator.py`: Test orchestrator demonstrating both independent operations
     - Absorbance commands (all wells, specific wells, single well, multi-wavelength)
-    - Mixing experiment commands (component transfers and shaking)
+    - Mixing experiment commands with real Opentrons operations
     - Demonstrates independence of absorbance and mixing operations
   - `MQTT_README.md`: Documentation for MQTT communication pattern
   - `requirements.txt`: Added paho-mqtt>=2.1.0 and opentrons>=7.0.0
