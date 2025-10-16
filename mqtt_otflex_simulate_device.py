@@ -240,6 +240,107 @@ def handle_absorbance_command(payload):
         client.publish(STATUS_TOPIC, error_response, qos=2)
 
 
+def run_mixing_experiment(formulation):
+    """
+    Run a mixing experiment using opentrons functions directly.
+    
+    Parameters
+    ----------
+    formulation : dict
+        Formulation with volumes for each component
+        Example: {"s1": 120.0, "s6": 168.0, "water": 396.0, "IBP": 180.0}
+    
+    Returns
+    -------
+    dict
+        Summary of mixing operations
+    """
+    print(f"Running mixing experiment:")
+    print(f"  Formulation: {formulation}")
+    
+    # For simulation, we'll just log the operations
+    # In real hardware, this would use pipettes and liquid transfers
+    operations = []
+    
+    # Sort components to process in logical order
+    components = sorted(formulation.items(), key=lambda x: x[0])
+    
+    for component, volume in components:
+        if volume > 0:
+            print(f"  [MOCK] Transferring {volume} µL of {component}")
+            operations.append({
+                "component": component,
+                "volume": volume,
+                "action": "transfer"
+            })
+    
+    # Mock mixing/shaking step
+    print(f"  [MOCK] Mixing on heater shaker at 1000 rpm for 5 minutes")
+    operations.append({
+        "action": "shake",
+        "speed_rpm": 1000,
+        "time_minutes": 5
+    })
+    
+    return {
+        "operations": operations,
+        "total_volume": sum(v for v in formulation.values() if v > 0),
+        "num_components": sum(1 for v in formulation.values() if v > 0)
+    }
+
+
+def handle_mixing_command(payload):
+    """
+    Handle mixing experiment command.
+    
+    Parameters
+    ----------
+    payload : dict
+        Command payload with formulation details
+    """
+    session_id = payload.get("session_id", "unknown")
+    experiment_id = payload.get("experiment_id", "unknown")
+    command = payload.get("command", {})
+    
+    formulation = command.get("formulation", {})
+    
+    print(f"\nProcessing mixing command:")
+    print(f"  Experiment ID: {experiment_id}")
+    print(f"  Session ID: {session_id}")
+    
+    try:
+        # Run the mixing experiment
+        result = run_mixing_experiment(formulation)
+        
+        print(f"Mixing experiment completed successfully")
+        print(f"  Total volume: {result['total_volume']} µL")
+        print(f"  Components mixed: {result['num_components']}")
+        
+        # Send results back
+        response_payload = {
+            "status": "completed",
+            "experiment_id": experiment_id,
+            "session_id": session_id,
+            "mixing_result": result,
+            "formulation": formulation
+        }
+        
+        response = json.dumps(response_payload)
+        client.publish(STATUS_TOPIC, response, qos=2)
+        print(f"Results published to {STATUS_TOPIC}\n")
+        
+    except Exception as e:
+        print(f"Error processing mixing command: {e}")
+        error_payload = {
+            "status": "error",
+            "experiment_id": experiment_id,
+            "session_id": session_id,
+            "error": str(e)
+        }
+        error_response = json.dumps(error_payload)
+        client.publish(STATUS_TOPIC, error_response, qos=2)
+
+
 def handle_command(payload):
     """
     Route command to appropriate handler.
@@ -254,6 +355,9 @@ def handle_command(payload):
     if "wavelengths" in command:
         print(f"Handling absorbance read command")
         handle_absorbance_command(payload)
+    elif "formulation" in command:
+        print(f"Handling mixing experiment command")
+        handle_mixing_command(payload)
     else:
         print(f"Unknown command type: {command}")
 

@@ -16,8 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Easy toggle to real hardware with commented line showing actual module loading
     - Multi-wavelength absorbance reading support
     - Flexible well selection (all wells, specific wells, single well)
-    - Independent absorbance measurements without requiring mixing experiments
-  - `test_mqtt_simulate_orchestrator.py`: Test orchestrator demonstrating independent absorbance commands
+    - **Independent absorbance measurements** without requiring mixing experiments
+    - **Independent mixing experiments** with drug-surfactant formulations
+    - Both operations can be triggered independently via MQTT commands
+  - `test_mqtt_simulate_orchestrator.py`: Test orchestrator demonstrating both independent operations
+    - Absorbance commands (all wells, specific wells, single well, multi-wavelength)
+    - Mixing experiment commands (component transfers and shaking)
+    - Demonstrates independence of absorbance and mixing operations
   - `MQTT_README.md`: Documentation for MQTT communication pattern
   - `requirements.txt`: Added paho-mqtt>=2.1.0 and opentrons>=7.0.0
 - 2025-10-14: HiveMQ integration test script (`test_hivemq_connection.py`) to verify MQTT broker connectivity

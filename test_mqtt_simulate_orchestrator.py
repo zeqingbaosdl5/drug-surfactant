@@ -138,6 +138,65 @@ def send_absorbance_command(wavelengths, wells, session_id=None, experiment_id=N
     raise TimeoutError(f"No result received within {timeout} seconds")
 
 
+def send_mixing_command(formulation, session_id=None, experiment_id=None):
+    """
+    Send mixing experiment command to device.
+    
+    Parameters
+    ----------
+    formulation : dict
+        Component volumes for mixing
+        Example: {"s1": 120.0, "s6": 168.0, "water": 396.0, "IBP": 180.0}
+    session_id : str, optional
+        Session identifier
+    experiment_id : str, optional
+        Experiment identifier
+        
+    Returns
+    -------
+    dict
+        Result from device
+    """
+    if session_id is None:
+        session_id = secrets.token_hex(4)
+    if experiment_id is None:
+        experiment_id = secrets.token_hex(8)
+    
+    command_payload = {
+        "session_id": session_id,
+        "experiment_id": experiment_id,
+        "command": {
+            "formulation": formulation
+        }
+    }
+    
+    print(f"\n{'='*60}")
+    print(f"Sending mixing command:")
+    print(f"  Experiment ID: {experiment_id}")
+    print(f"  Formulation: {formulation}")
+    print(f"{'='*60}")
+    
+    # Send command
+    command_json = json.dumps(command_payload)
+    client.publish(COMMAND_TOPIC, command_json, qos=2)
+    
+    # Wait for result
+    timeout = 60
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            result = result_queue.get(timeout=1)
+            if result.get('experiment_id') == experiment_id:
+                return result
+            else:
+                print(f"Received result for different experiment, waiting...")
+                result_queue.put(result)  # Put back for other requests
+        except Empty:
+            continue
+    
+    raise TimeoutError(f"No result received within {timeout} seconds")
+
+
 # Test 1: Single wavelength, all wells
 print("\n" + "="*60)
 print("TEST 1: Single wavelength (600nm), all wells")
@@ -218,6 +277,59 @@ try:
     
 except Exception as e:
     print(f"✗ Test 3 failed: {e}")
+
+print("\n" + "="*60)
+print("All absorbance tests completed")
+print("="*60)
+
+time.sleep(2)
+
+# Test 4: Mixing experiment
+print("\n" + "="*60)
+print("TEST 4: Mixing experiment with drug-surfactant formulation")
+print("="*60)
+
+try:
+    formulation = {
+        "s1": 120.0,
+        "s6": 168.0,
+        "water": 396.0,
+        "IBP": 180.0
+    }
+    
+    result4 = send_mixing_command(formulation=formulation)
+    
+    print("\n✓ Result received:")
+    print(f"  Status: {result4.get('status')}")
+    mixing_result = result4.get('mixing_result', {})
+    print(f"  Total volume: {mixing_result.get('total_volume')} µL")
+    print(f"  Components mixed: {mixing_result.get('num_components')}")
+    print(f"  Operations performed: {len(mixing_result.get('operations', []))}")
+    
+except Exception as e:
+    print(f"✗ Test 4 failed: {e}")
+
+time.sleep(2)
+
+# Test 5: Independent absorbance after mixing
+print("\n" + "="*60)
+print("TEST 5: Independent absorbance reading (demonstrating independence)")
+print("="*60)
+
+try:
+    result5 = send_absorbance_command(
+        wavelengths=[600],
+        wells=['A1', 'A2', 'A3']
+    )
+    
+    print("\n✓ Result received:")
+    print(f"  Status: {result5.get('status')}")
+    print(f"  Wells read: {result5.get('num_wells')}")
+    print("  Note: This absorbance reading was triggered independently,")
+    print("        not as part of the mixing experiment.")
+    
+except Exception as e:
+    print(f"✗ Test 5 failed: {e}")
 
 print("\n" + "="*60)
 print("All tests completed")
