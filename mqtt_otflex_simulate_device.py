@@ -282,7 +282,8 @@ def handle_absorbance_command(payload):
             "session_id": session_id,
             "absorbance_data": absorbance_data,
             "wavelengths": wavelengths,
-            "num_wells": len(absorbance_data)
+            "num_wells": len(absorbance_data),
+            "input_message": payload
         }
         
         response = json.dumps(response_payload)
@@ -295,7 +296,8 @@ def handle_absorbance_command(payload):
             "status": "error",
             "experiment_id": experiment_id,
             "session_id": session_id,
-            "error": str(e)
+            "error": str(e),
+            "input_message": payload
         }
         error_response = json.dumps(error_payload)
         client.publish(STATUS_TOPIC, error_response, qos=2)
@@ -442,7 +444,8 @@ def handle_mixing_command(payload):
             "experiment_id": experiment_id,
             "session_id": session_id,
             "mixing_result": result,
-            "formulation": formulation
+            "formulation": formulation,
+            "input_message": payload
         }
         
         response = json.dumps(response_payload)
@@ -455,7 +458,8 @@ def handle_mixing_command(payload):
             "status": "error",
             "experiment_id": experiment_id,
             "session_id": session_id,
-            "error": str(e)
+            "error": str(e),
+            "input_message": payload
         }
         error_response = json.dumps(error_payload)
         client.publish(STATUS_TOPIC, error_response, qos=2)
