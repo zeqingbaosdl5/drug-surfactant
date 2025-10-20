@@ -25,8 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - Heater-shaker integration for mixing (1000 rpm for 5 minutes)
       - Component transfers from source wells to target deepplate well
       - Based on real protocol patterns from experiments/20250917_closed_loop/
+      - **`plate_on_hs_to_reader()` function for streamlined heater-shaker-to-reader workflow**
+      - **Optional `read_after_mixing` parameter to measure absorbance after mixing**
     - Both operations can be triggered independently via MQTT commands
     - **Response payloads include input_message for traceability**
+    - **Supports measuring absorbance of both new and previously successful experiments**
   - `test_mqtt_simulate_orchestrator.py`: Test orchestrator demonstrating both independent operations
     - Absorbance commands (all wells, specific wells, single well, multi-wavelength)
     - Mixing experiment commands with real Opentrons operations

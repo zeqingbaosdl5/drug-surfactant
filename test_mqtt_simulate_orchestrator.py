@@ -138,7 +138,7 @@ def send_absorbance_command(wavelengths, wells, session_id=None, experiment_id=N
     raise TimeoutError(f"No result received within {timeout} seconds")
 
 
-def send_mixing_command(formulation, session_id=None, experiment_id=None):
+def send_mixing_command(formulation, session_id=None, experiment_id=None, read_after_mixing=False):
     """
     Send mixing experiment command to device.
     
@@ -151,6 +151,8 @@ def send_mixing_command(formulation, session_id=None, experiment_id=None):
         Session identifier
     experiment_id : str, optional
         Experiment identifier
+    read_after_mixing : bool, optional
+        If True, device will read absorbance after mixing, default False
         
     Returns
     -------
@@ -166,7 +168,8 @@ def send_mixing_command(formulation, session_id=None, experiment_id=None):
         "session_id": session_id,
         "experiment_id": experiment_id,
         "command": {
-            "formulation": formulation
+            "formulation": formulation,
+            "read_after_mixing": read_after_mixing
         }
     }
     
@@ -174,6 +177,7 @@ def send_mixing_command(formulation, session_id=None, experiment_id=None):
     print(f"Sending mixing command:")
     print(f"  Experiment ID: {experiment_id}")
     print(f"  Formulation: {formulation}")
+    print(f"  Read after mixing: {read_after_mixing}")
     print(f"{'='*60}")
     
     # Send command
@@ -311,25 +315,61 @@ except Exception as e:
 
 time.sleep(2)
 
-# Test 5: Independent absorbance after mixing
+# Test 5: Mixing experiment with absorbance reading
 print("\n" + "="*60)
-print("TEST 5: Independent absorbance reading (demonstrating independence)")
+print("TEST 5: Mixing with absorbance reading (read_after_mixing=True)")
+print("="*60)
+print("This demonstrates measuring absorbance for new experiments")
+print("and enables tracking of previously successful experiments.")
+
+try:
+    formulation2 = {
+        "s1": 100.0,
+        "s6": 200.0,
+        "water": 400.0,
+        "LOV": 180.0
+    }
+    
+    result5 = send_mixing_command(formulation=formulation2, read_after_mixing=True)
+    
+    print("\n✓ Result received:")
+    print(f"  Status: {result5.get('status')}")
+    mixing_result = result5.get('mixing_result', {})
+    print(f"  Total volume: {mixing_result.get('total_volume')} µL")
+    print(f"  Components mixed: {mixing_result.get('num_components')}")
+    
+    # Check if absorbance data is included
+    if 'absorbance_data' in mixing_result:
+        print(f"  ✓ Absorbance data included in response:")
+        abs_data = mixing_result.get('absorbance_data', {})
+        for well, data in abs_data.items():
+            print(f"    {well}: {data}")
+    
+except Exception as e:
+    print(f"✗ Test 5 failed: {e}")
+
+time.sleep(2)
+
+# Test 6: Independent absorbance after mixing
+print("\n" + "="*60)
+print("TEST 6: Independent absorbance reading (demonstrating independence)")
 print("="*60)
 
 try:
-    result5 = send_absorbance_command(
+    result6 = send_absorbance_command(
         wavelengths=[600],
         wells=['A1', 'A2', 'A3']
     )
     
     print("\n✓ Result received:")
-    print(f"  Status: {result5.get('status')}")
-    print(f"  Wells read: {result5.get('num_wells')}")
+    print(f"  Status: {result6.get('status')}")
+    print(f"  Wells read: {result6.get('num_wells')}")
     print("  Note: This absorbance reading was triggered independently,")
-    print("        not as part of the mixing experiment.")
+    print("        not as part of a mixing experiment.")
+    print("        Can measure any well plate at any time.")
     
 except Exception as e:
-    print(f"✗ Test 5 failed: {e}")
+    print(f"✗ Test 6 failed: {e}")
 
 print("\n" + "="*60)
 print("All tests completed")

@@ -311,7 +311,29 @@ def pipette_selection(vol):
         return pipette_high
 
 
-def run_mixing_experiment(formulation, target_well="A1"):
+def plate_on_hs_to_reader(labware_to_shake, speed, time):
+    """
+    Shake plate on heater-shaker without transferring to intermediate location.
+    Plate can be moved directly to reader after this operation.
+    Based on drug_surfactant_otflex_template.py pattern.
+    
+    Parameters
+    ----------
+    labware_to_shake : Labware
+        Plate to shake
+    speed : int
+        Shaking speed in rpm
+    time : int
+        Shaking time in minutes
+    """
+    hs_mod.close_labware_latch()
+    hs_mod.set_and_wait_for_shake_speed(speed)
+    protocol.delay(minutes=time)
+    hs_mod.deactivate_shaker()
+    hs_mod.open_labware_latch()
+
+
+def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False):
     """
     Run a mixing experiment using real Opentrons API operations.
     Based on drug_surfactant_otflex_template.py pattern.
@@ -323,15 +345,18 @@ def run_mixing_experiment(formulation, target_well="A1"):
         Example: {"s1": 120.0, "s6": 168.0, "water": 396.0, "IBP": 180.0}
     target_well : str
         Target well in deepplate for mixing, default "A1"
+    read_after_mixing : bool
+        If True, read absorbance after mixing, default False
     
     Returns
     -------
     dict
-        Summary of mixing operations
+        Summary of mixing operations and optional absorbance data
     """
     print(f"Running mixing experiment:")
     print(f"  Formulation: {formulation}")
     print(f"  Target well: {target_well}")
+    print(f"  Read after mixing: {read_after_mixing}")
     
     operations = []
     
@@ -385,13 +410,10 @@ def run_mixing_experiment(formulation, target_well="A1"):
                 "action": "transfer"
             })
     
-    # Shake the deepplate to mix (from template pattern)
+    # Shake the deepplate to mix using streamlined function
+    # (allows direct transfer to plate reader afterwards in real hardware)
     print(f"  Mixing on heater shaker at 1000 rpm for 5 minutes")
-    hs_mod.close_labware_latch()
-    hs_mod.set_and_wait_for_shake_speed(1000)
-    protocol.delay(minutes=5)
-    hs_mod.deactivate_shaker()
-    hs_mod.open_labware_latch()
+    plate_on_hs_to_reader(labware_to_shake=deepplate, speed=1000, time=5)
     
     operations.append({
         "action": "shake",
@@ -399,14 +421,30 @@ def run_mixing_experiment(formulation, target_well="A1"):
         "time_minutes": 5
     })
     
-    print(f"  Mixing complete")
-    
-    return {
+    result = {
         "operations": operations,
         "total_volume": sum(v for v in formulation.values() if v > 0),
         "num_components": sum(1 for v in formulation.values() if v > 0),
         "target_well": target_well
     }
+    
+    # Optionally read absorbance after mixing
+    # This enables measuring both new experiments and previously successful ones
+    if read_after_mixing:
+        print(f"  Reading absorbance after mixing")
+        # In real hardware, protocol.move_labware would transfer plate to reader
+        # For simulation, we read directly
+        absorbance_data = read_absorbance([600], [target_well])
+        result["absorbance_data"] = absorbance_data
+        operations.append({
+            "action": "read_absorbance",
+            "wavelengths": [600],
+            "wells": [target_well]
+        })
+    
+    print(f"  Mixing complete")
+    
+    return result
 
 
 def handle_mixing_command(payload):
@@ -424,6 +462,7 @@ def handle_mixing_command(payload):
     
     formulation = command.get("formulation", {})
     target_well = command.get("target_well", "A1")
+    read_after_mixing = command.get("read_after_mixing", False)
     
     print(f"\nProcessing mixing command:")
     print(f"  Experiment ID: {experiment_id}")
@@ -431,7 +470,7 @@ def handle_mixing_command(payload):
     
     try:
         # Run the mixing experiment with real Opentrons operations
-        result = run_mixing_experiment(formulation, target_well)
+        result = run_mixing_experiment(formulation, target_well, read_after_mixing)
         
         print(f"Mixing experiment completed successfully")
         print(f"  Total volume: {result['total_volume']} µL")
