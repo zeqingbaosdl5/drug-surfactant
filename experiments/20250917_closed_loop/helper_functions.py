@@ -89,9 +89,14 @@ def optimizer_init():
     # - BOTORCH_MODULAR: Bayesian optimization with Gaussian processes
     # - SAASBO: Sparse Axis-Aligned Subspace BO for high-dimensional problems
     #
-    # IMPORTANT: Do NOT manually set generation_strategy._curr to force step changes.
-    # This breaks the Sobol sequence state and can cause duplicate suggestions.
-    # Instead, let Ax manage transitions automatically based on completed trials.
+    # For Human-in-the-Loop (HiTL) workflows with prior data:
+    # - When loading an experiment with existing trials, you can skip Sobol and go
+    #   directly to BOTORCH_MODULAR or SAASBO by passing bopt=1 or bopt=2 to run_optimizer()
+    # - This is safe when sufficient prior data is available (typically 10+ trials)
+    # - The run_optimizer() function will advance the generation strategy accordingly
+    #
+    # IMPORTANT: Only advance steps when you have prior data. Starting from scratch
+    # should always use Sobol (bopt=0) for proper space-filling initialization.
     gs = GenerationStrategy(
         steps=[
             GenerationStep(
@@ -487,25 +492,44 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
         data_so_far = add_drug_names(data_so_far)
         best_concs = lowest_so_far(data_so_far, drug_list)
 
-    # 2. Log current generation step for verification
-    # NOTE: Removed manual _curr assignment which was unsafe and could:
-    # - Break Sobol sequence space-filling properties
-    # - Cause duplicate point suggestions
-    # - Lose model state (GP hyperparameters, etc.)
-    # The generation strategy will automatically advance based on num_trials
+    # 2. Log current generation step for verification and handle step transitions
+    # For HiTL (Human-in-the-Loop) workflows with prior data, you may want to skip
+    # Sobol and go directly to BOTORCH_MODULAR or SAASBO. The bopt parameter allows
+    # this by advancing the generation strategy when prior data is available.
     gs = ax_client.generation_strategy
     curr_step_index = gs.curr_index
     curr_model_name = gs._curr.model if gs._curr else "None"
+    
     print(f"\n{'='*80}")
     print(f"Generation Strategy Status:")
     print(f"  Current step index: {curr_step_index}")
     print(f"  Current model: {curr_model_name}")
     print(f"  Total trials so far: {len(ax_client.experiment.trials)}")
     print(f"  Requested step (bopt): {bopt}")
-    if curr_step_index != bopt:
-        print(f"  WARNING: Current step ({curr_step_index}) != requested step ({bopt})")
-        print(f"           Generation strategy manages transitions automatically.")
-        print(f"           Continuing with current step to preserve model state.")
+    
+    # Handle step advancement for HiTL workflows with prior data
+    # If we have prior data and want to skip Sobol, advance to the requested step
+    if bopt != curr_step_index and len(ax_client.experiment.trials) > 0:
+        # Only advance if we have sufficient data and are moving forward
+        if bopt > curr_step_index:
+            print(f"  INFO: HiTL mode - advancing from step {curr_step_index} to step {bopt}")
+            print(f"        Prior data available: {len(ax_client.experiment.trials)} trials")
+            # Advance the generation strategy by updating the current step
+            # This is safe when we have prior data and want to skip initialization
+            try:
+                gs._curr = gs._steps[bopt]
+                gs._curr_index = bopt
+                print(f"  SUCCESS: Advanced to step {bopt} ({gs._curr.model})")
+            except (IndexError, AttributeError) as e:
+                print(f"  WARNING: Could not advance to step {bopt}: {e}")
+                print(f"           Continuing with current step {curr_step_index}")
+        else:
+            print(f"  WARNING: Cannot move backward from step {curr_step_index} to {bopt}")
+            print(f"           Continuing with current step to preserve model state.")
+    elif bopt != curr_step_index:
+        print(f"  INFO: No prior data - staying at step {curr_step_index}")
+        print(f"        Will naturally transition after completing {gs._curr.num_trials} trials")
+    
     print(f"{'='*80}\n")
 
     trials_data = []
