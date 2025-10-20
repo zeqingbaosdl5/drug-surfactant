@@ -181,7 +181,7 @@ The key question to answer is: **What is the purpose of `update_results.ipynb` i
 1. **If it's for batch conditioning during optimization:**
    - Migrate to `get_next_trials()` 
    - Remove manual fantasy updates
-   - See `batch_conditioning_example.ipynb` for full example
+   - See `batch_conditioning_example.py` for full example
 
 2. **If it's for correcting data post-hoc:**
    - Current approach with `update_trial_data()` is correct
@@ -191,6 +191,6 @@ The key question to answer is: **What is the purpose of `update_results.ipynb` i
 ## Additional Resources
 
 - [BATCH_CONDITIONING_GUIDE.md](BATCH_CONDITIONING_GUIDE.md) - Comprehensive batch conditioning guide
-- [batch_conditioning_example.ipynb](batch_conditioning_example.ipynb) - Working example
+- [batch_conditioning_example.py](batch_conditioning_example.py) - Working example script
 - [Ax Documentation on Batch Trials](https://ax.dev/tutorials/gpei_hartmann_service.html)
 - [Ax GitHub - get_next_trials source](https://github.com/facebook/Ax/blob/main/ax/service/ax_client.py)

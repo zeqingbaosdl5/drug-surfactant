@@ -25,7 +25,7 @@ See the [Trial-Level Early Stopping section](BATCH_CONDITIONING_GUIDE.md#trial-l
 For information on properly implementing batch conditioning (also known as pending observations or fantasy modeling) in Ax, see:
 
 - **[Batch Conditioning Guide](BATCH_CONDITIONING_GUIDE.md)** - Comprehensive guide on batch conditioning best practices
-- **[batch_conditioning_example.ipynb](batch_conditioning_example.ipynb)** - Working example showing how to use `get_next_trials` with automatic batch conditioning
+- **[batch_conditioning_example.py](batch_conditioning_example.py)** - Working example script showing how to use `get_next_trials` with automatic batch conditioning
 
 ### Quick Summary
 
