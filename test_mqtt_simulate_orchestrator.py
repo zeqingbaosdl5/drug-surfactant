@@ -138,7 +138,7 @@ def send_absorbance_command(wavelengths, wells, session_id=None, experiment_id=N
     raise TimeoutError(f"No result received within {timeout} seconds")
 
 
-def send_mixing_command(formulation, session_id=None, experiment_id=None, read_after_mixing=False):
+def send_mixing_command(formulation, session_id=None, experiment_id=None, read_after_mixing=False, wells_to_read=None):
     """
     Send mixing experiment command to device.
     
@@ -153,6 +153,11 @@ def send_mixing_command(formulation, session_id=None, experiment_id=None, read_a
         Experiment identifier
     read_after_mixing : bool, optional
         If True, device will read absorbance after mixing, default False
+    wells_to_read : list or str, optional
+        Wells to read for absorbance when read_after_mixing=True. Can be:
+        - "all": read all 96 wells
+        - list of well names: ["A1", "A2", "B1"] - read specific wells
+        - None: only read the target well (default)
         
     Returns
     -------
@@ -173,11 +178,17 @@ def send_mixing_command(formulation, session_id=None, experiment_id=None, read_a
         }
     }
     
+    # Add wells_to_read if provided
+    if wells_to_read is not None:
+        command_payload["command"]["wells_to_read"] = wells_to_read
+    
     print(f"\n{'='*60}")
     print(f"Sending mixing command:")
     print(f"  Experiment ID: {experiment_id}")
     print(f"  Formulation: {formulation}")
     print(f"  Read after mixing: {read_after_mixing}")
+    if wells_to_read is not None:
+        print(f"  Wells to read: {wells_to_read}")
     print(f"{'='*60}")
     
     # Send command
@@ -315,12 +326,13 @@ except Exception as e:
 
 time.sleep(2)
 
-# Test 5: Mixing experiment with absorbance reading
+# Test 5: Mixing experiment with absorbance reading of multiple wells
 print("\n" + "="*60)
-print("TEST 5: Mixing with absorbance reading (read_after_mixing=True)")
+print("TEST 5: Mixing with absorbance reading of multiple occupied wells")
 print("="*60)
-print("This demonstrates measuring absorbance for new experiments")
-print("and enables tracking of previously successful experiments.")
+print("This demonstrates measuring absorbance for both the new experiment")
+print("AND previously successful experiments to detect retroactive failures.")
+print("(e.g., t=1hr looked good, but t=12hr shows it's actually invalid)")
 
 try:
     formulation2 = {
@@ -330,7 +342,17 @@ try:
         "LOV": 180.0
     }
     
-    result5 = send_mixing_command(formulation=formulation2, read_after_mixing=True)
+    # Simulate reading wells A1, A2, A3 which represent:
+    # - A1: Current experiment (just mixed)
+    # - A2, A3: Previously successful experiments from earlier iterations
+    # This enables tracking stability over time and retroactive failure detection
+    occupied_wells = ["A1", "A2", "A3"]
+    
+    result5 = send_mixing_command(
+        formulation=formulation2, 
+        read_after_mixing=True,
+        wells_to_read=occupied_wells
+    )
     
     print("\n✓ Result received:")
     print(f"  Status: {result5.get('status')}")
@@ -340,10 +362,12 @@ try:
     
     # Check if absorbance data is included
     if 'absorbance_data' in mixing_result:
-        print(f"  ✓ Absorbance data included in response:")
+        print(f"  ✓ Absorbance data included for {mixing_result.get('wells_read', 0)} wells:")
         abs_data = mixing_result.get('absorbance_data', {})
         for well, data in abs_data.items():
             print(f"    {well}: {data}")
+        print("\n  This enables detecting if previously successful experiments")
+        print("  have degraded or failed over time.")
     
 except Exception as e:
     print(f"✗ Test 5 failed: {e}")

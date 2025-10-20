@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
       - Based on real protocol patterns from experiments/20250917_closed_loop/
       - **`plate_on_hs_to_reader()` function for streamlined heater-shaker-to-reader workflow**
       - **Optional `read_after_mixing` parameter to measure absorbance after mixing**
+      - **`wells_to_read` parameter to specify which wells to measure**
+        - Supports reading all occupied wells on a single plate
+        - Enables retroactive failure detection (e.g., t=1hr looked good but t=12hr shows failure)
+        - Can read new experiment and previously successful experiments simultaneously
+        - Helps track formulation stability over time and update model with failure data
     - Both operations can be triggered independently via MQTT commands
     - **Response payloads include input_message for traceability**
     - **Supports measuring absorbance of both new and previously successful experiments**

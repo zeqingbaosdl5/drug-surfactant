@@ -333,7 +333,7 @@ def plate_on_hs_to_reader(labware_to_shake, speed, time):
     hs_mod.open_labware_latch()
 
 
-def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False):
+def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False, wells_to_read=None):
     """
     Run a mixing experiment using real Opentrons API operations.
     Based on drug_surfactant_otflex_template.py pattern.
@@ -347,6 +347,11 @@ def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False
         Target well in deepplate for mixing, default "A1"
     read_after_mixing : bool
         If True, read absorbance after mixing, default False
+    wells_to_read : list or str, optional
+        Wells to read for absorbance. Can be:
+        - "all": read all 96 wells
+        - list of well names: ["A1", "A2", "B1"] - read specific wells (e.g., all currently occupied wells)
+        - None: only read the target_well (default behavior for backward compatibility)
     
     Returns
     -------
@@ -357,6 +362,8 @@ def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False
     print(f"  Formulation: {formulation}")
     print(f"  Target well: {target_well}")
     print(f"  Read after mixing: {read_after_mixing}")
+    if read_after_mixing:
+        print(f"  Wells to read: {wells_to_read if wells_to_read is not None else [target_well]}")
     
     operations = []
     
@@ -430,16 +437,28 @@ def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False
     
     # Optionally read absorbance after mixing
     # This enables measuring both new experiments and previously successful ones
+    # to detect retroactive failures (e.g., t=1hr looked good but t=12hr shows failure)
     if read_after_mixing:
+        # Determine which wells to read
+        if wells_to_read is None:
+            # Default: only read the current experiment well
+            wells_for_reading = [target_well]
+        else:
+            # Read specified wells (e.g., all currently occupied wells on the plate)
+            wells_for_reading = wells_to_read
+        
         print(f"  Reading absorbance after mixing")
+        print(f"    Wells: {wells_for_reading if wells_for_reading != 'all' else 'all 96 wells'}")
+        
         # In real hardware, protocol.move_labware would transfer plate to reader
         # For simulation, we read directly
-        absorbance_data = read_absorbance([600], [target_well])
+        absorbance_data = read_absorbance([600], wells_for_reading)
         result["absorbance_data"] = absorbance_data
+        result["wells_read"] = len(absorbance_data) if isinstance(absorbance_data, dict) else 0
         operations.append({
             "action": "read_absorbance",
             "wavelengths": [600],
-            "wells": [target_well]
+            "wells": wells_for_reading
         })
     
     print(f"  Mixing complete")
@@ -463,6 +482,7 @@ def handle_mixing_command(payload):
     formulation = command.get("formulation", {})
     target_well = command.get("target_well", "A1")
     read_after_mixing = command.get("read_after_mixing", False)
+    wells_to_read = command.get("wells_to_read", None)  # New parameter
     
     print(f"\nProcessing mixing command:")
     print(f"  Experiment ID: {experiment_id}")
@@ -470,7 +490,7 @@ def handle_mixing_command(payload):
     
     try:
         # Run the mixing experiment with real Opentrons operations
-        result = run_mixing_experiment(formulation, target_well, read_after_mixing)
+        result = run_mixing_experiment(formulation, target_well, read_after_mixing, wells_to_read)
         
         print(f"Mixing experiment completed successfully")
         print(f"  Total volume: {result['total_volume']} µL")
