@@ -576,34 +576,47 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
     df_design['obj_surf_conc'] = None
 
     # Check for duplicate suggestions (should not happen with proper Ax usage)
-    param_cols = ['Drug_MW', 'Drug_LogP', 'Drug_TPSA', 'surf_1', 'surf_1_conc', 
-                  'surf_2', 'surf_2_conc', 'drug_conc']
-    duplicates_in_batch = df_design[param_cols].duplicated(keep=False)
-    if duplicates_in_batch.any():
-        print(f"\n{'!'*80}")
-        print(f"WARNING: Found {duplicates_in_batch.sum()} duplicate parameter sets in this batch!")
-        print(f"This suggests the generation strategy may not be working correctly.")
-        print(f"Duplicate rows:")
-        print(df_design[duplicates_in_batch][param_cols])
-        print(f"{'!'*80}\n")
+    # Only check surfactant and drug concentration parameters (drug properties are fixed per drug)
+    param_cols = ['surf_1', 'surf_1_conc', 'surf_2', 'surf_2_conc', 'drug_conc']
+    # Filter to only existing columns
+    param_cols = [col for col in param_cols if col in df_design.columns]
     
-    # Check for duplicates against all historical data
-    all_trials_df = ax_client.get_trials_data_frame()
-    if len(all_trials_df) > len(df_design):
-        # Compare new trials against historical trials (excluding the new ones)
-        historical_trials = all_trials_df.iloc[:-len(df_design)]
-        for idx, row in df_design.iterrows():
-            match_found = False
-            for _, hist_row in historical_trials.iterrows():
-                if all(row[col] == hist_row[col] for col in param_cols if col in hist_row):
-                    match_found = True
+    if param_cols:
+        duplicates_in_batch = df_design[param_cols].duplicated(keep=False)
+        if duplicates_in_batch.any():
+            # Count unique parameter sets that have duplicates
+            num_duplicate_sets = len(df_design[duplicates_in_batch][param_cols].drop_duplicates())
+            print(f"\n{'!'*80}")
+            print(f"WARNING: Found {num_duplicate_sets} unique parameter set(s) with duplicates in this batch!")
+            print(f"This suggests the generation strategy may not be working correctly.")
+            print(f"Duplicate rows:")
+            print(df_design[duplicates_in_batch][['trial_index', 'drug_name'] + param_cols])
+            print(f"{'!'*80}\n")
+        
+        # Check for duplicates against historical data
+        # Use trial_index to identify which trials are new
+        all_trials_df = ax_client.get_trials_data_frame()
+        new_trial_indices = set(df_design['trial_index'].values)
+        historical_trials = all_trials_df[~all_trials_df['trial_index'].isin(new_trial_indices)]
+        
+        if len(historical_trials) > 0:
+            # Use merge to efficiently find duplicates
+            historical_params = historical_trials[param_cols] if all(col in historical_trials.columns for col in param_cols) else None
+            if historical_params is not None:
+                # Create a merged dataframe to find matching parameter sets
+                new_params = df_design[['trial_index'] + param_cols]
+                merged = new_params.merge(
+                    historical_params,
+                    on=param_cols,
+                    how='inner'
+                )
+                
+                if len(merged) > 0:
                     print(f"\n{'!'*80}")
-                    print(f"WARNING: Trial {row['trial_index']} duplicates historical trial!")
+                    print(f"WARNING: Found {len(merged)} new trial(s) that duplicate historical trials!")
                     print(f"This suggests Sobol sequence was restarted incorrectly.")
+                    print(f"Duplicate trial indices: {merged['trial_index'].tolist()}")
                     print(f"{'!'*80}\n")
-                    break
-            if match_found:
-                break
 
     # 9. 保存状态
     ax_client.save_to_json_file(f"{optimizer_file_path}{current_iteration}.json")
