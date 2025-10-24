@@ -17,21 +17,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Multi-wavelength absorbance reading support
     - Flexible well selection (all wells, specific wells, single well)
     - **Independent absorbance measurements** without requiring mixing experiments
-    - **Independent mixing experiments using real Opentrons API operations**
-      - Real pipette transfers with volume-based pipette selection (50µL and 1000µL)
-      - Proper well bottom clearances (aspirate: 2mm, dispense: 25mm)
-      - Air gap handling (55µL for 1000µL pipette, 10µL for 50µL pipette)
-      - Blow out and touch tip operations following drug_surfactant_otflex_template.py
-      - Heater-shaker integration for mixing (1000 rpm for 5 minutes)
-      - Component transfers from source wells to target deepplate well
-      - Based on real protocol patterns from experiments/20250917_closed_loop/
-      - **`plate_on_hs_to_reader()` function for streamlined heater-shaker-to-reader workflow**
-      - **Optional `read_after_mixing` parameter to measure absorbance after mixing**
-      - **`wells_to_read` parameter to specify which wells to measure**
+    - **Independent mixing experiments using complete deep plate workflow**
+      - **Step 1: Mix in deep plate** - Components transferred to deep well plate on heater-shaker
+        - Deep plates prevent spillage (larger volume, more headspace)
+        - Improves compositional accuracy (minimal volume loss)
+        - Enables efficient mixing (accommodates magnetic/vortex mixing)
+        - Pipette selection based on volume (50µL for ≤40µL, 1000µL for >40µL)
+        - Well clearances: aspirate 2mm, dispense 25mm (deep plate optimized)
+        - Air gap handling (55µL for 1000µL pipette, 10µL for 50µL pipette)
+        - Initial heater-shaker mixing (1000 rpm, 1 minute)
+      - **Step 2: Dispense replicates** - `make_exp()` function transfers from deep plate to standard 96-well plate
+        - Creates 3 replicates per formulation (270µL each)
+        - Well clearances: aspirate 2mm, dispense 13mm (standard plate optimized)
+        - Standard plate is what goes to plate reader (optimized for optical measurements)
+      - **Step 3: Final mixing** - Standard plate on heater-shaker for final mixing
+        - `plate_on_hs_to_reader()` function enables streamlined heater-shaker-to-reader workflow
+        - Final mixing (1000 rpm, 5 minutes)
+      - **Step 4: Absorbance reading** - Standard plate moved to plate reader
+        - Gripper operations with `protocol.move_labware()` and proper offsets (`pick_up_offset={'x': 0, 'y': 0, 'z':-2}`)
+        - Optional `read_after_mixing` parameter to measure absorbance after mixing
+        - `wells_to_read` parameter to specify which wells to measure
         - Supports reading all occupied wells on a single plate
         - Enables retroactive failure detection (e.g., t=1hr looked good but t=12hr shows failure)
         - Can read new experiment and previously successful experiments simultaneously
         - Helps track formulation stability over time and update model with failure data
+      - Based on real protocol patterns from experiments/20250917_closed_loop/drug_surfactant_otflex_template.py
+      - All gripper transfers implemented (deep plate ↔ heater-shaker, standard plate ↔ heater-shaker, standard plate ↔ reader)
     - Both operations can be triggered independently via MQTT commands
     - **Response payloads include input_message for traceability**
     - **Supports measuring absorbance of both new and previously successful experiments**

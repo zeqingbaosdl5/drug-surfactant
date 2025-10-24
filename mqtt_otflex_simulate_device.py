@@ -333,6 +333,64 @@ def plate_on_hs_to_reader(labware_to_shake, speed, time):
     hs_mod.open_labware_latch()
 
 
+def make_exp(current_deep_well, next_plate_well, num_replicates=3):
+    """
+    Dispense formulation from deep plate well into multiple replicate wells on standard plate.
+    Based on drug_surfactant_otflex_template.py make_exp() function.
+    
+    This is the key step that transfers mixed formulation from deep wells to the 
+    standard 96-well plate that will go to the plate reader.
+    
+    Parameters
+    ----------
+    current_deep_well : str
+        Well in deep plate containing mixed formulation
+    next_plate_well : str
+        Starting well in standard plate for replicates
+    num_replicates : int
+        Number of replicate wells to create (default 3)
+    
+    Returns
+    -------
+    str
+        Next available well in standard plate
+    """
+    print(f"  Dispensing replicates from deep well {current_deep_well}")
+    
+    # Set well bottom clearances for standard plate dispensing (from template)
+    for pipette in [pipette_low, pipette_high]:
+        pipette.well_bottom_clearance.dispense = 13  # Shallower for standard plate
+        pipette.well_bottom_clearance.aspirate = 2
+    
+    # Generate replicate well list
+    replicate_wells = []
+    current_well = next_plate_well
+    for _ in range(num_replicates):
+        replicate_wells.append(current_well)
+        # Move to next well (simplified - in real code would use next_well() function)
+        current_well = chr(ord(current_well[0]) + (_ + 1) // 12) + str(((_ + 1) % 12) + 1) if current_well[1:] != '12' else chr(ord(current_well[0]) + 1) + '1'
+    
+    print(f"    Replicate wells: {replicate_wells}")
+    
+    # Dispense 270 µL into each replicate well (from template line 224)
+    pipette_high.pick_up_tip()
+    pipette_high.flow_rate.dispense = 50
+    for well in replicate_wells:
+        pipette_high.transfer(
+            270,
+            deepplate[current_deep_well],
+            plate[well],
+            new_tip='never',
+            air_gap=50
+        )
+        pipette_high.touch_tip(plate[well], v_offset=-3)
+    pipette_high.drop_tip()
+    
+    print(f"    Dispensed 270 µL into {len(replicate_wells)} wells")
+    
+    return replicate_wells[-1]  # Return last well used
+
+
 def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False, wells_to_read=None):
     """
     Run a mixing experiment using real Opentrons API operations.
@@ -417,51 +475,108 @@ def run_mixing_experiment(formulation, target_well="A1", read_after_mixing=False
                 "action": "transfer"
             })
     
-    # Shake the deepplate to mix using streamlined function
-    # (allows direct transfer to plate reader afterwards in real hardware)
-    print(f"  Mixing on heater shaker at 1000 rpm for 5 minutes")
-    plate_on_hs_to_reader(labware_to_shake=deepplate, speed=1000, time=5)
+    # Step 1: Mix components in deep plate on heater-shaker
+    # Deep plate provides: spillage prevention, compositional accuracy, efficient mixing
+    print(f"  Step 1: Moving deep plate to heater-shaker for mixing")
+    # In real hardware: protocol.move_labware(labware=deepplate, new_location=hs_adapter, use_gripper=True)
+    print("    [SIMULATION] Deep plate moved to heater-shaker adapter")
+    
+    print(f"  Step 2: Mixing on heater shaker at 1000 rpm for 1 minute (initial mix)")
+    plate_on_hs_to_reader(labware_to_shake=deepplate, speed=1000, time=1)
     
     operations.append({
-        "action": "shake",
+        "action": "shake_deep_plate",
         "speed_rpm": 1000,
-        "time_minutes": 5
+        "time_minutes": 1,
+        "location": "heater-shaker"
+    })
+    
+    print(f"  Step 3: Moving deep plate back to deck")
+    # In real hardware: protocol.move_labware(labware=deepplate, new_location='D2', use_gripper=True)
+    print("    [SIMULATION] Deep plate moved back to D2")
+    
+    # Step 2: Dispense replicates from deep plate to standard plate
+    # Standard plate is what goes to plate reader (optimized for optical measurements)
+    print(f"  Step 4: Dispensing replicates from deep plate to standard plate")
+    next_plate_well = "A1"  # Starting well for replicates
+    last_well = make_exp(current_deep_well=target_well, next_plate_well=next_plate_well, num_replicates=3)
+    
+    operations.append({
+        "action": "dispense_replicates",
+        "from_well": target_well,
+        "to_wells": f"A1 to {last_well}",
+        "num_replicates": 3,
+        "volume_per_replicate": 270
+    })
+    
+    # Step 3: Move standard plate to heater-shaker for final mixing
+    print(f"  Step 5: Moving standard plate to heater-shaker for final mixing")
+    # In real hardware: protocol.move_labware(labware=plate, new_location=hs_adapter, 
+    #                                        pick_up_offset={'x': 0, 'y': 0, 'z':-2}, 
+    #                                        drop_offset={'x': 0, 'y': 0, 'z': -5}, use_gripper=True)
+    print("    [SIMULATION] Standard plate moved to heater-shaker")
+    
+    print(f"  Step 6: Final mixing on heater shaker at 1000 rpm for 5 minutes")
+    plate_on_hs_to_reader(labware_to_shake=plate, speed=1000, time=5)
+    
+    operations.append({
+        "action": "shake_standard_plate",
+        "speed_rpm": 1000,
+        "time_minutes": 5,
+        "location": "heater-shaker"
     })
     
     result = {
         "operations": operations,
         "total_volume": sum(v for v in formulation.values() if v > 0),
         "num_components": sum(1 for v in formulation.values() if v > 0),
-        "target_well": target_well
+        "target_deep_well": target_well,
+        "replicate_wells": f"A1 to {last_well}"
     }
     
-    # Optionally read absorbance after mixing
+    # Step 4: Optionally read absorbance after mixing
     # This enables measuring both new experiments and previously successful ones
     # to detect retroactive failures (e.g., t=1hr looked good but t=12hr shows failure)
     if read_after_mixing:
         # Determine which wells to read
         if wells_to_read is None:
-            # Default: only read the current experiment well
-            wells_for_reading = [target_well]
+            # Default: only read the replicate wells just created
+            wells_for_reading = ["A1", "A2", "A3"]  # The 3 replicates
         else:
             # Read specified wells (e.g., all currently occupied wells on the plate)
             wells_for_reading = wells_to_read
         
-        print(f"  Reading absorbance after mixing")
+        print(f"  Step 7: Reading absorbance after mixing")
         print(f"    Wells: {wells_for_reading if wells_for_reading != 'all' else 'all 96 wells'}")
         
-        # In real hardware, protocol.move_labware would transfer plate to reader
-        # For simulation, we read directly
+        # Move standard plate to plate reader
+        print(f"    Moving standard plate to plate reader")
+        # In real hardware: 
+        # pr_mod.open_lid()
+        # protocol.move_labware(labware=plate, new_location=pr_mod, use_gripper=True)
+        # pr_mod.close_lid()
+        print("    [SIMULATION] Standard plate moved to plate reader")
+        
+        # Read absorbance
         absorbance_data = read_absorbance([600], wells_for_reading)
         result["absorbance_data"] = absorbance_data
         result["wells_read"] = len(absorbance_data) if isinstance(absorbance_data, dict) else 0
+        
+        # Move plate back to deck
+        print(f"    Moving standard plate back to deck")
+        # In real hardware:
+        # pr_mod.open_lid()
+        # protocol.move_labware(labware=plate, new_location='D1', use_gripper=True)
+        print("    [SIMULATION] Standard plate moved back to D1")
+        
         operations.append({
             "action": "read_absorbance",
             "wavelengths": [600],
-            "wells": wells_for_reading
+            "wells": wells_for_reading,
+            "plate": "standard_plate"
         })
     
-    print(f"  Mixing complete")
+    print(f"  Mixing workflow complete")
     
     return result
 
