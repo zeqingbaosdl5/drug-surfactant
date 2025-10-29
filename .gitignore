@@ -6,3 +6,4 @@ __pycache__/
 orchestrator_results.json
 otflex_experiment_results.json
 async_absorbance_results.json
+.vscode/settings.json
