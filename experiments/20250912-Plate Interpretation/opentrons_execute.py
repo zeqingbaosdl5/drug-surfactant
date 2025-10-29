@@ -1,17 +1,21 @@
 import re
+import os
 
-import opentrons.simulate
-# import opentrons.execute
+SIMULATION_MODE = os.getenv("SIMULATION_MODE", "true").lower() == "true"
 
-metadata = {
-    "description": "Written in 2025.05",
-    "author": "Zeqing Bao and Yunhee Hwang"
-}
+if SIMULATION_MODE:
+    print("Running in simulation mode.")
+    import opentrons.simulate
+    protocol = opentrons.simulate.get_protocol_api("2.21")
+else:
+    print("WARNING: Running on physical hardware.")
+    import opentrons.execute
+    protocol = opentrons.execute.get_protocol_api("2.21")
 
-# 2.16 tested with https://github.com/AccelerationConsortium/ac-training-lab/blob/3988313d80d3d9b1f2a795ceb8701194af00d8e3/src/ac_training_lab/ot-2/_scripts/OT2mqtt.py # noqa: E501
+print(f"Protocol API {protocol.api_version} loaded.")
+
+# NOTE: 2.16 tested with https://github.com/AccelerationConsortium/ac-training-lab/blob/3988313d80d3d9b1f2a795ceb8701194af00d8e3/src/ac_training_lab/ot-2/_scripts/OT2mqtt.py # noqa: E501
 # protocol = opentrons.execute.get_protocol_api("2.16")
-
-protocol = opentrons.execute.get_protocol_api("2.21")
 
 def main(data):
     # robot setup
