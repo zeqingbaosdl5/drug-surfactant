@@ -1,7 +1,8 @@
 import re
 import os
+from distutils.util import strtobool
 
-SIMULATION_MODE = os.getenv("SIMULATION_MODE", "true").lower() == "true"
+SIMULATION_MODE = bool(strtobool(os.getenv("SIMULATION_MODE", "true")))
 
 if SIMULATION_MODE:
     print("Running in simulation mode.")
@@ -26,5 +27,6 @@ pr_mod.initialize(
     mode="single", wavelengths=[600]
 )  # can add (reference_wavelength=) for normalization (reference wavelenth data will be subtracted from wavelength indicated)
 pr_data = pr_mod.read()
+print(pr_data)
 pr_data[600]["A1"]
 pr_data = pr_mod.read(export_filename="raw_absorbance_in")  # CSV file

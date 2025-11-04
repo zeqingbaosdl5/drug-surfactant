@@ -1,5 +1,12 @@
 from opentrons import protocol_api
 
+metadata = {
+    "description": "Written in 2025.05",
+    "author": "Zeqing Bao and Yunhee Hwang",
+}
+
+requirements = {"robotType": "Flex", "apiLevel": "2.21"}
+
 
 def run(protocol: protocol_api.ProtocolContext):
 
