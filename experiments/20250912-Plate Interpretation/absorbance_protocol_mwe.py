@@ -8,10 +8,21 @@ metadata = {
 requirements = {"robotType": "Flex", "apiLevel": "2.23"}
 
 
-def run(protocol: protocol_api.ProtocolContext):
+def add_parameters(parameters: protocol_api.Parameters):
+    parameters.add_int(
+        display_name="Wavelength",
+        variable_name="wavelength",
+        default=600,
+        minimum=300,
+        maximum=1000,
+        unit="nm",
+        description="Absorbance wavelength for the plate reader.",
+    )
 
-    # Add runtime parameter for wavelength
-    wavelength = protocol.add_parameter("wavelength", type=int, default=600)
+
+def run(protocol: protocol_api.ProtocolContext):
+    # Access runtime parameter for wavelength
+    wavelength = protocol.params.wavelength
 
     pr_mod = protocol.load_module(module_name="absorbanceReaderV1", location="C3")
 
