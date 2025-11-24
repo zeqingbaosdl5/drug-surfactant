@@ -468,12 +468,14 @@ def add_drug_names(df):
 
 
 def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
-    best_concs = {}
 
-    # 1. 加载或恢复上一次的 AxClient
+
+    # 1. 加载或恢复上一次的 AxClient (Load AxClient)
     if current_iteration == 0:
         ax_client = AxClient.load_from_json_file(optimizer_file_path + '00.json')
+        best_concs = None
         best_conc = None
+        data_so_far = None
         
     else:
         ax_client = AxClient.load_from_json_file(
@@ -483,7 +485,7 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
         data_so_far = add_drug_names(data_so_far)
         best_concs = lowest_so_far(data_so_far, drug_list)
 
-    # 2. 切换到对应的 generation step（sobol/bo）
+    # 2. 切换到对应的 generation step（sobol/bo） (Switch to generation step)
     ax_client.generation_strategy._curr = ax_client.generation_strategy._steps[bopt]
 
     trials_data = []
@@ -493,14 +495,15 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
         count += 1
         print(f"\n{'*'*80} {count}/{len(drug_list)} {'*'*80}\n")
 
-        # 3. 构造固定的药物特征
+        # 3. 构造固定的药物特征 (Construct fixed drug features)
         drug_props = normalize_drug_properties_dict[drug]["normalized_properties"].copy()
         drug_props["drug_conc"] = 100  # 固定药浓度
         drug_features = ObservationFeatures(parameters=drug_props)
 
-        # 4. 取出该 drug 的最新 best_conc
-    if current_iteration > 0:
-        best_conc = best_concs[drug]
+        # 4. 取出该 drug 的最新 best_conc (Apply constraints and clear cache)
+       # if current_iteration > 0 and isinstance(best_conc, (int, float)):
+        if current_iteration > 0:
+            best_conc = best_concs[drug]
 
         # 5. 构造并替换新的 search_space 约束
         space = ax_client.experiment.search_space
@@ -508,14 +511,17 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
             space._parameters["surf_1_conc"],
             space._parameters["surf_2_conc"],
         ]
-        new_constraints = [
+        if best_concs is not None and isinstance(best_conc, (int, float)):
+            new_constraints = [
             # 上界：surf_1_conc + surf_2_conc <= best_conc - 1
-            SumConstraint(parameters=param_objs, is_upper_bound=True,  bound=best_conc -2),
+            SumConstraint(parameters=param_objs, is_upper_bound=True,  bound=best_conc*0.9),
             # 下界：surf_1_conc + surf_2_conc >= 1
             SumConstraint(parameters=param_objs, is_upper_bound=False, bound=1),
         ]
-        space._parameter_constraints = new_constraints
-        print(f"Update constraints (drug={drug})：surf_1_conc+surf_2_conc <= {best_conc -2}，>=1")
+        
+            space._parameter_constraints = new_constraints
+            print(f"Update constraints (drug={drug})：surf_1_conc+surf_2_conc <= {best_conc*0.9}，>=1")
+        
 
         # 6. 清除 BoTorch/SAASBO 的拟合缓存，确保使用最新约束重新 fit
         gs = ax_client.generation_strategy
@@ -531,7 +537,7 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
         if hasattr(gs, "_model"):
             gs._model = None
 
-        # 7. 用单条 get_next_trial(force=True) 循环生成 n_trials
+        # 7. 用单条 get_next_trial(force=True) 循环生成 n_trials (Generate trials for the current iteration)
         for _ in range(n_trials):
             parameters, trial_index = ax_client.get_next_trial(
                 fixed_features=drug_features,
@@ -543,12 +549,12 @@ def run_optimizer(current_iteration, drug_list, bopt,n_trials=1):
                 **parameters,
             })
 
-    # 8. 整理返回的 DataFrame
+    # 8. 整理返回的 DataFrame (Organize the returned DataFrame)
     df_design = pd.DataFrame(trials_data)
     df_design['surf_conc'] = df_design['surf_1_conc'] + df_design['surf_2_conc']
     df_design['obj_surf_conc'] = None
 
-    # 9. 保存状态
+    # 9. 保存状态 (Save state)
     ax_client.save_to_json_file(f"{optimizer_file_path}{current_iteration}.json")
     df_design.to_csv(f"{design_file_path}i{current_iteration}.csv", index=False)
 
@@ -569,31 +575,31 @@ def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
     with open(input_path, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
-    # To label data file name from plate reader
-    for i, line in enumerate(lines):
-        stripped = line.strip()
-        if stripped.startswith('pr_data = pr_mod.read(export_filename="raw_absorbance_in")'):
-            indent = line[:len(line) - len(line.lstrip())]
-            lines[i] = f'{indent}pr_data = pr_mod.read(export_filename = "raw_absorbance_i{n}")\n'
-            break
-
-    
     # Replace plate wells in lines (modify in place)
     found_plate = False
     found_deep = False
+ 
     for i, line in enumerate(lines):
-        stripped = line.strip()
-        if not found_plate and stripped.startswith("next_plate_well") and "'H3'" in stripped:
-            indent = line[:len(line) - len(line.lstrip())]
-            lines[i] = f"{indent}next_plate_well = '{plate_well}'\n"
+        # Replace next_plate_well
+        if not found_plate and re.search(r"next_plate_well\s*=", line):
+            lines[i] = re.sub(
+                r"next_plate_well\s*=.*",
+                f"next_plate_well = '{plate_well}'",
+                line
+            )
             found_plate = True
-        elif not found_deep and stripped.startswith("next_deepplate_well") and "'H3'" in stripped:
-            indent = line[:len(line) - len(line.lstrip())]
-            lines[i] = f"{indent}next_deepplate_well = '{deepplate_well}'\n"
+
+    # Replace next_deepplate_well
+        if not found_deep and re.search(r"next_deepplate_well\s*=", line):
+            lines[i] = re.sub(
+                r"next_deepplate_well\s*=.*",
+                f"next_deepplate_well = '{deepplate_well}'",
+                line
+            )
             found_deep = True
+
         if found_plate and found_deep:
             break
-    
 
     df_vol_list = []
     for idx, row in df_vol.iterrows():
@@ -613,18 +619,13 @@ def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
     end_idx = None
 
     for i, line in enumerate(lines):
-        if "# to be rewritten according to the exp design" in line:
-            for j in range(i + 1, len(lines)):
-                if lines[j].strip().startswith("#") and "data = [" in lines[j + 1]:
-                    start_idx = j
-                    break
-            break
-
-    if start_idx is not None:
-        for k in range(start_idx + 1, len(lines)):
-            if lines[k].strip().startswith("#") and k > start_idx + 1:
-                end_idx = k
+        if re.match(r"\s*#{20,}", line):   # at least 20 '#' in a row
+            if start_idx is None:
+                start_idx = i
+            elif end_idx is None:
+                end_idx = i
                 break
+    
 
     # Extract indent prefix AFTER finding start_idx
     if start_idx is not None:
@@ -654,6 +655,7 @@ def generate_protocol(df_vol, iteration, plate_well, deepplate_well):
         print(f"✅ Successfully wrote to: {output_path}")
     else:
         print("❌ Could not locate the block to replace.")
+
 
 def load_design_optimizer(iteration):
 

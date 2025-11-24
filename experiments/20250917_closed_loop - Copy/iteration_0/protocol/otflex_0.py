@@ -6,7 +6,7 @@ metadata = {
     "author": "Zeqing Bao and Yunhee Hwang"
 }
 
-requirements = {"robotType": "Flex", "apiLevel": "2.19"}
+requirements = {"robotType": "Flex", "apiLevel": "2.21"}
 
 
 def run(protocol: protocol_api.ProtocolContext):
@@ -20,6 +20,8 @@ def run(protocol: protocol_api.ProtocolContext):
 
     hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
     hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
+
+    pr_mod = protocol.load_module(module_name="absorbanceReaderV1", location="C3")
     
     # attach pipette 
     pipette_low = protocol.load_instrument(instrument_name="flex_1channel_50", mount="right", tip_racks=[tip50])
@@ -37,10 +39,10 @@ def run(protocol: protocol_api.ProtocolContext):
 
     # load second stock plate with 4 surfactants + pyrene in deck slot C2
     surfactant_drug_dmso_stock_2 = protocol.load_labware(load_name="allenlab_8_wellplate_20000ul", location="C2")
-    s9 = surfactant_drug_dmso_stock_2['A1']
-    s10 = surfactant_drug_dmso_stock_2['A2']
-    s11 = surfactant_drug_dmso_stock_2['A3']
-    s12 = surfactant_drug_dmso_stock_2['A4']
+#    s9 = surfactant_drug_dmso_stock_2['A1']
+#    s10 = surfactant_drug_dmso_stock_2['A2']
+#    s11 = surfactant_drug_dmso_stock_2['A3']
+#    s12 = surfactant_drug_dmso_stock_2['A4']
     ibp = surfactant_drug_dmso_stock_2['B1']
     lov = surfactant_drug_dmso_stock_2['B2']
     dcf = surfactant_drug_dmso_stock_2['B3']
@@ -49,18 +51,18 @@ def run(protocol: protocol_api.ProtocolContext):
 #    dmso = surfactant_drug_dmso_stock_2['B2']
 
     # load water in deck slot C3
-    water_res = protocol.load_labware('nest_1_reservoir_290ml','C3')
-    water = water_res['A1']
+    #water_res = protocol.load_labware('nest_1_reservoir_290ml','C3')
+    water = surfactant_drug_dmso_stock_2['A1']
     
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'A1'
+    next_plate_well = 'A2'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'A1'
+    next_deepplate_well = 'A2'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -74,10 +76,10 @@ def run(protocol: protocol_api.ProtocolContext):
         's6': s6,
         's7': s7,
         's8': s8,
-        's9': s9,
-        's10': s10,
-        's11': s11,
-        's12': s12,
+     #   's9': s9,
+     #   's10': s10,
+     #   's11': s11,
+     #   's12': s12,
         'water': water,
         'IBP': ibp,
         'LOV': lov,
@@ -124,8 +126,20 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.move_labware(labware=labware_to_shake, new_location= new_location, pick_up_offset={'x': 0, 'y': 0, 'z':-2}, use_gripper=True)
 
 
+    def plate_on_pr(labware_to_read, new_location):
+        pr_mod.close_lid()
+        pr_mod.initialize(mode="single", wavelengths=[600]) # can add (reference_wavelength=) for normalization (reference wavelenth data will be subtracted from wavelength indicated)
+        pr_mod.open_lid()
+        protocol.move_labware(labware=labware_to_read, new_location= pr_mod, use_gripper=True)
+        pr_mod.close_lid()
+        pr_data = pr_mod.read()
+        pr_data[600]["A1"]
+        pr_data = pr_mod.read(export_filename="raw_absorbance_in") #CSV file
+        pr_mod.open_lid()
+        protocol.move_labware(labware=labware_to_read, new_location= new_location, use_gripper=True)
 
-    # to be rewritten according to the exp design
+
+    # to be treated as an input arguement in the future
 ########################################################################################################################################
     data = [
     {
@@ -143,15 +157,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "780.0",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "1",
         "trial_index": "1",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -163,15 +174,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "600.0",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "2",
         "trial_index": "2",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "48.0",
@@ -183,15 +191,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "828.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "3",
         "trial_index": "3",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "1092.0",
         "s2": "12.0",
@@ -203,10 +208,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "95.99999999999986",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     },
     {
         "": "4",
@@ -223,15 +225,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "647.9999999999999",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "5",
         "trial_index": "5",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "912.0",
         "s2": "0.0",
@@ -243,15 +242,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "215.99999999999997",
         "dmso": "0.0",
         "water": "71.99999999999984",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "6",
         "trial_index": "6",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "36.0",
@@ -263,15 +259,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "708.0",
         "dmso": "0.0",
         "water": "455.99999999999994",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "7",
         "trial_index": "7",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -283,10 +276,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "383.9999999999999",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     },
     {
         "": "8",
@@ -303,15 +293,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "252.0",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "9",
         "trial_index": "9",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -323,15 +310,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "215.99999999999997",
         "dmso": "0.0",
         "water": "840.0",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "10",
         "trial_index": "10",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "120.0",
         "s2": "0.0",
@@ -343,15 +327,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "816.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "11",
         "trial_index": "11",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "660.0",
@@ -363,10 +344,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "252.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     },
     {
         "": "12",
@@ -383,15 +361,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "732.0",
         "dmso": "0.0",
         "water": "323.99999999999994",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "13",
         "trial_index": "13",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "1032.0",
         "s2": "0.0",
@@ -403,15 +378,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "167.99999999999991",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "14",
         "trial_index": "14",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "12.0",
@@ -423,15 +395,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "287.99999999999994",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "15",
         "trial_index": "15",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "683.9999999999999",
         "s2": "0.0",
@@ -443,10 +412,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "372.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     },
     {
         "": "16",
@@ -463,15 +429,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "588.0",
         "dmso": "0.0",
         "water": "191.99999999999994",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "17",
         "trial_index": "17",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "180.0",
@@ -483,15 +446,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "756.0",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "18",
         "trial_index": "18",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "348.0",
@@ -503,15 +463,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "852.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "19",
         "trial_index": "19",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -523,10 +480,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "431.99999999999994",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     },
     {
         "": "20",
@@ -543,15 +497,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "348.0",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "21",
         "trial_index": "21",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -563,15 +514,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "203.99999999999997",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "22",
         "trial_index": "22",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -583,15 +531,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "24.0",
         "dmso": "0.0",
         "water": "816.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "23",
         "trial_index": "23",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "755.9999999999999",
         "s2": "0.0",
@@ -603,10 +548,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "144.0000000000001",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     },
     {
         "": "24",
@@ -623,15 +565,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "612.0",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "25",
         "trial_index": "25",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -643,15 +582,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "108.0000000000001",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "26",
         "trial_index": "26",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "0.0",
@@ -663,15 +599,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "756.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "27",
         "trial_index": "27",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "96.0",
         "s2": "0.0",
@@ -683,10 +616,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "1068.0",
         "dmso": "0.0",
         "water": "35.99999999999981",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     },
     {
         "": "28",
@@ -703,15 +633,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "552.0",
-        "IBP": "180.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "29",
         "trial_index": "29",
-        "drug_name": "LOV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "996.0",
@@ -723,15 +650,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "12.00000000000001",
-        "IBP": "0.0",
-        "LOV": "180.0",
-        "DCF": "0.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "30",
         "trial_index": "30",
-        "drug_name": "DCF",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
         "s2": "180.0",
@@ -743,15 +667,12 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "863.9999999999999",
         "dmso": "0.0",
         "water": "156.00000000000014",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "180.0",
-        "GLV": "0.0"
+        "IBP": "180.0"
     },
     {
         "": "31",
         "trial_index": "31",
-        "drug_name": "GLV",
+        "drug_name": "IBP",
         "drug": "180.0",
         "s1": "635.9999999999999",
         "s2": "0.0",
@@ -763,10 +684,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "s8": "0.0",
         "dmso": "0.0",
         "water": "396.0",
-        "IBP": "0.0",
-        "LOV": "0.0",
-        "DCF": "0.0",
-        "GLV": "180.0"
+        "IBP": "180.0"
     }
 ]
 ########################################################################################################################################
@@ -784,7 +702,7 @@ def run(protocol: protocol_api.ProtocolContext):
             if vol > 0:
                 pipette.pick_up_tip()
                 pipette_high.flow_rate.dispense= 50
-                air_gap_vol = 50 if pipette == pipette_high else 10 #do air gap 50 for 1000uL tip
+                air_gap_vol = 55 if pipette == pipette_high else 10 #do air gap 50 for 1000uL tip
                 hs_mod.close_labware_latch()
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap= air_gap_vol)
                 pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))
@@ -853,3 +771,4 @@ def run(protocol: protocol_api.ProtocolContext):
         
 
     plate_on_hs(labware_to_shake=plate, new_location='D1', time=5, speed=1000) # time in minutes, speed in rpm
+    plate_on_pr(labware_to_read= plate, new_location= "D1")
