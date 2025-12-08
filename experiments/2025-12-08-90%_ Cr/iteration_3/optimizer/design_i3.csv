@@ -1,0 +1,5 @@
+trial_index,drug_name,Drug_MW,Drug_LogP,Drug_TPSA,surf_1_conc,surf_2_conc,drug_conc,surf_1,surf_2,surf_conc,obj_surf_conc
+16,IBP,0.2063,0.3073,0.0373,0,15,25.0,s2,s6,15,
+17,IBP,0.2063,0.3073,0.0373,0,15,25.0,s2,s6,15,
+18,IBP,0.2063,0.3073,0.0373,0,15,25.0,s2,s6,15,
+19,IBP,0.2063,0.3073,0.0373,0,15,25.0,s2,s6,15,
