@@ -57,12 +57,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # load well plate in deck slot D1
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat", location='D1')
     #plate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat") #use this if the plate is already loaded on the shaker
-    next_plate_well = 'C1'
+    next_plate_well = 'A1'
 
     # load deep well plate in deck slot D2
     #deepplate = protocol.load_labware('allenlabresevoir_96_wellplate_2200ul', location = 'D2')
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat")
-    next_deepplate_well = 'C1'
+    next_deepplate_well = 'A!'
 
     # trash bin
     trash = protocol.load_trash_bin(location="A3")
@@ -148,15 +148,15 @@ def run(protocol: protocol_api.ProtocolContext):
         "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
-        "s2": "84.0",
+        "s2": "0.0",
         "s3": "0.0",
         "s4": "0.0",
         "s5": "0.0",
-        "s6": "168.0",
-        "s7": "0.0",
+        "s6": "12.0",
+        "s7": "12.0",
         "s8": "0.0",
         "dmso": "0.0",
-        "water": "948.0",
+        "water": "1176.0",
         "IBP": "180.0"
     },
     {
@@ -165,15 +165,15 @@ def run(protocol: protocol_api.ProtocolContext):
         "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
-        "s2": "96.0",
+        "s2": "0.0",
         "s3": "0.0",
         "s4": "0.0",
         "s5": "0.0",
-        "s6": "180.0",
-        "s7": "0.0",
+        "s6": "12.0",
+        "s7": "12.0",
         "s8": "0.0",
         "dmso": "0.0",
-        "water": "923.9999999999999",
+        "water": "1176.0",
         "IBP": "180.0"
     },
     {
@@ -182,15 +182,15 @@ def run(protocol: protocol_api.ProtocolContext):
         "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
-        "s2": "72.0",
+        "s2": "0.0",
         "s3": "0.0",
         "s4": "0.0",
         "s5": "0.0",
-        "s6": "192.0",
-        "s7": "0.0",
+        "s6": "12.0",
+        "s7": "12.0",
         "s8": "0.0",
         "dmso": "0.0",
-        "water": "936.0",
+        "water": "1176.0",
         "IBP": "180.0"
     },
     {
@@ -199,15 +199,15 @@ def run(protocol: protocol_api.ProtocolContext):
         "drug_name": "IBP",
         "drug": "180.0",
         "s1": "0.0",
-        "s2": "107.99999999999999",
+        "s2": "0.0",
         "s3": "0.0",
         "s4": "0.0",
         "s5": "0.0",
-        "s6": "168.0",
-        "s7": "0.0",
+        "s6": "12.0",
+        "s7": "12.0",
         "s8": "0.0",
         "dmso": "0.0",
-        "water": "923.9999999999999",
+        "water": "1176.0",
         "IBP": "180.0"
     }
 ]
@@ -254,7 +254,7 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_high.pick_up_tip()
         pipette_high.flow_rate.dispense = 50
         for well in replicate_wells:
-            pipette_high.transfer(270, deepplate[current_surfactant_well], plate[well], new_tip='never', air_gap= 50) #do air gap 50 for 1000uL tip
+            pipette_high.transfer(270, deepplate[current_surfactant_well], plate[well], new_tip='never', air_gap= 60) #do air gap 50 for 1000uL tip
             pipette_high.touch_tip(plate[well], v_offset=-3)
         pipette_high.drop_tip()
 
