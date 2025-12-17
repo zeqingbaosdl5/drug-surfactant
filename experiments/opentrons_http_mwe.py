@@ -201,74 +201,16 @@ def run_absorbance_protocol():
             download_data_file(fid, save_path)
             print(f"Downloaded data file {fid} -> {save_path}")
     else:
-        # Fallback: some robot versions or protocols may not populate outputFileIds. (assumption by Copilot, not verified)
-        # Use existing heuristic: scan /dataFiles and pick newest matching name.
-        print(
-            "No outputFileIds on run; falling back to scanning /dataFiles by name/createdAt."
+        # Require explicit run outputs. Failing fast reduces risk of downloading
+        # stale files when multiple data files share names on the robot.
+        raise RuntimeError(
+            "Run did not report any outputFileIds; cannot reliably determine "
+            "which data files belong to this run. Ensure your protocol registers "
+            "output files (or write a unique filename per run via a runtime "
+            "parameter) so the client can download results deterministically."
+            f" Run details: {run_details}"
+            f" All data files: {get_data_files()}"
         )
-        data_files = get_data_files().get("data", [])
-        # Find matching files (may be multiple from previous runs) and pick the newest
-        matches = [f for f in data_files if "raw_absorbance_in" in f.get("name", "")]
-        if not matches:
-            print("No absorbance data files found matching 'raw_absorbance_in'.")
-        else:
-            # Prefer sorting by createdAt if available (ISO8601); otherwise use list order
-            try:
-                matches_sorted = sorted(
-                    matches, key=lambda x: x.get("createdAt", ""), reverse=True
-                )
-            except Exception:
-                matches_sorted = matches
-            chosen = matches_sorted[0]
-            file_id = chosen["id"]
-            filename = chosen.get("name") or f"raw_absorbance_in_{file_id}"
-            save_path = f"/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/{filename}"
-            download_data_file(file_id, save_path)
-            print(f"Downloaded absorbance data to: {save_path}")
-            if len(matches_sorted) > 1:
-                print(
-                    f"Note: {len(matches_sorted)} matching files exist; downloaded the newest one."
-                )
-
-
-def run_minimal_param_protocol(wavelength_value=500):
-    """Upload and run a minimal protocol that prints its runtime parameter.
-
-    This helps confirm whether the robot uses the runtime parameter value.
-    """
-    protocol_path = "/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/minimal_runtime_param_protocol.py"
-
-    # Upload
-    upload_response = upload_protocol(protocol_path)
-    protocol_id = upload_response["data"]["id"]
-    print(f"Uploaded minimal protocol: {protocol_id}")
-
-    # Inspect protocol analysis (debug)
-    analyses = get_protocol_analyses(protocol_id)
-    print("Analyses:", analyses.get("data", []))
-
-    # Create run with runtime parameter
-    run_response = create_run(protocol_id, {"wavelength": wavelength_value})
-    run_id = run_response["data"]["id"]
-    print(f"Created run: {run_id} with wavelength={wavelength_value}")
-
-    # Start run
-    start_run(run_id)
-    print(f"Started run: {run_id}")
-
-    # Wait and monitor logs (wait_for_run_completion prints status and new log lines)
-    final_status = wait_for_run_completion(run_id)
-    print(f"Run completed with status: {final_status}")
-
-    # After completion, fetch recent api.log and search for the printed marker
-    api_log = get_log("api.log")
-    if f"RUNTIME_PARAM_WAVELENGTH={wavelength_value}" in api_log:
-        print("Found runtime parameter printed in api.log")
-    else:
-        print(
-            "Did not find printed runtime parameter in api.log; showing last 2000 chars:"
-        )
-        print(api_log[-2000:])
 
 
 # Example usage
@@ -279,8 +221,5 @@ if __name__ == "__main__":
 
     # Run the absorbance protocol
     run_absorbance_protocol()
-
-    # run the minimal parameter protocol with a test wavelength
-    # run_minimal_param_protocol(wavelength_value=550)
 
     1 + 1
