@@ -1,5 +1,7 @@
 import requests
 import json
+import os
+import uuid
 
 # Opentrons HTTP API base URL (replace with your robot's IP)
 BASE_URL = "http://192.168.0.5:31950"  # Updated with provided IP
@@ -16,17 +18,21 @@ def get_health():
 
 def upload_protocol(protocol_file_path):
     """Upload a protocol file."""
+    # Force a unique filename to avoid server-side caching/stale analyses
+    base = os.path.basename(protocol_file_path)
+    prefix = uuid.uuid4().hex[:6]
+    unique_name = f"{prefix}_{base}"
     with open(protocol_file_path, "rb") as f:
-        files = {"files": f}
+        # attach filename in multipart upload
+        files = {"files": (unique_name, f)}
         response = requests.post(f"{BASE_URL}/protocols", files=files, headers=HEADERS)
     return response.json()
 
 
-def create_run(protocol_id, run_time_parameters=None):
+def create_run(protocol_id, run_time_parameters):
     """Create a new run from a protocol."""
     data = {"data": {"protocolId": protocol_id}}
-    if run_time_parameters:
-        data["data"]["runTimeParameterValues"] = run_time_parameters
+    data["data"]["runTimeParameterValues"] = run_time_parameters
     response = requests.post(f"{BASE_URL}/runs", json=data, headers=HEADERS)
     return response.json()
 
@@ -49,6 +55,15 @@ def get_data_files():
     return response.json()
 
 
+def get_data_file_info(data_file_id):
+    """Get metadata for a single data file by id."""
+    response = requests.get(f"{BASE_URL}/dataFiles/{data_file_id}", headers=HEADERS)
+    try:
+        return response.json()
+    except Exception:
+        return {"data": {}}
+
+
 def download_data_file(data_file_id, save_path):
     """Download a data file."""
     response = requests.get(
@@ -63,6 +78,33 @@ def get_log(log_identifier):
     """Get a specific log file."""
     response = requests.get(f"{BASE_URL}/logs/{log_identifier}", headers=HEADERS)
     return response.text
+
+
+def get_protocol(protocol_id):
+    """Get protocol metadata for a protocol id."""
+    response = requests.get(f"{BASE_URL}/protocols/{protocol_id}", headers=HEADERS)
+    return response.json()
+
+
+def get_protocol_analyses(protocol_id):
+    """List analyses for a protocol."""
+    response = requests.get(
+        f"{BASE_URL}/protocols/{protocol_id}/analyses", headers=HEADERS
+    )
+    return response.json()
+
+
+def get_protocol_analysis_document(protocol_id, analysis_id):
+    """Get the analysis document (source/AST) for a protocol analysis."""
+    response = requests.get(
+        f"{BASE_URL}/protocols/{protocol_id}/analyses/{analysis_id}/asDocument",
+        headers=HEADERS,
+    )
+    # return raw text or json depending on server
+    try:
+        return response.json()
+    except Exception:
+        return response.text
 
 
 def start_run(run_id):
@@ -112,8 +154,26 @@ def run_absorbance_protocol():
     protocol_id = upload_response["data"]["id"]
     print(f"Uploaded protocol: {protocol_id}")
 
+    # Inspect uploaded protocol and analyses (debug)
+    proto_meta = get_protocol(protocol_id)
+    print("Protocol meta keys:", list(proto_meta.keys()))
+    analyses = get_protocol_analyses(protocol_id)
+    print("Analyses:", analyses.get("data", []))
+    # if an analysis exists, fetch the first analysis document
+    if analyses.get("data"):
+        analysis_id = analyses["data"][0]["id"]
+        doc = get_protocol_analysis_document(protocol_id, analysis_id)
+        print("Analysis document (truncated):")
+        if isinstance(doc, str):
+            print(doc[:1000])
+        else:
+            try:
+                print(json.dumps(doc)[:1000])
+            except Exception:
+                print(str(doc)[:1000])
+
     # Create run
-    run_response = create_run(protocol_id, {"wavelength": 600})
+    run_response = create_run(protocol_id, {"wavelength": 650})
     run_id = run_response["data"]["id"]
     print(f"Created run: {run_id}")
 
@@ -124,16 +184,91 @@ def run_absorbance_protocol():
     # Wait for completion
     final_status = wait_for_run_completion(run_id)
     print(f"Run completed with status: {final_status}")
+    # Prefer files explicitly recorded on the run (outputFileIds).
+    # This is more robust than scanning all dataFiles and guessing which one belongs
+    # to this run.
+    run_details = get_run_details(run_id)
+    output_ids = run_details.get("data", {}).get("outputFileIds", []) or []
 
-    # Fetch and download absorbance data
-    data_files = get_data_files()
-    for file_info in data_files.get("data", []):
-        if "raw_absorbance_in" in file_info.get("name", ""):
-            file_id = file_info["id"]
-            save_path = f"/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/{file_info['name']}.csv"
+    if output_ids:
+        print(f"Found {len(output_ids)} output file id(s) on run; downloading...")
+        for fid in output_ids:
+            info = get_data_file_info(fid).get("data") or {}
+            name = info.get("name") or f"datafile_{fid}"
+            save_path = (
+                f"/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/{name}"
+            )
+            download_data_file(fid, save_path)
+            print(f"Downloaded data file {fid} -> {save_path}")
+    else:
+        # Fallback: some robot versions or protocols may not populate outputFileIds. (assumption by Copilot, not verified)
+        # Use existing heuristic: scan /dataFiles and pick newest matching name.
+        print(
+            "No outputFileIds on run; falling back to scanning /dataFiles by name/createdAt."
+        )
+        data_files = get_data_files().get("data", [])
+        # Find matching files (may be multiple from previous runs) and pick the newest
+        matches = [f for f in data_files if "raw_absorbance_in" in f.get("name", "")]
+        if not matches:
+            print("No absorbance data files found matching 'raw_absorbance_in'.")
+        else:
+            # Prefer sorting by createdAt if available (ISO8601); otherwise use list order
+            try:
+                matches_sorted = sorted(
+                    matches, key=lambda x: x.get("createdAt", ""), reverse=True
+                )
+            except Exception:
+                matches_sorted = matches
+            chosen = matches_sorted[0]
+            file_id = chosen["id"]
+            filename = chosen.get("name") or f"raw_absorbance_in_{file_id}"
+            save_path = f"/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/{filename}"
             download_data_file(file_id, save_path)
             print(f"Downloaded absorbance data to: {save_path}")
-            break
+            if len(matches_sorted) > 1:
+                print(
+                    f"Note: {len(matches_sorted)} matching files exist; downloaded the newest one."
+                )
+
+
+def run_minimal_param_protocol(wavelength_value=500):
+    """Upload and run a minimal protocol that prints its runtime parameter.
+
+    This helps confirm whether the robot uses the runtime parameter value.
+    """
+    protocol_path = "/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/minimal_runtime_param_protocol.py"
+
+    # Upload
+    upload_response = upload_protocol(protocol_path)
+    protocol_id = upload_response["data"]["id"]
+    print(f"Uploaded minimal protocol: {protocol_id}")
+
+    # Inspect protocol analysis (debug)
+    analyses = get_protocol_analyses(protocol_id)
+    print("Analyses:", analyses.get("data", []))
+
+    # Create run with runtime parameter
+    run_response = create_run(protocol_id, {"wavelength": wavelength_value})
+    run_id = run_response["data"]["id"]
+    print(f"Created run: {run_id} with wavelength={wavelength_value}")
+
+    # Start run
+    start_run(run_id)
+    print(f"Started run: {run_id}")
+
+    # Wait and monitor logs (wait_for_run_completion prints status and new log lines)
+    final_status = wait_for_run_completion(run_id)
+    print(f"Run completed with status: {final_status}")
+
+    # After completion, fetch recent api.log and search for the printed marker
+    api_log = get_log("api.log")
+    if f"RUNTIME_PARAM_WAVELENGTH={wavelength_value}" in api_log:
+        print("Found runtime parameter printed in api.log")
+    else:
+        print(
+            "Did not find printed runtime parameter in api.log; showing last 2000 chars:"
+        )
+        print(api_log[-2000:])
 
 
 # Example usage
@@ -144,3 +279,8 @@ if __name__ == "__main__":
 
     # Run the absorbance protocol
     run_absorbance_protocol()
+
+    # run the minimal parameter protocol with a test wavelength
+    # run_minimal_param_protocol(wavelength_value=550)
+
+    1 + 1

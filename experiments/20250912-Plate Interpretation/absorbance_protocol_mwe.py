@@ -12,7 +12,7 @@ def add_parameters(parameters: protocol_api.Parameters):
     parameters.add_int(
         display_name="Wavelength",
         variable_name="wavelength",
-        default=600,
+        default=450,
         minimum=300,
         maximum=1000,
         unit="nm",
@@ -23,6 +23,7 @@ def add_parameters(parameters: protocol_api.Parameters):
 def run(protocol: protocol_api.ProtocolContext):
     # Access runtime parameter for wavelength
     wavelength = protocol.params.wavelength
+    protocol.comment(f"Using wavelength: {wavelength} nm")
 
     pr_mod = protocol.load_module(module_name="absorbanceReaderV1", location="C3")
 
