@@ -115,18 +115,21 @@ def add_parameters(parameters: protocol_api.Parameters):
         minimum=0.0,
         maximum=1000.0,
     )
-    well_choices = [f"{row}{col}" for row in "FGH" for col in range(1, 13)]
-    parameters.add_string(
-        display_name="next_plate_well",
+    well_choices = [
+        {"display_name": well, "value": well}
+        for well in [f"{row}{col}" for row in "FGH" for col in range(1, 13)]
+    ]
+    parameters.add_str(
         variable_name="next_plate_well",
-        default="F1",
+        display_name="Next Plate Well",
         choices=well_choices,
+        default="F1",
     )
-    parameters.add_string(
-        display_name="next_deepplate_well",
+    parameters.add_str(
         variable_name="next_deepplate_well",
-        default="F1",
+        display_name="Next Deepplate Well",
         choices=well_choices,
+        default="F1",
     )
 
 

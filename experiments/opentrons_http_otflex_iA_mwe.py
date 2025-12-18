@@ -42,7 +42,8 @@ def run_otflex_iA(otflex_params: dict):
                 name = name.replace(".csv", f"_{run_id[:8]}.csv")
             else:
                 name = f"{name}_{run_id[:8]}"
-            save_path = os.path.join(os.path.dirname(__file__), name)
+            save_path = os.path.join(os.path.dirname(__file__), "data", name)
+            os.makedirs(os.path.dirname(save_path), exist_ok=True)
             download_data_file(BASE_URL, fid, save_path)
             print(f"Downloaded data file {fid} -> {save_path}")
     else:
