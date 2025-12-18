@@ -122,6 +122,12 @@ def get_protocol_analysis_document(base_url: str, protocol_id: str, analysis_id:
         return response.text
 
 
+def get_run_commands(base_url: str, run_id: str):
+    response = requests.get(f"{base_url}/runs/{run_id}/commands", headers=HEADERS)
+    response.raise_for_status()
+    return response.json()
+
+
 def start_run(base_url: str, run_id: str):
     response = requests.post(
         f"{base_url}/runs/{run_id}/actions",
@@ -133,18 +139,53 @@ def start_run(base_url: str, run_id: str):
 
 
 def wait_for_run_completion(base_url: str, run_id: str, poll_interval=5):
+    """
+    Poll run status and stream any new run commands (protocol logs).
+    Prints run status changes and new commands to stdout.
+    """
     import time
 
     previous_status = None
+    # track how many commands we've already printed
+    printed_count = 0
+
     while True:
         details = get_run_details(base_url, run_id)
         status = details.get("data", {}).get("status", "unknown")
 
+        # print status change
         if status != previous_status:
             print(f"Run status: {status}")
             previous_status = status
 
+        # get commands and print new ones
+        commands_response = get_run_commands(base_url, run_id)
+        commands = commands_response.get("data", [])
+        for i in range(printed_count, len(commands)):
+            cmd = commands[i]
+            command_type = cmd.get("commandType", "unknown")
+            key = cmd.get("key", "")
+            status_cmd = cmd.get("status", "unknown")
+            notes = cmd.get("notes", [])
+            print(f"Command {i+1}: {command_type} ({key}) - {status_cmd}")
+            for note in notes:
+                print(f"  Note: {note}")
+
+        printed_count = len(commands)
+
         if status in ["succeeded", "failed", "stopped"]:
+            # fetch remaining commands one last time before returning
+            commands_response = get_run_commands(base_url, run_id)
+            commands = commands_response.get("data", [])
+            for i in range(printed_count, len(commands)):
+                cmd = commands[i]
+                command_type = cmd.get("commandType", "unknown")
+                key = cmd.get("key", "")
+                status_cmd = cmd.get("status", "unknown")
+                notes = cmd.get("notes", [])
+                print(f"Command {i+1}: {command_type} ({key}) - {status_cmd}")
+                for note in notes:
+                    print(f"  Note: {note}")
             return status
         time.sleep(poll_interval)
 
@@ -185,21 +226,30 @@ def run_protocol(
         analysis_id = analysis["id"]
         if analysis["status"] == "pending":
             print("Waiting for analysis to complete...")
-            wait_for_analysis_completion(base_url, protocol_id, analysis_id)
-        doc = get_protocol_analysis_document(base_url, protocol_id, analysis_id)
-        print("Analysis document (truncated):")
-        if isinstance(doc, str):
-            print(doc[:1000])
-        else:
-            try:
-                import json
+            completed_analysis = wait_for_analysis_completion(
+                base_url, protocol_id, analysis_id
+            )
+            print(f"Analysis completed with status: {completed_analysis['status']}")
+        try:
+            doc = get_protocol_analysis_document(base_url, protocol_id, analysis_id)
+            print("Analysis document (truncated):")
+            if isinstance(doc, str):
+                print(doc[:1000])
+            else:
+                try:
+                    import json
 
-                print(json.dumps(doc)[:1000])
-            except TypeError:
-                print(str(doc)[:1000])
-        # Check for errors in doc
-        if isinstance(doc, dict) and "errors" in doc and doc["errors"]:
-            raise ValueError(f"Protocol analysis errors: {doc['errors']}")
+                    print(json.dumps(doc)[:1000])
+                except TypeError:
+                    print(str(doc)[:1000])
+            # Check for errors in doc
+            if isinstance(doc, dict) and "errors" in doc and doc["errors"]:
+                raise ValueError(f"Protocol analysis errors: {doc['errors']}")
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                print("Analysis document not available (404), skipping.")
+            else:
+                raise
 
     run_response = create_run(base_url, protocol_id, run_time_parameters)
     run_id = run_response["data"]["id"]

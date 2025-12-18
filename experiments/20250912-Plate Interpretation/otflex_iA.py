@@ -115,6 +115,13 @@ def add_parameters(parameters: protocol_api.Parameters):
         minimum=0.0,
         maximum=1000.0,
     )
+    parameters.add_int(
+        display_name="replicates",
+        variable_name="replicates",
+        default=3,
+        minimum=1,
+        maximum=12,
+    )
     well_choices = [
         {"display_name": well, "value": well}
         for well in [f"{row}{col}" for row in "FGH" for col in range(1, 13)]
@@ -371,7 +378,7 @@ def run(protocol: protocol_api.ProtocolContext):
             pipette.well_bottom_clearance.aspirate = 2
 
         replicate_wells = []
-        for _ in range(3):  # Change this number to control the amount of replicates
+        for _ in range(protocol.params.replicates):
             replicate_wells.append(next_plate_well)
             next_plate_well = next_well(next_plate_well)
 

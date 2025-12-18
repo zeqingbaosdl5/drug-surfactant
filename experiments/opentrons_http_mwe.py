@@ -5,79 +5,17 @@ from opentrons_http_client import (
     get_data_file_info,
     get_data_files,
     get_health,
-    get_log,
     get_protocol,
     get_protocol_analyses,
     get_protocol_analysis_document,
-    get_run_details,
-    start_run,
+    run_protocol,
     upload_protocol,
-    create_run,
 )
 
 import os
 
 # Opentrons HTTP API base URL (replace with your robot's IP)
 BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
-
-
-def wait_for_run_completion(run_id, poll_interval=5, verbosity=2):
-    """Wait for a run to complete by polling its status and monitoring logs.
-
-    verbosity levels:
-      0 - quiet (no output)
-      1 - status changes only
-      2 - status + filtered high-level log lines
-      3 - status + full log lines
-    """
-    import time
-
-    HIGHLIGHT_KEYWORDS = [
-        "RUNTIME_PARAM_WAVELENGTH",
-        "Using wavelength",
-        "raw_absorbance",
-        "Sample Wavelength",
-        "protocol.comment",
-        "ERROR",
-        "WARNING",
-    ]
-
-    previous_log = ""
-    previous_status = None
-    while True:
-        details = get_run_details(BASE_URL, run_id)
-        status = details.get("data", {}).get("status", "unknown")
-
-        # Print status if allowed and if it changed
-        if verbosity >= 1 and status != previous_status:
-            print(f"Run status: {status}")
-            previous_status = status
-
-        # Fetch log (may be large)
-        current_log = get_log(BASE_URL, "api.log")
-        new_lines = current_log[len(previous_log) :]
-
-        if verbosity >= 2 and new_lines.strip():
-            if verbosity >= 3:
-                # Verbose: print everything
-                print("New log lines:")
-                print(new_lines)
-            else:
-                # Filter for high-level keywords to reduce noise
-                matched = []
-                for line in new_lines.splitlines():
-                    for kw in HIGHLIGHT_KEYWORDS:
-                        if kw in line:
-                            matched.append(line)
-                            break
-                if matched:
-                    print("New high-level log lines:")
-                    print("\n".join(matched))
-        previous_log = current_log
-
-        if status in ["succeeded", "failed", "stopped"]:
-            return status
-        time.sleep(poll_interval)
 
 
 def run_absorbance_protocol(verbosity=2):
@@ -110,22 +48,10 @@ def run_absorbance_protocol(verbosity=2):
             except TypeError:
                 print(str(doc)[:1000])
 
-    # Create run
-    run_response = create_run(BASE_URL, protocol_id, {"wavelength": 650})
-    run_id = run_response["data"]["id"]
-    print(f"Created run: {run_id}")
-
-    # Start run
-    start_run(BASE_URL, run_id)
-    print(f"Started run: {run_id}")
-
-    # Wait for completion
-    final_status = wait_for_run_completion(run_id, verbosity=verbosity)
+    # Upload, create, start, wait and fetch run details using helper
+    run_details = run_protocol(BASE_URL, protocol_path, {"wavelength": 650})
+    final_status = run_details.get("data", {}).get("status", "unknown")
     print(f"Run completed with status: {final_status}")
-    # Prefer files explicitly recorded on the run (outputFileIds).
-    # This is more robust than scanning all dataFiles and guessing which one belongs
-    # to this run.
-    run_details = get_run_details(BASE_URL, run_id)
     output_ids = run_details.get("data", {}).get("outputFileIds", []) or []
 
     if output_ids:
