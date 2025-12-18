@@ -1,5 +1,4 @@
 import json
-import os
 
 from opentrons_http_client import (
     download_data_file,
@@ -16,8 +15,10 @@ from opentrons_http_client import (
     create_run,
 )
 
+import os
+
 # Opentrons HTTP API base URL (replace with your robot's IP)
-BASE_URL = "http://192.168.0.5:31950"  # Updated with provided IP
+BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
 
 
 def wait_for_run_completion(run_id, poll_interval=5, verbosity=2):
@@ -81,7 +82,10 @@ def wait_for_run_completion(run_id, poll_interval=5, verbosity=2):
 
 def run_absorbance_protocol(verbosity=2):
     """Upload and run the absorbance protocol."""
-    protocol_path = "/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/20250912-Plate Interpretation/absorbance_protocol_mwe.py"
+    protocol_path = os.getenv(
+        "PROTOCOL_PATH",
+        "/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/20250912-Plate Interpretation/absorbance_protocol_mwe.py",
+    )
 
     # Upload protocol
     upload_response = upload_protocol(BASE_URL, protocol_path)
@@ -103,7 +107,7 @@ def run_absorbance_protocol(verbosity=2):
         else:
             try:
                 print(json.dumps(doc)[:1000])
-            except Exception:
+            except TypeError:
                 print(str(doc)[:1000])
 
     # Create run
@@ -129,9 +133,11 @@ def run_absorbance_protocol(verbosity=2):
         for fid in output_ids:
             info = get_data_file_info(BASE_URL, fid).get("data") or {}
             name = info.get("name") or f"datafile_{fid}"
-            save_path = (
-                f"/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments/{name}"
+            save_dir = os.getenv(
+                "DATA_SAVE_DIR",
+                "/Users/zeqingbao/Documents/GitHub/drug_surfactant/experiments",
             )
+            save_path = f"{save_dir}/{name}"
             download_data_file(BASE_URL, fid, save_path)
             print(f"Downloaded data file {fid} -> {save_path}")
     else:
@@ -155,5 +161,3 @@ if __name__ == "__main__":
 
     # Run the absorbance protocol
     run_absorbance_protocol()
-
-    1 + 1

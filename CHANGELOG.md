@@ -15,5 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 2025-10-14: `paho-mqtt` dependency for MQTT client functionality
 
 ### Fixed
+- 2025-12-18: Improved error handling and code quality in Opentrons HTTP client: added HTTP error checking with `response.raise_for_status()` to all request functions, replaced bare except clauses with specific exception types (ValueError, TypeError), made hardcoded paths and IP addresses configurable via environment variables, removed unused variable assignment and debug code
 - 2025-12-17: Added stackingOffsetWithLabware to corning_96_wellplate_360ul_flat_new.json to enable stacking on opentrons_universal_flat_adapter, resolving LabwareCannotBeStackedError in protocol analysis. Updated opentrons_http_client.py to only raise on non-empty error lists.
 - 2025-11-06: Corrected runtime parameter implementation in `absorbance_protocol_mwe.py` to use proper `add_parameters()` function and `protocol.params` accessor according to Opentrons API documentation

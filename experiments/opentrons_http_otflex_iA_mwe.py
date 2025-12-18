@@ -8,8 +8,7 @@ from opentrons_http_client import (
     run_protocol,
 )
 
-
-BASE_URL = "http://192.168.0.5:31950"
+BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
 
 
 def run_otflex_iA(otflex_params: dict):
