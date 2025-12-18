@@ -9,6 +9,7 @@ HEADERS = {"opentrons-version": "4"}
 
 def get_health(base_url: str):
     response = requests.get(f"{base_url}/health", headers=HEADERS)
+    response.raise_for_status()
     return response.json()
 
 
@@ -37,6 +38,7 @@ def upload_protocol(base_url: str, protocol_file_path: str, labware_paths: list 
     files = [("files", ft) for ft in files_list]
     try:
         response = requests.post(f"{base_url}/protocols", files=files, headers=HEADERS)
+        response.raise_for_status()
         return response.json()
     finally:
         for f in file_objects:
@@ -56,21 +58,25 @@ def create_run(base_url: str, protocol_id: str, run_time_parameters: dict):
 
 def get_runs(base_url: str):
     response = requests.get(f"{base_url}/runs", headers=HEADERS)
+    response.raise_for_status()
     return response.json()
 
 
 def get_run_details(base_url: str, run_id: str):
     response = requests.get(f"{base_url}/runs/{run_id}", headers=HEADERS)
+    response.raise_for_status()
     return response.json()
 
 
 def get_data_files(base_url: str):
     response = requests.get(f"{base_url}/dataFiles", headers=HEADERS)
+    response.raise_for_status()
     return response.json()
 
 
 def get_data_file_info(base_url: str, data_file_id: str):
     response = requests.get(f"{base_url}/dataFiles/{data_file_id}", headers=HEADERS)
+    response.raise_for_status()
     return response.json()
 
 
@@ -78,6 +84,7 @@ def download_data_file(base_url: str, data_file_id: str, save_path: str):
     response = requests.get(
         f"{base_url}/dataFiles/{data_file_id}/download", headers=HEADERS
     )
+    response.raise_for_status()
     with open(save_path, "wb") as f:
         f.write(response.content)
     return save_path
@@ -85,11 +92,13 @@ def download_data_file(base_url: str, data_file_id: str, save_path: str):
 
 def get_log(base_url: str, log_identifier: str):
     response = requests.get(f"{base_url}/logs/{log_identifier}", headers=HEADERS)
+    response.raise_for_status()
     return response.text
 
 
 def get_protocol(base_url: str, protocol_id: str):
     response = requests.get(f"{base_url}/protocols/{protocol_id}", headers=HEADERS)
+    response.raise_for_status()
     return response.json()
 
 
@@ -97,6 +106,7 @@ def get_protocol_analyses(base_url: str, protocol_id: str):
     response = requests.get(
         f"{base_url}/protocols/{protocol_id}/analyses", headers=HEADERS
     )
+    response.raise_for_status()
     return response.json()
 
 
@@ -105,9 +115,10 @@ def get_protocol_analysis_document(base_url: str, protocol_id: str, analysis_id:
         f"{base_url}/protocols/{protocol_id}/analyses/{analysis_id}/asDocument",
         headers=HEADERS,
     )
+    response.raise_for_status()
     try:
         return response.json()
-    except Exception:
+    except ValueError:
         return response.text
 
 
@@ -117,6 +128,7 @@ def start_run(base_url: str, run_id: str):
         json={"data": {"actionType": "play"}},
         headers=HEADERS,
     )
+    response.raise_for_status()
     return response.json()
 
 
@@ -173,7 +185,7 @@ def run_protocol(
         analysis_id = analysis["id"]
         if analysis["status"] == "pending":
             print("Waiting for analysis to complete...")
-            analysis = wait_for_analysis_completion(base_url, protocol_id, analysis_id)
+            wait_for_analysis_completion(base_url, protocol_id, analysis_id)
         doc = get_protocol_analysis_document(base_url, protocol_id, analysis_id)
         print("Analysis document (truncated):")
         if isinstance(doc, str):
@@ -183,7 +195,7 @@ def run_protocol(
                 import json
 
                 print(json.dumps(doc)[:1000])
-            except Exception:
+            except TypeError:
                 print(str(doc)[:1000])
         # Check for errors in doc
         if isinstance(doc, dict) and "errors" in doc and doc["errors"]:
