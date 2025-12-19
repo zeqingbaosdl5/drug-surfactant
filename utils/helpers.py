@@ -251,18 +251,6 @@ def process_absorbance(iteration, replicates=3, threshold=0.06):
     
     return pd.DataFrame(summary)
 
-
-def build_results(iteration, df_absorbance):
-    # 1. trial_index from df_design
-    df_design = pd.read_csv(f'{design_data_path}{iteration}.csv')
-    results = df_design.copy()
-
-    results['success'] = df_absorbance['success'] #if 'success' in df_absorbance.columns else 0
-
-    results['obj_surf_conc'] = np.where( results['success'] == 1, results['surf_conc'], surfactant_stock_conc )
-
-    return results
-
 def results_so_far (current_iteration):
 
     ax_client = AxClient.load_from_json_file(optimizer_file_path + str(current_iteration-1) + '_loaded.json')
