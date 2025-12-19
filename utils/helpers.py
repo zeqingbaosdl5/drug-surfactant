@@ -488,6 +488,47 @@ def load_design_optimizer(iteration):
 
     return ax_client
 
+def absorbance_to_results_df(
+    absorbance: dict,
+    surf_conc_per_trial: list,
+    replicates: int = 3,
+    threshold: float = 0.06,
+    fallback_surf_conc: float = None,
+):
+
+    # 1) enforce A1→H12 row-major order
+    ordered_vals = []
+    for row in "ABCDEFGH":
+        for col in range(1, 13):
+            well = f"{row}{col}"
+            if well in absorbance:
+                ordered_vals.append(absorbance[well])
+
+    arr = np.array(ordered_vals)
+
+    # 2) binarize absorbance
+    binary = (arr < threshold).astype(int)
+
+    # 3) chunk into trials
+    n_trials = len(binary) // replicates
+    rows = []
+
+    for i in range(n_trials):
+        block = binary[i * replicates : (i + 1) * replicates]
+        success = block.all()
+
+        surf_conc = surf_conc_per_trial[i]
+
+        obj_surf_conc = (
+            surf_conc if success else fallback_surf_conc
+        )
+
+        rows.append({
+            "trial_index": i,
+            "obj_surf_conc": obj_surf_conc
+        })
+
+    return pd.DataFrame(rows)
 
 def load_data_to_optimizer(iteration, results):
     
