@@ -237,21 +237,24 @@ def process_absorbance(raw_data_file_path, replicates=3, threshold=0.06):
     df = pd.read_csv(raw_data_file_path, nrows=8, index_col=0)
     arr = df.to_numpy().flatten(order="C")
     arr = arr[~np.isnan(arr)]
-    binary = (arr < threshold).astype(int)
-    n_chunks = len(binary) // replicates
+    n_chunks = len(arr) // replicates
     summary = []
     # Map from flat index to well_slot (A1, A2, ..., H12)
     rows = list(df.index)
     cols = list(df.columns)
     for i in range(n_chunks):
-        block = binary[i * replicates : (i + 1) * replicates]
-        success = int(block.all())
+        block = arr[i * replicates : (i + 1) * replicates]
+        binary_block = (block < threshold).astype(int)
+        success = int(binary_block.all())
+        absorbance = float(np.mean(block))
         # Calculate well_slot for the first value in this chunk
         flat_idx = i * replicates
         row_idx = flat_idx // len(cols)
         col_idx = flat_idx % len(cols)
         well_slot = f"{rows[row_idx]}{cols[col_idx]}"
-        summary.append({"trial_index": i, "success": success, "well_slot": well_slot})
+        summary.append(
+            {"well_slot": well_slot, "success": success, "absorbance": absorbance}
+        )
 
     return pd.DataFrame(summary)
 

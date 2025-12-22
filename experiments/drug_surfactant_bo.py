@@ -182,6 +182,7 @@ else:
         parameter_constraints=[
             f"s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 <= {hf.surfactant_total_volume * 1000}",
         ],
+        outcome_constraints=["absorbance <= 0.06"],
     )
     # persist initial optimizer state and a timestamped snapshot (only if newly created)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -326,9 +327,7 @@ for trial in range(total_trials):
 
     trials_data = []
     num_init = 8
-    if n <= num_init and (
-        data_so_far.empty or data_so_far["obj_surf_conc"].notna().sum() < 2
-    ):
+    if n <= num_init:
         rng = np.random.default_rng(n)
         sample_idx = int(rng.choice(len(candidate_df), size=1, replace=False)[0])
         chosen = candidate_df.iloc[[sample_idx]]
@@ -346,6 +345,9 @@ for trial in range(total_trials):
 
     ax_params = chosen.iloc[0].to_dict()
     _, trial_index = ax_client.attach_trial(ax_params)
+
+    obj_surf_conc = sum(ax_params[s] for s in surf_names)
+    print(f"Chosen surfactant concentrations for {drug}: {ax_params}")
 
     # Add well_slot and plate_num to trial._properties
     trial = ax_client.experiment.trials[trial_index]
@@ -383,24 +385,46 @@ for trial in range(total_trials):
     otflex_params["next_deepplate_well"] = NEXT_DEEPPLATE_WELL
     otflex_params["replicates"] = REPLICATES
 
+    # update well position json
+    with open(WELL_POSITIONS_FILE, "w") as f:
+        json.dump(
+            {
+                "plate": NEXT_PLATE_WELL,
+                "deepplate": NEXT_DEEPPLATE_WELL,
+            },
+            f,
+        )
+
     run_otflex_iA(otflex_params)
 
     raw_data_file = RAW_DATA_FILE_PATH + "i" + str(n) + ".csv"
+
     df_absorbance = hf.process_absorbance(
         replicates=REPLICATES,
         threshold=0.06,
         raw_data_file_path=raw_data_file,
     )
+
+    # find the absorbance value from df_absorbance that corresponds to trial._properties["well_slot"]
+    absorbance = df_absorbance.loc[
+        df_absorbance["well_slot"] == NEXT_PLATE_WELL, "absorbance"
+    ].values[0]
+
+    ax_client.complete_trial(
+        trial_index, {"obj_surf_conc": obj_surf_conc, "absorbance": absorbance}
+    )
+
     results = hf.build_results(n, df_absorbance, design_file_path=DESIGN_FILE_PATH)
     labeled_data = results.copy()
 
     # Mark failed trials as abandoned based on well_slot and absorbance results
-    # See: https://github.com/facebook/Ax/issues/2931#issuecomment-2432821274
-    # For every trial in ax_client, if its well_slot matches a failed well in df_absorbance, mark as abandoned
     failed_wells = set(df_absorbance.loc[df_absorbance["success"] == 0, "well_slot"])
+    absorbance_map = dict(zip(df_absorbance["well_slot"], df_absorbance["absorbance"]))
     for idx, trial in ax_client.experiment.trials.items():
         well = trial._properties.get("well_slot")
+        absorbance_val = absorbance_map.get(well)
         if well in failed_wells:
+            print(f"Marking trial {idx} as abandoned due to failed well: {well}")
             trial.mark_abandoned(unsafe=True)
 
     ax_client.save_to_json_file(OPTIMIZER_FILE_PATH + str(n) + "_loaded.json")
