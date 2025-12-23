@@ -344,7 +344,7 @@ for trial in range(n, total_trials):
         ]
 
     trials_data = []
-    num_init = 4
+    num_init = 4 if SMOKE_TEST else 12
     if n + 1 <= num_init:
         rng = np.random.default_rng(n)
         sample_idx = int(rng.choice(len(candidate_df), size=1, replace=False)[0])
