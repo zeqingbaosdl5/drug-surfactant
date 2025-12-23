@@ -2,6 +2,7 @@ import json
 import os
 import sys
 
+import glob
 import itertools
 import numpy as np
 import math
@@ -37,7 +38,14 @@ else:
         with open(raw_data_file, "w", newline="") as f:
             f.write("," + ",".join(cols) + "\n")
             for row in rows:
-                values = [f"{random.uniform(0.04, 0.12):.3f}" for _ in cols]
+                # 80% chance below 0.06, 20% above
+                values = []
+                for _ in cols:
+                    if random.random() < 0.9:
+                        val = random.uniform(0.04, 0.059)
+                    else:
+                        val = random.uniform(0.06, 0.12)
+                    values.append(f"{val:.3f}")
                 f.write(f"{row}," + ",".join(values) + "\n")
 
 
@@ -70,19 +78,30 @@ gs = GenerationStrategy(
         # GenerationStep(
         #     model=Generators.SOBOL, num_trials=1000, model_kwargs={"seed": 0}
         # ),
-        # GenerationStep(
-        #     model=Generators.BOTORCH_MODULAR, num_trials=1000, model_kwargs={}
-        # ),
-        GenerationStep(model=Models.SAASBO, num_trials=-1, model_kwargs={}),
+        # GenerationStep(model=Models.BOTORCH_MODULAR, num_trials=-1, model_kwargs={}), # faster, but less performant
+        GenerationStep(
+            model=Models.SAASBO, num_trials=-1, model_kwargs={}
+        ),  # Use for production runs
     ]
 )
 
 # If a snapshot exists in SNAPSHOT_DIR, restore the latest one. Otherwise create new experiment.
-os.makedirs(SNAPSHOT_DIR, exist_ok=True)
-snapshot_files = []
+# Dynamically determine n based on available raw absorbance CSV files
 
 os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
+
+def determine_current_iteration():
+    """Determine current iteration number n based on existing raw data files."""
+    raw_data_pattern = RAW_DATA_FILE_PATH + "i*.csv"
+    raw_data_files = glob.glob(raw_data_pattern)
+    return len(raw_data_files)
+
+
+n = determine_current_iteration()
+
+
+# Restore AxClient from latest completed snapshot if available, else create new experiment
 try:
     completed_snapshot_files = [
         os.path.join(SNAPSHOT_DIR, f)
@@ -96,7 +115,6 @@ if completed_snapshot_files:
     latest = max(completed_snapshot_files, key=os.path.getmtime)
     print(f"Restoring AxClient from latest completed snapshot: {latest}")
     ax_client = AxClient.load_from_json_file(latest)
-    n = int(os.path.basename(latest).split("_")[0]) + 1
 else:
     ax_client = AxClient(generation_strategy=gs)
     ax_client.create_experiment(
@@ -186,8 +204,7 @@ else:
     )
     # persist initial optimizer state and a timestamped snapshot (only if newly created)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    n = 0
-    pending_snapshot_path = os.path.join(SNAPSHOT_DIR, f"{n}_{timestamp}_pending.json")
+    pending_snapshot_path = os.path.join(SNAPSHOT_DIR, f"{0}_{timestamp}_pending.json")
     ax_client.save_to_json_file(pending_snapshot_path)
 # --- end BO initialization ---
 
@@ -229,12 +246,13 @@ surf_names = [f"s{i}" for i in range(1, 9)]
 
 # Interleaved round-robin drug selection for each trial
 total_trials = NUM_BATCHES * len(drug_choices)
-for trial in range(total_trials):
+for trial in range(n, total_trials):
     drug = drug_choices[trial % len(drug_choices)]
     print(f"\n=== Starting experiment {trial + 1}/{total_trials} for drug: {drug} ===")
 
     # 1) Generate recommendations (inlined from helper_functions.run_optimizer)
     data_so_far = pd.DataFrame()
+    n = determine_current_iteration()
     if n > 0:
         data_so_far = ax_client.get_trials_data_frame()
         data_so_far = hf.add_drug_names(data_so_far)
@@ -326,20 +344,41 @@ for trial in range(total_trials):
         ]
 
     trials_data = []
-    num_init = 8
-    if n <= num_init:
+    num_init = 4
+    if n + 1 <= num_init:
         rng = np.random.default_rng(n)
         sample_idx = int(rng.choice(len(candidate_df), size=1, replace=False)[0])
         chosen = candidate_df.iloc[[sample_idx]]
     else:
+        print("Fitting model..")
         ax_client.fit_model()
         model = ax_client.generation_strategy.model
-        obs_feat = [
-            ObservationFeatures(row.to_dict()) for _, row in candidate_df.iterrows()
-        ]
-        acqf_values = np.array(
-            model.evaluate_acquisition_function(observation_features=obs_feat)
-        )
+        # Evaluate acquisition function in batches to reduce memory usage
+        acqf_batch_size = 1000  # Set your preferred batch size here
+        acqf_list = []
+        total = len(candidate_df)
+        start = 0
+        batch_num = 1
+        while start < total:
+            end = min(start + batch_size, total)
+            # Print only for exponentially spaced batches (1, 2, 4, 8, ...)
+            if (batch_num & (batch_num - 1)) == 0:
+                print(
+                    f"Processing acquisition function batch {batch_num} (rows {start}..{end-1})"
+                )
+            obs_feat_chunk = [
+                ObservationFeatures(row.to_dict())
+                for _, row in candidate_df.iloc[start:end].iterrows()
+            ]
+            vals = model.evaluate_acquisition_function(
+                observation_features=obs_feat_chunk
+            )
+            acqf_list.extend(vals)
+            start = end
+            batch_num += 1
+            start = end
+            batch_num += 1
+        acqf_values = np.array(acqf_list)
         best_index = int(np.argmax(acqf_values))
         chosen = candidate_df.iloc[[best_index]]
 
