@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
+ - Updated BO to represent drug identity as a single Ax `choice` parameter and generate next trials from an NChooseK predefined candidate set scored via `evaluate_acquisition_function`, while restoring normalized drug featurization inputs (MW/LogP/TPSA).
 - 2025-12-17: Refactored Opentrons HTTP helper functions into `experiments/opentrons_http_client.py`, kept the absorbance workflow in `experiments/opentrons_http_mwe.py`, added `experiments/opentrons_http_otflex_iA_mwe.py` runner, and added runtime float parameters to `experiments/20250912-Plate Interpretation/otflex_iA.py`. Added `run_protocol` helper to reduce boilerplate in MWE scripts.
 - 2025-12-17: Added runtime string parameters for starting well positions (next_plate_well and next_deepplate_well) in otflex_iA.py, allowing dynamic well selection via opentrons_http_otflex_iA_mwe.py, with choices restricted to wells F1 through H12.
 - 2025-12-18: Modified output CSV file saving in `opentrons_http_otflex_iA_mwe.py` to use a `data` subdirectory to avoid cluttering the experiments folder.
