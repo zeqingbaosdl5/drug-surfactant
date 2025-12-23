@@ -78,7 +78,9 @@ gs = GenerationStrategy(
         # GenerationStep(
         #     model=Generators.SOBOL, num_trials=1000, model_kwargs={"seed": 0}
         # ),
-        # GenerationStep(model=Models.BOTORCH_MODULAR, num_trials=-1, model_kwargs={}), # faster, but less performant
+        # GenerationStep(
+        #     model=Models.BOTORCH_MODULAR, num_trials=-1, model_kwargs={}
+        # ),  # faster, but less performant
         GenerationStep(
             model=Models.SAASBO, num_trials=-1, model_kwargs={}
         ),  # Use for production runs
@@ -211,30 +213,37 @@ else:
 
 WELL_POSITIONS_FILE = f"well_positions{'_smoketest' if SMOKE_TEST else ''}.json"
 try:
+
     with open(WELL_POSITIONS_FILE, "r") as f:
         well_positions = json.load(f)
-    last_plate = well_positions.get("plate", hf.get_next_well("A1", offset=n))
-    last_deep = well_positions.get("deepplate", hf.get_next_well("A1", offset=n))
+    prev_plate = well_positions.get("plate", hf.get_next_well("A1", offset=n))
+    prev_deep = well_positions.get("deepplate", hf.get_next_well("A1", offset=n))
+    next_plate_default = hf.get_next_well(prev_plate, offset=1)
+    next_deep_default = hf.get_next_well(prev_deep, offset=1)
     print(
-        f"Last saved plate well: {last_plate}\nLast saved deepplate well: {last_deep}"
+        f"Last saved plate well: {prev_plate}\nLast saved deepplate well: {prev_deep}"
     )
 except (FileNotFoundError, json.JSONDecodeError):
-    last_plate = hf.get_next_well("A1", offset=n)
-    last_deep = hf.get_next_well("A1", offset=n)
+    prev_plate = hf.get_next_well("A1", offset=n)
+    prev_deep = hf.get_next_well("A1", offset=n)
+    next_plate_default = prev_plate
+    next_deep_default = prev_deep
     print("No previous well positions found.")
 
 plate_input = input(
-    f"Enter starting plate well (press Enter for {last_plate}): "
+    f"Enter starting plate well (press Enter for {next_plate_default}): "
 ).strip()
 deep_input = input(
-    f"Enter starting deep plate well (press Enter for {last_deep}): "
+    f"Enter starting deep plate well (press Enter for {next_deep_default}): "
 ).strip()
-NEXT_PLATE_WELL = plate_input if plate_input else last_plate
-NEXT_DEEPPLATE_WELL = deep_input if deep_input else last_deep
+NEXT_PLATE_WELL = plate_input if plate_input else next_plate_default
+NEXT_DEEPPLATE_WELL = deep_input if deep_input else next_deep_default
 
-# Save chosen positions for next run
-with open(WELL_POSITIONS_FILE, "w") as f:
-    json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
+
+# Only update well positions file if user manually set a position
+if plate_input or deep_input:
+    with open(WELL_POSITIONS_FILE, "w") as f:
+        json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
 REPLICATES = 1
 
 
@@ -257,9 +266,11 @@ for trial in range(n, total_trials):
         data_so_far = ax_client.get_trials_data_frame()
         data_so_far = hf.add_drug_names(data_so_far)
 
-    # Compute per-drug best surfactant concentration for dynamic constraint
-    if not data_so_far.empty and "drug" in data_so_far.columns:
-        drug_data = data_so_far[data_so_far["drug"] == drug]
+    # Compute per-drug best surfactant concentration for dynamic constraint, only using successful experiments (absorbance <= 0.06)
+    if not data_so_far.empty:
+        drug_data = data_so_far[
+            (data_so_far["drug"] == drug) & (data_so_far["absorbance"] <= 0.06)
+        ]
         if not drug_data.empty:
             best_surf_conc = drug_data["obj_surf_conc"].min()
         else:
@@ -360,9 +371,24 @@ for trial in range(n, total_trials):
         start = 0
         batch_num = 1
         while start < total:
-            end = min(start + batch_size, total)
-            # Print only for exponentially spaced batches (1, 2, 4, 8, ...)
-            if (batch_num & (batch_num - 1)) == 0:
+            end = min(start + acqf_batch_size, total)
+            if batch_num in [
+                1,
+                2,
+                4,
+                8,
+                16,
+                32,
+                64,
+                128,
+                256,
+                512,
+                1024,
+                2048,
+                4096,
+                8192,
+                16384,
+            ]:
                 print(
                     f"Processing acquisition function batch {batch_num} (rows {start}..{end-1})"
                 )
@@ -374,8 +400,6 @@ for trial in range(n, total_trials):
                 observation_features=obs_feat_chunk
             )
             acqf_list.extend(vals)
-            start = end
-            batch_num += 1
             start = end
             batch_num += 1
         acqf_values = np.array(acqf_list)
@@ -424,7 +448,7 @@ for trial in range(n, total_trials):
     otflex_params["next_deepplate_well"] = NEXT_DEEPPLATE_WELL
     otflex_params["replicates"] = REPLICATES
 
-    # update well position json
+    # Update well position json right before running the robot
     with open(WELL_POSITIONS_FILE, "w") as f:
         json.dump(
             {
