@@ -365,11 +365,14 @@ for trial in range(n, total_trials):
         ax_client.fit_model()
         model = ax_client.generation_strategy.model
         # Evaluate acquisition function in batches to reduce memory usage
+        import time
+
         acqf_batch_size = 1000  # Set your preferred batch size here
         acqf_list = []
         total = len(candidate_df)
         start = 0
         batch_num = 1
+        batch_start_time = time.time()
         while start < total:
             end = min(start + acqf_batch_size, total)
             if batch_num in [
@@ -389,8 +392,10 @@ for trial in range(n, total_trials):
                 8192,
                 16384,
             ]:
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                elapsed = time.time() - batch_start_time
                 print(
-                    f"Processing acquisition function batch {batch_num} (rows {start}..{end-1})"
+                    f"[{now}] Elapsed: {elapsed:7.2f}s | Processing acquisition function batch {batch_num} (rows {start}..{end-1})"
                 )
             obs_feat_chunk = [
                 ObservationFeatures(row.to_dict())
