@@ -249,7 +249,8 @@ REPLICATES = 1
 
 # Number of closed-loop batches to run in this iteration
 NUM_BATCHES = 3
-drug_choices = ["IBP", "LOV", "DCF", "GLV"]
+#drug_choices = ["IBP", "LOV", "DCF", "GLV"]
+drug_choices = ["IBP"] #to only test for IBP
 surf_names = [f"s{i}" for i in range(1, 9)]
 
 
@@ -484,7 +485,7 @@ for trial in range(n, total_trials):
 
     results = hf.build_results(n, df_absorbance, design_file_path=DESIGN_FILE_PATH)
     labeled_data = results.copy()
-
+    
     # Mark failed trials as abandoned based on well_slot and absorbance results
     failed_wells = set(df_absorbance.loc[df_absorbance["success"] == 0, "well_slot"])
     absorbance_map = dict(zip(df_absorbance["well_slot"], df_absorbance["absorbance"]))
@@ -497,15 +498,44 @@ for trial in range(n, total_trials):
 
     ax_client.save_to_json_file(OPTIMIZER_FILE_PATH + str(n) + "_loaded.json")
 
-    # Save a completed snapshot after trial completion
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    completed_snapshot_file = os.path.join(
-        SNAPSHOT_DIR, f"{n}_loaded_{timestamp}_completed.json"
+   # ============================================================
+    # Viewer-only results table (NOT used by machine or optimizer)
+    # ============================================================
+
+    # Build Ax trial status table (viewer only)
+    df_status = hf.ax_trial_status_dataframe(ax_client)
+
+    # Merge status into experimental results (viewer only)
+    viewer_results_with_status = results.merge(
+        df_status,
+        on="trial_index",
+        how="left"
     )
-    ax_client.save_to_json_file(completed_snapshot_file)
+
+    # Sort for readability
+    viewer_results_with_status = viewer_results_with_status.sort_values("trial_index")
+
+    # Save viewer-only CSV
+    os.makedirs("results", exist_ok=True)
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    VIEWER_RESULTS_FILE = f"results/viewer_results{_SUFFIX}_i{n}_{ts}.csv"
+    viewer_results_with_status.to_csv(VIEWER_RESULTS_FILE, index=False)
+
+    # Print for live inspection
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.width", 160)
+
+    print("\n=== Viewer-only results with Ax trial status ===")
+    print(viewer_results_with_status.tail(10))
+    print(f"\n[Viewer] Results saved to: {VIEWER_RESULTS_FILE}")
+
+    # Explicitly prevent accidental downstream use
+    del viewer_results_with_status
+
 
     NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=1)
     NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=1)
+
 
 print(
     f"\nClosed-loop optimization for iteration {n} completed with {NUM_BATCHES} batches."

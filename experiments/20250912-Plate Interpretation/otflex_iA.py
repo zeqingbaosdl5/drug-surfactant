@@ -456,3 +456,7 @@ def run(protocol: protocol_api.ProtocolContext):
     )  # time in minutes, speed in rpm
     protocol.comment("Measuring absorbance.")
     plate_on_pr(labware_to_read=plate, new_location="D1")
+    protocol.move_labware(
+            labware=deepplate, new_location=hs_adapter, use_gripper=True
+        )
+

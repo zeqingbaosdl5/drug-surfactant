@@ -390,3 +390,24 @@ def get_next_well(starting_well, offset=1):
     next_row = chr(ord("A") + (next_index // 12))
     next_col = (next_index % 12) + 1
     return f"{next_row}{next_col}"
+
+#Code added to make a status table
+def ax_trial_status_dataframe(ax_client):
+    """
+    Viewer-only helper.
+    Returns Ax trial lifecycle info for inspection/debugging.
+    Not used by optimization or execution.
+    """
+    import pandas as pd
+
+    rows = []
+    for idx, trial in ax_client.experiment.trials.items():
+        rows.append(
+            {
+                "trial_index": idx,
+                "status": trial.status.name,  # COMPLETED / ABANDONED / RUNNING
+                "well_slot": trial._properties.get("well_slot"),
+                "plate_num": trial._properties.get("plate_num"),
+            }
+        )
+    return pd.DataFrame(rows)
