@@ -540,3 +540,8 @@ for trial in range(n, total_trials):
 print(
     f"\nClosed-loop optimization for iteration {n} completed with {NUM_BATCHES} batches."
 )
+
+#to run terminal
+    #conda activate drug_surfactants
+    #cd experiments
+    #drug_surfactant_bo.py
