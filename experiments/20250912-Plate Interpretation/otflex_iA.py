@@ -8,112 +8,112 @@ metadata = {
 
 requirements = {"robotType": "Flex", "apiLevel": "2.23"}
 
-
+#parameters are needed to tell the expected values to Optentons
 def add_parameters(parameters: protocol_api.Parameters):
     parameters.add_float(
         display_name="drug",
         variable_name="drug",
         default=180.0,
-        minimum=0.0,
-        maximum=1000.0,
+        minimum=180.0,
+        maximum=180.0,
     )
     parameters.add_float(
         display_name="s1",
         variable_name="s1",
         default=300.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s2",
         variable_name="s2",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s3",
         variable_name="s3",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s4",
         variable_name="s4",
         default=300.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s5",
         variable_name="s5",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s6",
         variable_name="s6",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s7",
         variable_name="s7",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s8",
         variable_name="s8",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="dmso",
         variable_name="dmso",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=0.0,# 0 as we are using maxium drug concentration
     )
     parameters.add_float(
         display_name="water",
         variable_name="water",
         default=550.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="IBP",
         variable_name="IBP",
         default=180.0,
-        minimum=0.0,
-        maximum=1000.0,
+        minimum=180.0,
+        maximum=180.0,
     )
     parameters.add_float(
         display_name="LOV",
         variable_name="LOV",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=180.0,
     )
     parameters.add_float(
         display_name="DCF",
         variable_name="DCF",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=180.0,
     )
     parameters.add_float(
         display_name="GLV",
         variable_name="GLV",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=180.0,
     )
     parameters.add_int(
         display_name="replicates",
@@ -122,21 +122,28 @@ def add_parameters(parameters: protocol_api.Parameters):
         minimum=1,
         maximum=12,
     )
+    parameters.add_int(
+    variable_name="iteration",
+    display_name="Iteration",
+    default=0,
+    minimum=0,
+    maximum=10000,
+    )
     well_choices = [
         {"display_name": well, "value": well}
-        for well in [f"{row}{col}" for row in "FGH" for col in range(1, 13)]
+        for well in [f"{row}{col}" for row in "ABCDEFGH" for col in range(1, 13)]
     ]
     parameters.add_str(
         variable_name="next_plate_well",
         display_name="Next Plate Well",
         choices=well_choices,
-        default="F1",
+        default="A1",
     )
     parameters.add_str(
         variable_name="next_deepplate_well",
         display_name="Next Deepplate Well",
         choices=well_choices,
-        default="F1",
+        default="A1",
     )
 
 
@@ -306,7 +313,7 @@ def run(protocol: protocol_api.ProtocolContext):
         pr_mod.close_lid()
         pr_data = pr_mod.read()
         pr_data[600]["A1"]
-        pr_data = pr_mod.read(export_filename="raw_absorbance_in")  # CSV file
+        pr_data = pr_mod.read(export_filename=f"raw_absorbance_i{protocol.params.iteration}")  # CSV file
         pr_mod.open_lid()
         protocol.move_labware(
             labware=labware_to_read, new_location=new_location, use_gripper=True

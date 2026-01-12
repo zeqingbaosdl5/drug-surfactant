@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- 2026-01-09: Fix KeyError in `conc_to_vol` / `design_to_vol` by ensuring `df_vol['drug']` is computed before use. Now `conc_to_vol` populates `drug` (mL) from an existing `drug` column, converts from `drug_conc` if present, or defaults to 0. This prevents missing-column KeyError when calculating `dmso`.
 
  - Updated BO to represent drug identity as a single Ax `choice` parameter and generate next trials from an NChooseK predefined candidate set scored via `evaluate_acquisition_function`, while restoring normalized drug featurization inputs (MW/LogP/TPSA).
 - 2025-12-17: Refactored Opentrons HTTP helper functions into `experiments/opentrons_http_client.py`, kept the absorbance workflow in `experiments/opentrons_http_mwe.py`, added `experiments/opentrons_http_otflex_iA_mwe.py` runner, and added runtime float parameters to `experiments/20250912-Plate Interpretation/otflex_iA.py`. Added `run_protocol` helper to reduce boilerplate in MWE scripts.

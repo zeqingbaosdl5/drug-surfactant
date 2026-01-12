@@ -212,6 +212,7 @@ else:
 
 
 WELL_POSITIONS_FILE = f"well_positions{'_smoketest' if SMOKE_TEST else ''}.json"
+
 try:
 
     with open(WELL_POSITIONS_FILE, "r") as f:
@@ -248,7 +249,7 @@ REPLICATES = 1
 
 
 # Number of closed-loop batches to run in this iteration
-NUM_BATCHES = 3
+NUM_BATCHES = 1 #change for amount of trials
 #drug_choices = ["IBP", "LOV", "DCF", "GLV"]
 drug_choices = ["IBP"] #to only test for IBP
 surf_names = [f"s{i}" for i in range(1, 9)]
@@ -542,6 +543,8 @@ print(
 )
 
 #to run terminal
-    #conda activate drug_surfactants
+    #conda activate drug-surfactant
     #cd experiments
-    #drug_surfactant_bo.py
+    #python drug_surfactant_bo.py
+
+    #if any of the raw_data files exist it considers their plate

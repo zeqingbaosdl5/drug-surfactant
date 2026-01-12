@@ -214,6 +214,16 @@ def run_protocol(
     run_time_parameters: dict,
     labware_paths: list = None,
 ):
+    # Validate run_time_parameters before upload
+    for k, v in run_time_parameters.items():
+        try:
+            val = float(v)
+            if not (0.0 <= val <= 1000.0):
+                print(f"[ERROR] Parameter '{k}' has value {v} (type {type(v)}) which is out of bounds [0, 1000]")
+        except Exception:
+            print(f"[WARN] Parameter '{k}' could not be cast to float (value: {v}, type: {type(v)})")
+    print("[DEBUG] run_time_parameters:", run_time_parameters)
+
     upload_response = upload_protocol(base_url, protocol_path, labware_paths)
     protocol_id = upload_response["data"]["id"]
     print(f"Uploaded protocol: {protocol_id}")

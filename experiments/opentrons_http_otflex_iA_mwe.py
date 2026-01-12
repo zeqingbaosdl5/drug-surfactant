@@ -74,9 +74,11 @@ example_params = {
     "LOV": 0.0,
     "DCF": 0.0,
     "GLV": 0.0,
-    "next_plate_well": "F4",
+    "next_plate_well": "F4", 
     "next_deepplate_well": "F4",
     "replicates": 1,
 }
 
-run_otflex_iA(example_params)
+# run_otflex_iA(example_params)
+#run_otflex_iA(otflex_params)
+

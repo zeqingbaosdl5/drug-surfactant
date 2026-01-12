@@ -13,7 +13,7 @@ drug_stock_conc = 25  # mg/mL
 surfactant_stock_conc = 100  # represents percent of the stock solution
 actual_surfactant_stock_conc = 50  # mg/mL represents the actual conc
 drug_total_volume = 0.18  # mL
-surfactant_total_volume = 1.2  # mL
+surfactant_total_volume = 1.2  # mL 
 number_of_surfactants = 8  # s1 to s8
 
 normalize_drug_properties_dict = {
@@ -129,10 +129,10 @@ def conc_to_vol(
         {"trial_index": df["trial_index"], "drug_name": df["drug_name"]}
     )
 
-    # drug volume (mL)
-    df_vol["drug"] = df["drug_conc"].apply(
-        lambda c: conc_to_vol_helper(c, drug_total_volume, drug_stock_conc)
-    )
+    # drug volume (mL)(we don't need this bc we are working with volume so no longer need to change back to conc)
+    #df_vol["drug"] = df["drug_conc"].apply(
+    #    lambda c: conc_to_vol_helper(c, drug_total_volume, drug_stock_conc)
+    #)
 
     # initialize surfactant volume columns s1…sN
     s_cols = [f"s{i}" for i in range(1, number_of_surfactants + 1)]
@@ -164,9 +164,22 @@ def conc_to_vol(
                 continue
             df_vol.at[idx, surf] += slot_volumes.at[idx]
 
+    # compute drug volume column (mL) so 'drug' exists for subsequent calculations
+    if "drug" in df.columns:
+        # assume 'drug' column already contains volume in mL
+        df_vol["drug"] = df["drug"].astype(float)
+    elif "drug_conc" in df.columns:
+        # convert drug concentration to volume (mL)
+        df_vol["drug"] = df["drug_conc"].apply(
+            lambda c: conc_to_vol_helper(c, drug_total_volume, drug_stock_conc)
+        )
+    else:
+        # minimal fallback (keeps behavior simple per project guidelines)
+        df_vol["drug"] = 0.0
+
     # calculate dmso and water (mL)
-    df_vol["dmso"] = drug_total_volume - df_vol["drug"]
-    df_vol["water"] = surfactant_total_volume - df_vol[s_cols].sum(axis=1)
+    df_vol["dmso"] = drug_total_volume - df_vol["drug"]/1000
+    df_vol["water"] = surfactant_total_volume - df_vol[s_cols].sum(axis=1)/1000
 
     # convert everything except trial_index & drug_name to µL
     data_cols = df_vol.columns.difference(["trial_index", "drug_name"])
