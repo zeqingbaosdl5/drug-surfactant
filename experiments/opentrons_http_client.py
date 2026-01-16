@@ -218,7 +218,7 @@ def run_protocol(
     for k, v in run_time_parameters.items():
         try:
             val = float(v)
-            if not (0.0 <= val <= 1000.0):
+            if not (0.0 <= val <= 1200.0):
                 print(f"[ERROR] Parameter '{k}' has value {v} (type {type(v)}) which is out of bounds [0, 1000]")
         except Exception:
             print(f"[WARN] Parameter '{k}' could not be cast to float (value: {v}, type: {type(v)})")

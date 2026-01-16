@@ -22,56 +22,56 @@ def add_parameters(parameters: protocol_api.Parameters):
         variable_name="s1",
         default=300.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="s2",
         variable_name="s2",
         default=0.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="s3",
         variable_name="s3",
         default=0.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="s4",
         variable_name="s4",
         default=300.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="s5",
         variable_name="s5",
         default=0.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="s6",
         variable_name="s6",
         default=0.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="s7",
         variable_name="s7",
         default=0.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="s8",
         variable_name="s8",
         default=0.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="dmso",
@@ -85,7 +85,7 @@ def add_parameters(parameters: protocol_api.Parameters):
         variable_name="water",
         default=550.0,
         minimum=0.0,
-        maximum=1200.0,
+        maximum=1000.0,
     )
     parameters.add_float(
         display_name="IBP",

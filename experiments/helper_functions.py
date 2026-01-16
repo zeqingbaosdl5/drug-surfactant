@@ -113,7 +113,7 @@ normalize_drug_properties_dict = {
 
 def conc_to_vol_helper(conc, total_volume, stock_conc):
     vol = (conc * total_volume) / stock_conc
-    return vol
+    return vol #volume in mL
 
 
 def conc_to_vol(
@@ -159,6 +159,7 @@ def conc_to_vol(
         for idx, surf in surf_names.items():
             if pd.isna(surf):
                 continue
+            surf = str(surf).lower()
             if surf not in s_cols:
                 # skip unknown or out‑of‑range surfactants
                 continue
@@ -178,12 +179,12 @@ def conc_to_vol(
         df_vol["drug"] = 0.0
 
     # calculate dmso and water (mL)
-    df_vol["dmso"] = drug_total_volume - df_vol["drug"]/1000
-    df_vol["water"] = surfactant_total_volume - df_vol[s_cols].sum(axis=1)/1000
+    df_vol["dmso"] = (drug_total_volume*1000) - df_vol["drug"]
+    df_vol["water"] = (surfactant_total_volume*1000) - df_vol[s_cols].sum(axis=1)
 
     # convert everything except trial_index & drug_name to µL
     data_cols = df_vol.columns.difference(["trial_index", "drug_name"])
-    df_vol.loc[:, data_cols] *= 1000
+    #df_vol.loc[:, data_cols] *= 1000
 
     return df_vol
 
@@ -206,29 +207,56 @@ def design_to_vol(
     surfactant_total_volume=surfactant_total_volume,
 ):  # in mg/mL or mL
 
-    df_design = pd.read_csv(design_file_path + "i" + str(iteration) + ".csv")
+    #df_design = pd.read_csv(design_file_path + "i" + str(iteration) + ".csv")
+    full_path = f"{design_file_path}i{iteration}.csv"
+
+    # sanity check - optional but helps
+    if not os.path.exists(full_path):
+        raise FileNotFoundError(f"CSV not found at {full_path}")
+
+    # read CSV, take first 13 columns in case of trailing empty column
+    df_design = pd.read_csv(full_path).iloc[:, :13]
+
+    # force correct column names to match your code
+    df_design.columns = ["trial_index","drug_name","s1","s2","s3","s4","s5","s6","s7","s8","IBP","surf_conc","obj_surf_conc"]
 
     s_cols = [f"s{i}" for i in range(1, number_of_surfactants + 1)]
-    drug_cols = ["IBP", "LOV", "DCF", "GLV"]
+    possible_drug_cols = ["IBP", "LOV", "DCF", "GLV"]
+
+
+    print("Reading design file:", design_file_path + "i" + str(iteration) + ".csv")
+    print("Columns found:", df_design.columns.tolist())
+    print("First rows:", df_design.head())
 
     # New format: s1..sN and drug volumes are already in µL.
-    if all(col in df_design.columns for col in s_cols + drug_cols):
-        df_vol = pd.DataFrame(
-            {
-                "trial_index": df_design["trial_index"],
-                "drug_name": df_design.get("drug_name", None),
-            }
-        )
+    # if all(col in df_design.columns for col in s_cols + drug_cols):
+    #     df_vol = pd.DataFrame(
+    #         {
+    #             "trial_index": df_design["trial_index"],
+    #             "drug_name": df_design.get("drug_name", None),
+    #         }
+    #     )
+    if all(col in df_design.columns for col in s_cols) and "drug_name" in df_design.columns:
+        df_vol = pd.DataFrame({
+            "trial_index": df_design["trial_index"],
+            "drug_name": df_design["drug_name"],
+        })
 
         for s in s_cols:
             df_vol[s] = df_design[s].astype(float)
 
-        for d in drug_cols:
-            df_vol[d] = df_design[d].astype(float)
+        for d in possible_drug_cols:
+            df_vol[d] = df_vol[d] = 0.0
+        for idx, row in df_design.iterrows():
+            chosen_drug = row['drug_name'] # This will be "IBP"
+            if chosen_drug in possible_drugs:
+                # This grabs the actual volume (180uL) from the 'drug' column
+                df_vol.at[idx, chosen_drug] = float(row['drug'])
+
 
         # dmso and water (µL) as remainder
-        df_vol["dmso"] = (drug_total_volume * 1000) - df_vol[drug_cols].sum(axis=1)
-        df_vol["water"] = (surfactant_total_volume * 1000) - df_vol[s_cols].sum(axis=1)
+        df_vol["dmso"] = (drug_total_volume*1000) - df_vol[possible_drug_cols].sum(axis=1)
+        df_vol["water"] = (surfactant_total_volume*1000) - df_vol[s_cols].sum(axis=1)
     else:
         # Old format: surf_1/surf_2 choice + *_conc columns
         df_vol = conc_to_vol(

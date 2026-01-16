@@ -49,8 +49,34 @@ def run_absorbance_protocol(verbosity=2):
                 print(str(doc)[:1000])
 
     # Upload, create, start, wait and fetch run details using helper
-    run_details = run_protocol(BASE_URL, protocol_path, {"wavelength": 650})
+    # run_details = run_protocol(BASE_URL, protocol_path, {"wavelength": 650})
+    # final_status = run_details.get("data", {}).get("status", "unknown")
+    # Load the designer CSV
+    df = pd.read_csv("designer_file.csv")
+
+    # Take the first row (or whichever row you need)
+    row = df.iloc[0]
+
+    # Build the run_time_parameters dict
+    run_time_parameters = {
+        "s1": float(row["s1"]),
+        "s2": float(row["s2"]),
+        "s3": float(row["s3"]),
+        "s4": float(row["s4"]),
+        "s5": float(row["s5"]),
+        "s6": float(row["s6"]),
+        "s7": float(row["s7"]),
+        "s8": float(row["s8"]),
+        "water": float(row["water"]),
+        "dmso": float(row["dmso"]),
+        "IBP": float(row["IBP"]),
+        "wavelength": float(row.get("wavelength", 650)),  # fallback if not in CSV
+    }
+
+    # Pass that dict to run_protocol
+    run_details = run_protocol(BASE_URL, protocol_path, run_time_parameters)
     final_status = run_details.get("data", {}).get("status", "unknown")
+
     print(f"Run completed with status: {final_status}")
     output_ids = run_details.get("data", {}).get("outputFileIds", []) or []
 

@@ -448,9 +448,17 @@ for trial in range(n, total_trials):
 
     df_design, df_vol = hf.design_to_vol(n, design_file_path=DESIGN_FILE_PATH)
 
+# If surfactant volumes are zero, replace them with CSV-generated ones
+    surf_names = [f"s{i}" for i in range(1, 9)]
+    if df_vol[surf_names].sum(axis=1).iloc[0] == 0:
+        print("Surf values zero — using CSV-generated volumes")
+        # Correct: unpack the tuple again
+        df_design, df_vol = hf.design_to_vol(n, design_file_path=DESIGN_FILE_PATH)
+
     otflex_params = df_vol.drop(columns=["trial_index", "drug_name"]).to_dict(
         orient="records"
     )[0]
+    
     otflex_params["next_plate_well"] = NEXT_PLATE_WELL
     otflex_params["next_deepplate_well"] = NEXT_DEEPPLATE_WELL
     otflex_params["replicates"] = REPLICATES
