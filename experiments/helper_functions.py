@@ -221,7 +221,7 @@ def design_to_vol(
     df_design.columns = ["trial_index","drug_name","s1","s2","s3","s4","s5","s6","s7","s8","IBP","surf_conc","obj_surf_conc"]
 
     s_cols = [f"s{i}" for i in range(1, number_of_surfactants + 1)]
-    possible_drug_cols = ["IBP", "LOV", "DCF", "GLV"]
+    drug_cols = ["IBP", "LOV", "DCF", "GLV"]
 
 
     print("Reading design file:", design_file_path + "i" + str(iteration) + ".csv")
@@ -245,17 +245,19 @@ def design_to_vol(
         for s in s_cols:
             df_vol[s] = df_design[s].astype(float)
 
-        for d in possible_drug_cols:
+        for d in drug_cols:
             df_vol[d] = df_vol[d] = 0.0
         for idx, row in df_design.iterrows():
             chosen_drug = row['drug_name'] # This will be "IBP"
-            if chosen_drug in possible_drugs:
+            if chosen_drug in drug_cols:
+                df_vol.at[idx, chosen_drug] = float(row['IBP']) if chosen_drug == "IBP" else 0.0
                 # This grabs the actual volume (180uL) from the 'drug' column
-                df_vol.at[idx, chosen_drug] = float(row['drug'])
+               # df_vol.at[idx, chosen_drug] = float(row['IBP']) 
+        
 
 
         # dmso and water (µL) as remainder
-        df_vol["dmso"] = (drug_total_volume*1000) - df_vol[possible_drug_cols].sum(axis=1)
+        df_vol["dmso"] = (drug_total_volume*1000) - df_vol[drug_cols].sum(axis=1)
         df_vol["water"] = (surfactant_total_volume*1000) - df_vol[s_cols].sum(axis=1)
     else:
         # Old format: surf_1/surf_2 choice + *_conc columns

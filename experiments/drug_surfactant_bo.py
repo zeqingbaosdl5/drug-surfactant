@@ -249,14 +249,16 @@ REPLICATES = 1
 
 
 # Number of closed-loop batches to run in this iteration
-NUM_BATCHES = 1 #change for amount of trials
+NUM_BATCHES = 3 #change for amount of iterations you want to run
+SAMPLES_PER_ITERATION = 1  # number of samples per batch
 #drug_choices = ["IBP", "LOV", "DCF", "GLV"]
-drug_choices = ["IBP"] #to only test for IBP
+drug_choices = ["IBP"]*SAMPLES_PER_ITERATION #to only test for IBP
 surf_names = [f"s{i}" for i in range(1, 9)]
 
 
 # Interleaved round-robin drug selection for each trial
-total_trials = NUM_BATCHES * len(drug_choices)
+total_trials = NUM_BATCHES * len(drug_choices) # tell how much trials in whole run
+
 for trial in range(n, total_trials):
     drug = drug_choices[trial % len(drug_choices)]
     print(f"\n=== Starting experiment {trial + 1}/{total_trials} for drug: {drug} ===")
@@ -265,6 +267,13 @@ for trial in range(n, total_trials):
     data_so_far = pd.DataFrame()
     n = determine_current_iteration()
     if n > 0:
+        if "Drug_MW" not in data_so_far.columns:
+            # This fills in the missing info for old trials so it doesn't crash
+            if drug in hf.normalize_drug_properties_dict:
+                props = hf.normalize_drug_properties_dict[drug]['normalized_properties']
+                for col, val in props.items():
+                    data_so_far[col] = val
+
         data_so_far = ax_client.get_trials_data_frame()
         data_so_far = hf.add_drug_names(data_so_far)
 
@@ -413,7 +422,15 @@ for trial in range(n, total_trials):
         best_index = int(np.argmax(acqf_values))
         chosen = candidate_df.iloc[[best_index]]
 
+    #ax_params = chosen.iloc[0].to_dict()
+    # Convert the chosen candidate to a dictionary for Ax
     ax_params = chosen.iloc[0].to_dict()
+
+    # FIX: Inject drug properties to stop the KeyError: 'Drug_MW'
+    if drug in hf.normalize_drug_properties_dict:
+        props = hf.normalize_drug_properties_dict[drug]['normalized_properties']
+        ax_params.update(props)
+
     _, trial_index = ax_client.attach_trial(ax_params)
 
     obj_surf_conc = sum(ax_params[s] for s in surf_names)
@@ -475,12 +492,42 @@ for trial in range(n, total_trials):
 
     run_otflex_iA(otflex_params)
 
-    raw_data_file = RAW_DATA_FILE_PATH + "i" + str(n) + ".csv"
+    # raw_data_file = RAW_DATA_FILE_PATH + "i" + str(n) + ".csv"
 
+    # df_absorbance = hf.process_absorbance(
+    #     replicates=REPLICATES,
+    #     threshold=0.06,
+    #     raw_data_file_path=raw_data_file,
+    # )
+
+    # --- NEW SEARCH & RENAME LOGIC ---
+    import glob
+    import shutil
+
+    # 1. Search for the file the robot just downloaded (wildcard handles the random ID)
+    # This looks for any file starting with 'raw_absorbance' in the 'data/' folder
+    possible_files = glob.glob("data/raw_absorbance*.csv")
+    
+    if not possible_files:
+        raise FileNotFoundError(f"Robot finished, but no CSV found in the 'data/' folder for iteration {n}.")
+
+    # 2. Identify the newest one
+    latest_messy_file = max(possible_files, key=os.path.getctime)
+    
+    # 3. Define the clean name your helpers expect
+    # This creates: raw_data/raw_absorbance_i0.csv
+    clean_raw_data_path = f"raw_data/raw_absorbance_i{n}.csv"
+    os.makedirs("raw_data", exist_ok=True)
+
+    # 4. Move and Rename it
+    shutil.move(latest_messy_file, clean_raw_data_path)
+    print(f"DEBUG: Cleaned {latest_messy_file} -> {clean_raw_data_path}")
+
+    # 5. Process the absorbance using the NEW CLEAN NAME
     df_absorbance = hf.process_absorbance(
+        raw_data_file_path=clean_raw_data_path, 
         replicates=REPLICATES,
         threshold=0.06,
-        raw_data_file_path=raw_data_file,
     )
 
     # find the absorbance value from df_absorbance that corresponds to trial._properties["well_slot"]
@@ -542,8 +589,8 @@ for trial in range(n, total_trials):
     del viewer_results_with_status
 
 
-    NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=1)
-    NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=1)
+    NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=2)
+    NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
 
 
 print(

@@ -22,56 +22,56 @@ def add_parameters(parameters: protocol_api.Parameters):
         variable_name="s1",
         default=300.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s2",
         variable_name="s2",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s3",
         variable_name="s3",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s4",
         variable_name="s4",
         default=300.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s5",
         variable_name="s5",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s6",
         variable_name="s6",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s7",
         variable_name="s7",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="s8",
         variable_name="s8",
         default=0.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="dmso",
@@ -85,7 +85,7 @@ def add_parameters(parameters: protocol_api.Parameters):
         variable_name="water",
         default=550.0,
         minimum=0.0,
-        maximum=1000.0,
+        maximum=1200.0,
     )
     parameters.add_float(
         display_name="IBP",
@@ -397,8 +397,8 @@ def run(protocol: protocol_api.ProtocolContext):
                 deepplate[current_surfactant_well],
                 plate[well],
                 new_tip="never",
-                air_gap=50,
-            )  # do air gap 50 for 1000uL tip
+                air_gap=60,
+            )  # do air gap 60 for 1000uL tip
             pipette_high.touch_tip(plate[well], v_offset=-3)
         pipette_high.drop_tip()
 
@@ -466,4 +466,5 @@ def run(protocol: protocol_api.ProtocolContext):
     protocol.move_labware(
             labware=deepplate, new_location=hs_adapter, use_gripper=True
         )
+    pr_mod.close_lid()
 
