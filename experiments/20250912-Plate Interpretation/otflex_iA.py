@@ -157,15 +157,28 @@ def add_parameters(parameters: protocol_api.Parameters):
     #     choices=well_choices,
     #     default="A1",
     # )
+    rack_choices = [
+        {"display_name": "Rack 1 (Slot B1)", "value": "0"},
+        {"display_name": "Rack 2 (Slot A1)", "value": "1"}
+    ]
     parameters.add_str(
-        variable_name="rack_id_1000", display_name="1000 Rack ID", default="0"
-        )
+        variable_name="rack_id_1000", 
+        display_name="1000 Rack ID", 
+        choices=rack_choices, # Added choices
+        default="0"
+    )
     parameters.add_str(
-        variable_name="well_1000", display_name="1000 Start Well", default="A1"
-        )
+        variable_name="well_1000", 
+        display_name="1000 uL Start Well", 
+        choices=well_choices, # Added choices
+        default="A1"
+    )
     parameters.add_str(
-        variable_name="well_50", display_name="50 Start Well", default="A1"
-        )
+        variable_name="well_50", 
+        display_name="50 uL Start Well", 
+        choices=well_choices, # Added choices
+        default="A1"
+    )
    
 
 
@@ -458,7 +471,7 @@ def run(protocol: protocol_api.ProtocolContext):
                 new_tip="never",
                 air_gap=60,
             )  # do air gap 60 for 1000uL tip
-            pipette_high.touch_tip(plate[well], v_offset=-3)
+            #pipette_high.touch_tip(plate[well], v_offset=-3) # Took this out since bubbles were formed
         pipette_high.drop_tip()
 
         pipette_low.pick_up_tip()

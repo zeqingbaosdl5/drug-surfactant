@@ -222,8 +222,10 @@ try:
     prev_deep = well_positions.get("deepplate", hf.get_next_well("A1", offset=n))
     #next_plate_default = hf.get_next_well(prev_plate, offset=1)
     #next_deep_default = hf.get_next_well(prev_deep, offset=1)
-    next_plate_default = hf.get_next_well(prev_plate)
-    next_deep_default = hf.get_next_well(prev_deep)
+    #next_plate_default = hf.get_next_well(prev_plate)
+    #next_deep_default = hf.get_next_well(prev_deep)
+    next_plate_default = prev_plate
+    next_deep_default = prev_deep
     print(
         f"Last saved plate well: {prev_plate}\nLast saved deepplate well: {prev_deep}"
     )
@@ -281,18 +283,22 @@ for trial in range(n, total_trials):
     drug = drug_choices[trial % len(drug_choices)]
     print(f"\n=== Starting experiment {trial + 1}/{total_trials} for drug: {drug} ===")
 
-    # 1) Generate recommendations (inlined from helper_functions.run_optimizer)
-    data_so_far = pd.DataFrame()
+    # 1) Generate recommendations
     n = determine_current_iteration()
-    if n > 0:
-        if "Drug_MW" not in data_so_far.columns:
-            # This fills in the missing info for old trials so it doesn't crash
-            if drug in hf.normalize_drug_properties_dict:
-                props = hf.normalize_drug_properties_dict[drug]['normalized_properties']
-                for col, val in props.items():
-                    data_so_far[col] = val
+    
+    # First, get the actual data from the optimizer
+    data_so_far = ax_client.get_trials_data_frame()
 
-        data_so_far = ax_client.get_trials_data_frame()
+    # If we have data, we must ensure the fixed properties exist for the helper function
+    if not data_so_far.empty:
+        for d_key, info in hf.normalize_drug_properties_dict.items():
+            props = info['normalized_properties']
+            # Map properties (MW, LogP, TPSA) to every row matching this drug
+            mask = data_so_far['drug'] == d_key
+            for col, val in props.items():
+                data_so_far.loc[mask, col] = val
+        
+        # Now that columns are 'hydrated', this will work perfectly
         data_so_far = hf.add_drug_names(data_so_far)
 
     # Compute per-drug best surfactant concentration for dynamic constraint, only using successful experiments (absorbance <= 0.06)
