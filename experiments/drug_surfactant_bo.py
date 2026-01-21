@@ -250,7 +250,7 @@ NEXT_DEEPPLATE_WELL = deep_input if deep_input else next_deep_default
 if plate_input or deep_input:
     with open(WELL_POSITIONS_FILE, "w") as f:
         json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
-REPLICATES = 1
+REPLICATES = 3
 
 # # To update pipette tip location/ initiation ###################################################################################################################################################
 # tip1000_well = input("Enter starting 1000uL TIP well (default A1): ").upper() or "A1"
@@ -269,9 +269,9 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 # Number of closed-loop batches to run in this iteration
 NUM_BATCHES = 3 #change for amount of iterations you want to run
-SAMPLES_PER_ITERATION = 1  # number of samples per batch
+SAMPLES_PER_ITERATION = 3  # number of samples per batch
 #drug_choices = ["IBP", "LOV", "DCF", "GLV"]
-drug_choices = ["IBP"]*SAMPLES_PER_ITERATION #to only test for IBP
+drug_choices = ["IBP", "IBP","IBP"]#*SAMPLES_PER_ITERATION #to only test for IBP
 TOTAL_DRUGS=1
 surf_names = [f"s{i}" for i in range(1, 9)]
 
@@ -590,14 +590,14 @@ for trial in range(n, total_trials):
     # MATH: Calculate how many tips each pipette used in this run
     # High pipette used for volumes > 40uL and the final mix
     surfactant_list = [f"s{i}" for i in range(1, 9)] + ["water"]
-    high_used = sum(1 for s in surfactant_list if float(otflex_params.get(s, 0)) > 40) + 1
+    high_used = sum(1 for s in surfactant_list if float(otflex_params.get(s, 0)) > 40) + (SAMPLES_PER_ITERATION)  # includes pipette_high for surfactants used, water, making experiment
     # Low pipette used for volumes <= 40uL and the drug transfer
-    low_used = sum(1 for s in surfactant_list if 0 < float(otflex_params.get(s, 0)) <= 40) + 1
+    low_used = sum(1 for s in surfactant_list if 0 < float(otflex_params.get(s, 0)) <= 40) + (SAMPLES_PER_ITERATION)
 
     all_wells = [f"{r}{c}" for c in range(1, 13) for r in "ABCDEFGH"]
 
     # Update 1000uL Counter (Handles 2 racks B1 and A1)
-    idx_1000 = all_wells.index(tip_state["well_1000"]) + high_used
+    idx_1000 = all_wells.index(tip_state["well_1000"]) + high_used +1 
     if idx_1000 >= 96:
         tip_state["rack_id_1000"] = "1" # Move to tip1000_2
         tip_state["well_1000"] = all_wells[idx_1000 - 96]
@@ -605,7 +605,7 @@ for trial in range(n, total_trials):
         tip_state["well_1000"] = all_wells[idx_1000]
 
     # Update 50uL Counter (1 rack at B2)
-    idx_50 = all_wells.index(tip_state["well_50"]) + low_used
+    idx_50 = all_wells.index(tip_state["well_50"]) + low_used +1
     tip_state["well_50"] = all_wells[idx_50 % 96] # Loops back to A1 if full
 
     # Save to JSON file so the next iteration starts correctly
@@ -666,8 +666,8 @@ for trial in range(n, total_trials):
     del viewer_results_with_status
 
 
-    NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset= SAMPLES_PER_ITERATION * REPLICATES* TOTAL_DRUGS)
-    NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset= 2 * SAMPLES_PER_ITERATION * TOTAL_DRUGS)
+    NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset= SAMPLES_PER_ITERATION * REPLICATES) #* TOTAL_DRUGS) take out total drugs because we won't do different drugs in one iteration 
+    NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset= 2 * SAMPLES_PER_ITERATION) # * TOTAL_DRUGS)
 
 
 print(

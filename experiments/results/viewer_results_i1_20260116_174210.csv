@@ -1,2 +1,0 @@
-trial_index,drug_name,s1,s2,s3,s4,s5,s6,s7,s8,IBP,surf_conc,obj_surf_conc,success,status,well_slot,plate_num
-1,IBP,0.0,0.0,105.0,520.0,0.0,0.0,0.0,0.0,180.0,625.0,625.0,1,ABANDONED,B2,1
