@@ -145,6 +145,28 @@ def add_parameters(parameters: protocol_api.Parameters):
         choices=well_choices,
         default="A1",
     )
+    # parameters.add_str(
+    #     variable_name="tip1000_well",
+    #     display_name="Starting 1000uL Tip Well",
+    #     choices=well_choices,
+    #     default="A1",
+    # )
+    # parameters.add_str(
+    #     variable_name="tip50_well",
+    #     display_name="Starting 50uL Tip Well",
+    #     choices=well_choices,
+    #     default="A1",
+    # )
+    parameters.add_str(
+        variable_name="rack_id_1000", display_name="1000 Rack ID", default="0"
+        )
+    parameters.add_str(
+        variable_name="well_1000", display_name="1000 Start Well", default="A1"
+        )
+    parameters.add_str(
+        variable_name="well_50", display_name="50 Start Well", default="A1"
+        )
+   
 
 
 def run(protocol: protocol_api.ProtocolContext):
@@ -176,6 +198,13 @@ def run(protocol: protocol_api.ProtocolContext):
         mount="left",
         tip_racks=[tip1000_1, tip1000_2],
     )
+
+    # Map your existing labware names to IDs for the logic
+    tipracks_1000 = {"0": tip1000_1, "1": tip1000_2}
+    
+    # SET STARTING TIPS: This prevents the robot from resetting to A1
+    pipette_high.starting_tip = tipracks_1000[protocol.params.rack_id_1000].wells_by_name()[protocol.params.well_1000]
+    pipette_low.starting_tip = tip50.wells_by_name()[protocol.params.well_50]
 
     surfactant_stock_1 = protocol.load_labware(
         load_name="allenlab_8_wellplate_20000ul", location="C1"
@@ -280,6 +309,33 @@ def run(protocol: protocol_api.ProtocolContext):
             return pipette_low
         else:
             return pipette_high
+    
+    # # ... after sources dictionary ...
+    # all_wells = [f"{r}{c}" for c in range(1, 13) for r in "ABCDEFGH"]
+    
+    # # We use a dictionary to hold state so nested functions can update it
+    # tip_tracker = {
+    #     "idx_1000": all_wells.index(protocol.params.tip1000_well),
+    #     "idx_50": all_wells.index(protocol.params.tip50_well),
+    #     "used_1000": 0,
+    #     "used_50": 0
+    # }
+
+    # def get_next_tip(pipette):
+    #     if pipette == pipette_high:
+    #         total_idx = tip_tracker["idx_1000"] + tip_tracker["used_1000"]
+    #         # Logic for two 1000uL racks
+    #         rack = tip1000_1 if total_idx < 96 else tip1000_2
+    #         well = rack.wells()[total_idx % 96]
+    #         tip_tracker["used_1000"] += 1
+    #         protocol.comment(f"Picking 1000uL Tip {well.has_name} from {'B1' if total_idx < 96 else 'A1'}")
+    #         return well
+    #     else:
+    #         total_idx = tip_tracker["idx_50"] + tip_tracker["used_50"]
+    #         well = tip50.wells()[total_idx % 96]
+    #         tip_tracker["used_50"] += 1
+    #         protocol.comment(f"Picking 50uL Tip {well.has_name} from B2")
+    #         return well
 
     def plate_on_hs(labware_to_shake, new_location, speed, time):
         hs_mod.close_labware_latch()
@@ -357,10 +413,12 @@ def run(protocol: protocol_api.ProtocolContext):
             pipette = pipette_selection(vol)
             if vol > 0:
                 pipette.pick_up_tip()
+                #pipette.pick_up_tip(get_next_tip(pipette))
                 pipette_high.flow_rate.dispense = 50
                 air_gap_vol = (
-                    55 if pipette == pipette_high else 10
+                    60 if pipette == pipette_high else 10
                 )  # do air gap 50 for 1000uL tip
+
                 hs_mod.close_labware_latch()
                 pipette.transfer(
                     vol,
@@ -390,6 +448,7 @@ def run(protocol: protocol_api.ProtocolContext):
             next_plate_well = next_well(next_plate_well)
 
         pipette_high.pick_up_tip()
+        #pipette_high.pick_up_tip(get_next_tip(pipette_high))
         pipette_high.flow_rate.dispense = 50
         for well in replicate_wells:
             pipette_high.transfer(
@@ -403,6 +462,7 @@ def run(protocol: protocol_api.ProtocolContext):
         pipette_high.drop_tip()
 
         pipette_low.pick_up_tip()
+        #pipette_low.pick_up_tip(get_next_tip(pipette_low))
         for well in replicate_wells:
             pipette_low.transfer(
                 30,
