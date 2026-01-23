@@ -1,4 +1,5 @@
 from opentrons import protocol_api
+import json
 import re
 
 metadata = {
@@ -194,7 +195,7 @@ requirements = {"robotType": "Flex", "apiLevel": "2.23"}
 #     )
 
 # --- GLOBAL CONSTANTS ---
-# Defining these outside the function helps the robot analyzer read them correctly
+# These must be defined outside the function so the Robot Analyzer can validate the strings
 RACK_CHOICES = [
     {"display_name": "Rack 1 (Slot B1)", "value": "0"},
     {"display_name": "Rack 2 (Slot A1)", "value": "1"}
@@ -205,19 +206,21 @@ WELL_CHOICES = [
 ]
 
 def add_parameters(parameters: protocol_api.Parameters):
-    # 1. Batch Data (The dynamic list)
+    # 1. Batch Data Container
+    # Every add_str MUST have choices in API 2.23 to pass the pre-run analysis.
+    # The 'default' value MUST be present in the 'choices' list.
     parameters.add_str(
         variable_name="batch_json",
         display_name="Batch Data (JSON)",
         default="[]",
-        description="List of trials to run in this batch"
+        choices=[{"display_name": "Dynamic", "value": "[]"}]
     )
 
-    # 2. Hardware Settings
+    # 2. Hardware & Run Settings
     parameters.add_int(variable_name="iteration", display_name="Iteration", default=0, minimum=0, maximum=10000)
     parameters.add_int(variable_name="replicates", display_name="replicates", default=3, minimum=1, maximum=12)
     
-    # 3. Tip Tracking
+    # 3. Tip Tracking Parameters
     parameters.add_str(variable_name="rack_id_1000", display_name="1000 Rack ID", choices=RACK_CHOICES, default="0")
     parameters.add_str(variable_name="well_1000", display_name="1000 Start Well", choices=WELL_CHOICES, default="A1")
     parameters.add_str(variable_name="well_50", display_name="50 Start Well", choices=WELL_CHOICES, default="A1")
@@ -227,6 +230,16 @@ def add_parameters(parameters: protocol_api.Parameters):
     parameters.add_str(variable_name="next_deepplate_well", display_name="Next Deepplate Well", choices=WELL_CHOICES, default="A1")
 
 def run(protocol: protocol_api.ProtocolContext):
+    # --- A. LOAD DATA FIRST ---
+    # We parse the batch list before doing anything else
+    try:
+        data = json.loads(protocol.params.batch_json)
+    except:
+        data = []
+    
+    protocol.comment(f"Starting Batch Run with {len(data)} samples.")
+
+    # --- B. ROBOT SETUP ---
 
     # robot setup
     protocol.comment("Setting up robot: loading tip racks, modules, and instruments.")
@@ -458,15 +471,6 @@ def run(protocol: protocol_api.ProtocolContext):
     #     },
     # ]
 
-    # --- BATCH CHANGE: Load the list from the JSON parameter ---
-    import json
-    try:
-        data = json.loads(protocol.params.batch_json)
-    except:
-        data = [] # Fallback for safety
-    
-    protocol.comment(f"Running Batch with {len(data)} samples.")
-    # -----------------------------------------------------------
 
 
     # ################################################################################################################################################
