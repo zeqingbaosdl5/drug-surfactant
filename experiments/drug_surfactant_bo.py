@@ -535,12 +535,12 @@ for n in range(start_n, start_n + NUM_BATCHES):
             "drug_name": drug,
             "well_slot": NEXT_PLATE_WELL,
             "deep_well_slot": NEXT_DEEPPLATE_WELL,
-            "rack_1000": tip_state["rack_id_1000"], # Use the tip_state you captured
+            "rack_1000": tip_state["rack_id_1000"],
             "well_1000": tip_state["well_1000"],
             "well_50": tip_state["well_50"],
             **{k: ax_params[k] for k in surf_names},
-            "surf_conc": row.get('surf_conc', 0.0), # Add this to keep columns aligned
-            "obj_surf_conc": ""
+            "surf_conc": row.get('surf_conc', 0.0),
+            "obj_surf_conc": "" 
         })
         
         print(f"Trial {trial_index} assigned to Plate: {NEXT_PLATE_WELL}, Deep: {NEXT_DEEPPLATE_WELL}")
@@ -603,10 +603,10 @@ for n in range(start_n, start_n + NUM_BATCHES):
     # otflex_params["well_1000"] = tip_state["well_1000"]
     # otflex_params["well_50"] = tip_state["well_50"]
 
-    print("\n--- TIP USAGE PREVIEW ---")
-    print(f"1000uL Pipette starting at: Rack {otflex_params['rack_id_1000']}, Well {otflex_params['well_1000']}")
-    print(f"50uL Pipette starting at: Well {otflex_params['well_50']}")
-    print("--------------------------\n")
+    # print("\n--- TIP USAGE PREVIEW ---")
+    # print(f"1000uL Pipette starting at: Rack {otflex_params['rack_id_1000']}, Well {otflex_params['well_1000']}")
+    # print(f"50uL Pipette starting at: Well {otflex_params['well_50']}")
+    # print("--------------------------\n")
 
 
     run_otflex_iA(otflex_params)
