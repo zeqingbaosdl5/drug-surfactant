@@ -613,20 +613,31 @@ for n in range(start_n, start_n + NUM_BATCHES):
 
     import time
 
-    for i, trial_data in enumerate(otflex_params):
-        # 1. Add the missing batch parameter
-        trial_data["trials_per_iteration"] = TRIALS_PER_ITERATION
+    # 1. Convert the list of dictionaries (the batch) into a JSON string
+    batch_json_str = json.dumps(otflex_params)
+
+    # 2. Create ONE payload for the entire iteration
+    # We use the tip state from the start; the robot will increment internally.
+    run_payload = {
+        "batch_json": batch_json_str,
+        "iteration": n,
+        "rack_id_1000": tip_state["rack_id_1000"],
+        "well_1000": tip_state["well_1000"],
+        "well_50": tip_state["well_50"],
+        "replicates": REPLICATES,
         
-        # 2. Use 'i' instead of the missing 'trial_index' key
-        well = trial_data.get('next_plate_well', 'Unknown')
-        print(f"--- Launching Robot: Trial {i} at Well {well} ---")
-        
-        # 3. Execute robot run
-        run_otflex_iA(trial_data)
-        
-        # 4. 5-second buffer for server stability
-        print("Trial submitted! Waiting 5 seconds for robot server to cycle...")
-        time.sleep(5)
+        # These are just placeholders so the robot display doesn't show "null"
+        "next_plate_well": otflex_params[0].get("next_plate_well", "Batch"),
+        "next_deepplate_well": otflex_params[0].get("next_deepplate_well", "Batch")
+    }
+
+    # 3. Upload and Run ONCE
+    print(f"--- Launching Batch {n} ({len(otflex_params)} trials) ---")
+    run_otflex_iA(run_payload)
+    
+    # 4. Wait for the robot to finish the whole batch
+    print("Batch running... Waiting 15 seconds for server cycle...")
+    time.sleep(15)
 
 
 
