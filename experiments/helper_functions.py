@@ -246,12 +246,12 @@ def design_to_vol(
         #     df_vol[s] = df_design[s].astype(float)
 
         # Create the list of surfactant column names explicitly to avoid string columns
-        surfactant_names = [f's{i}' for i in range(1, 9)] 
+        surf_cols = [f"s{i}" for i in range(1, 9)]
 
-        for s in surfactant_names:
-            if s in df_design.columns:
-                # Use pd.to_numeric to safely skip any accidental strings
-                df_vol[s] = pd.to_numeric(df_design[s], errors='coerce').fillna(0.0)
+        for s in surf_cols:
+            # Use pd.to_numeric to safely skip strings like 'C5' if the columns shift
+            # This 'coerce' turns strings into NaN, and fillna(0.0) makes them usable numbers
+            df_vol[s] = pd.to_numeric(df_design[s], errors='coerce').fillna(0.0)
 
         for d in drug_cols:
             df_vol[d] = df_vol[d] = 0.0

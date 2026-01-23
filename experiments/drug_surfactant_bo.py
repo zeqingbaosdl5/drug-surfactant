@@ -603,10 +603,11 @@ for n in range(start_n, start_n + NUM_BATCHES):
     # otflex_params["well_1000"] = tip_state["well_1000"]
     # otflex_params["well_50"] = tip_state["well_50"]
 
-    # print("\n--- TIP USAGE PREVIEW ---")
-    # print(f"1000uL Pipette starting at: Rack {otflex_params['rack_id_1000']}, Well {otflex_params['well_1000']}")
-    # print(f"50uL Pipette starting at: Well {otflex_params['well_50']}")
-    # print("--------------------------\n")
+    # Use tip_state directly since it is the dictionary holding these strings
+    print("\n--- TIP USAGE PREVIEW ---")
+    print(f"1000uL Pipette starting at: Rack {tip_state['rack_id_1000']}, Well {tip_state['well_1000']}")
+    print(f"50uL Pipette starting at: Well {tip_state['well_50']}")
+    print("--------------------------\n")
 
 
     run_otflex_iA(otflex_params)
