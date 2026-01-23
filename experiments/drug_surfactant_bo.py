@@ -604,18 +604,28 @@ for n in range(start_n, start_n + NUM_BATCHES):
     # otflex_params["well_1000"] = tip_state["well_1000"]
     # otflex_params["well_50"] = tip_state["well_50"]
 
-    # Use tip_state directly since it is the dictionary holding these strings
-    print("\n--- TIP USAGE PREVIEW ---")
-    print(f"1000uL Pipette starting at: Rack {tip_state['rack_id_1000']}, Well {tip_state['well_1000']}")
-    print(f"50uL Pipette starting at: Well {tip_state['well_50']}")
-    print("--------------------------\n")
+    # # Use tip_state directly since it is the dictionary holding these strings
+    # print("\n--- TIP USAGE PREVIEW ---")
+    # print(f"1000uL Pipette starting at: Rack {tip_state['rack_id_1000']}, Well {tip_state['well_1000']}")
+    # print(f"50uL Pipette starting at: Well {tip_state['well_50']}")
+    # print("--------------------------\n")
 
 
-    # This ensures each of the 3 trials runs with its own specific volumes and wells
+    import time
+
     for trial_data in otflex_params:
-        print(f"--- Running Robot: Trial at Well {trial_data['next_plate_well']} ---")
+        # Ensure the robot knows the batch size for this specific trial
+        trial_data["trials_per_iteration"] = TRIALS_PER_ITERATION
+        
+        print(f"--- Launching Robot: Trial {trial_data['trial_index']} at Well {trial_data['next_plate_well']} ---")
+        
+        # This is the function that talks to opentrons_http_client.py
         run_otflex_iA(trial_data)
-
+        
+        # 5-second buffer to prevent the 'RunNotFoundError' communication glitch
+        print("Trial submitted! Waiting 5 seconds for robot server to cycle...")
+        time.sleep(5)
+        
     # raw_data_file = RAW_DATA_FILE_PATH + "i" + str(n) + ".csv"
 
     # df_absorbance = hf.process_absorbance(
