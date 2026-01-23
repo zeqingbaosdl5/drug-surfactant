@@ -179,6 +179,12 @@ def add_parameters(parameters: protocol_api.Parameters):
         choices=well_choices, # Added choices
         default="A1"
     )
+    parameters.add_int(
+        variable_name="samples_per_batch",
+        display_name="Samples Per Batch",
+        default=3,
+        choices=[1, 2, 3, 4, 6, 8]
+    )
    
 
 
@@ -387,6 +393,7 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.move_labware(
             labware=labware_to_read, new_location=new_location, use_gripper=True
         )
+
 
     # to be rewritten according to the exp design
     ################################################################################################################################################

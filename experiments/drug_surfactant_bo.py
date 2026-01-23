@@ -264,27 +264,35 @@ try:
     with open(TIP_STATE_FILE, "r") as f:
         tip_state = json.load(f)
 except (FileNotFoundError, json.JSONDecodeError):
-    # Default values if the file doesn't exist yet
     tip_state = {"rack_id_1000": "0", "well_1000": "A1", "well_50": "A1"}
+
+# Manual tip location check and override
+print(f"\nRemembered 1000uL: Rack {tip_state['rack_id_1000']}, Well {tip_state['well_1000']}")
+print(f"Remembered 50uL:   Well {tip_state['well_50']}")
+
+user_1000_rack = input(f"Enter 1000uL Rack ID (Enter for {tip_state['rack_id_1000']}): ").strip()
+user_1000_well = input(f"Enter 1000uL Well (Enter for {tip_state['well_1000']}): ").strip().upper()
+user_50_well   = input(f"Enter 50uL Well (Enter for {tip_state['well_50']}): ").strip().upper()
+
+if user_1000_rack: tip_state["rack_id_1000"] = user_1000_rack
+if user_1000_well: tip_state["well_1000"] = user_1000_well
+if user_50_well:   tip_state["well_50"] = user_50_well
 
 # Number of closed-loop batches to run in this iteration
 NUM_BATCHES = 3 #change for amount of iterations you want to run
-SAMPLES_PER_ITERATION = 3  # number of samples per batch
+TRIALS_PER_ITERATION = 3  # number of samples per batch
 #drug_choices = ["IBP", "LOV", "DCF", "GLV"]
-drug_choices = ["IBP", "IBP","IBP"]#*SAMPLES_PER_ITERATION #to only test for IBP
-TOTAL_DRUGS=1
+drug_choices = ["IBP"] #to only test for IBP
 surf_names = [f"s{i}" for i in range(1, 9)]
 
 
-# Interleaved round-robin drug selection for each trial
-total_trials = NUM_BATCHES * len(drug_choices) # tell how much trials in whole run
-
-for trial in range(n, total_trials):
-    drug = drug_choices[trial % len(drug_choices)]
-    print(f"\n=== Starting experiment {trial + 1}/{total_trials} for drug: {drug} ===")
+# Number of iterations to run
+start_n = n 
+for n in range(start_n, start_n + NUM_BATCHES):
+    drug = drug_choices[n % len(drug_choices)]
+    print(f"\n=== Starting Batch Iteration {n}/{NUM_BATCHES} for drug: {drug} ===")
 
     # 1) Generate recommendations
-    n = determine_current_iteration()
     
     # First, get the actual data from the optimizer
     data_so_far = ax_client.get_trials_data_frame()
@@ -389,17 +397,46 @@ for trial in range(n, total_trials):
             )
         ]
 
+    # trials_data = []
+    # num_init = 4 if SMOKE_TEST else 12
+    # if n + 1 <= num_init:
+    #     rng = np.random.default_rng(n)
+    #     sample_idx = int(rng.choice(len(candidate_df), size=1, replace=False)[0])
+    #     chosen = candidate_df.iloc[[sample_idx]]
+
     trials_data = []
+    chosen_rows = []
+
     num_init = 4 if SMOKE_TEST else 12
+
     if n + 1 <= num_init:
         rng = np.random.default_rng(n)
-        sample_idx = int(rng.choice(len(candidate_df), size=1, replace=False)[0])
-        chosen = candidate_df.iloc[[sample_idx]]
+        sample_indices = rng.choice(
+            len(candidate_df),
+            size=TRIALS_PER_ITERATION,
+            replace=False
+        )
+        chosen_rows = candidate_df.iloc[sample_indices]
+
     else:
         print("Fitting model..")
         ax_client.fit_model()
         model = ax_client.generation_strategy.model
-        # Evaluate acquisition function in batches to reduce memory usage
+
+        obs_feats = [
+            ObservationFeatures(row.to_dict())
+            for _, row in candidate_df.iterrows()
+        ]
+        acqf_vals = model.evaluate_acquisition_function(obs_feats)
+
+        best_indices = np.argsort(acqf_vals)[-TRIALS_PER_ITERATION:]
+        chosen_rows = candidate_df.iloc[best_indices]
+
+    # else:
+    #     print("Fitting model..")
+    #     ax_client.fit_model()
+    #     model = ax_client.generation_strategy.model
+    #     # Evaluate acquisition function in batches to reduce memory usage
         import time
 
         acqf_batch_size = 1000  # Set your preferred batch size here
@@ -446,36 +483,66 @@ for trial in range(n, total_trials):
         best_index = int(np.argmax(acqf_values))
         chosen = candidate_df.iloc[[best_index]]
 
-    #ax_params = chosen.iloc[0].to_dict()
-    # Convert the chosen candidate to a dictionary for Ax
-    ax_params = chosen.iloc[0].to_dict()
+    # #ax_params = chosen.iloc[0].to_dict()
+    # # Convert the chosen candidate to a dictionary for Ax
+    # ax_params = chosen.iloc[0].to_dict()
 
-    # FIX: Inject drug properties to stop the KeyError: 'Drug_MW'
-    if drug in hf.normalize_drug_properties_dict:
-        props = hf.normalize_drug_properties_dict[drug]['normalized_properties']
+    # # FIX: Inject drug properties to stop the KeyError: 'Drug_MW'
+    # if drug in hf.normalize_drug_properties_dict:
+    #     props = hf.normalize_drug_properties_dict[drug]['normalized_properties']
+    #     ax_params.update(props)
+
+    # _, trial_index = ax_client.attach_trial(ax_params)
+
+    # obj_surf_conc = sum(ax_params[s] for s in surf_names)
+    # print(f"Chosen surfactant concentrations for {drug}: {ax_params}")
+
+    # # Add well_slot and plate_num to trial._properties
+    # trial = ax_client.experiment.trials[trial_index]
+    # trial._properties["well_slot"] = NEXT_PLATE_WELL
+    # trial._properties["plate_num"] = 1  # Always 1 for now
+
+    # drug_cols = {d: 0.0 for d in drug_choices}
+    # drug_cols[drug] = float(fixed_drug_amount_ul)
+
+    # trials_data.append(
+    #     {
+    #         "trial_index": trial_index,
+    #         "drug_name": drug,
+    #         **{k: ax_params[k] for k in surf_names},
+    #         **drug_cols,
+    #     }
+    # )
+
+    trial_indices = []
+
+    for _, row in chosen_rows.iterrows():
+        ax_params = row.to_dict()
+        props = hf.normalize_drug_properties_dict[drug]["normalized_properties"]
         ax_params.update(props)
 
-    _, trial_index = ax_client.attach_trial(ax_params)
+        _, trial_index = ax_client.attach_trial(ax_params)
+        trial_indices.append(trial_index)
 
-    obj_surf_conc = sum(ax_params[s] for s in surf_names)
-    print(f"Chosen surfactant concentrations for {drug}: {ax_params}")
+        trial = ax_client.experiment.trials[trial_index]
+        # Assign unique wells to this trial inside the loop
+        trial._properties["well_slot"] = NEXT_PLATE_WELL
+        trial._properties["deep_well_slot"] = NEXT_DEEPPLATE_WELL
+        trial._properties["plate_num"] = 1
 
-    # Add well_slot and plate_num to trial._properties
-    trial = ax_client.experiment.trials[trial_index]
-    trial._properties["well_slot"] = NEXT_PLATE_WELL
-    trial._properties["plate_num"] = 1  # Always 1 for now
-
-    drug_cols = {d: 0.0 for d in drug_choices}
-    drug_cols[drug] = float(fixed_drug_amount_ul)
-
-    trials_data.append(
-        {
+        trials_data.append({
             "trial_index": trial_index,
             "drug_name": drug,
+            "well_slot": NEXT_PLATE_WELL,
+            "deep_well_slot": NEXT_DEEPPLATE_WELL,
             **{k: ax_params[k] for k in surf_names},
-            **drug_cols,
-        }
-    )
+        })
+        
+        print(f"Trial {trial_index} assigned to Plate: {NEXT_PLATE_WELL}, Deep: {NEXT_DEEPPLATE_WELL}")
+        
+        # INCREMENT: Move wells forward for the NEXT sample in this batch
+        NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=REPLICATES)
+        NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
 
     df_design = pd.DataFrame(trials_data)
     df_design["surf_conc"] = sum(df_design[s] for s in surf_names)
@@ -496,14 +563,25 @@ for trial in range(n, total_trials):
         # Correct: unpack the tuple again
         df_design, df_vol = hf.design_to_vol(n, design_file_path=DESIGN_FILE_PATH)
 
-    otflex_params = df_vol.drop(columns=["trial_index", "drug_name"]).to_dict(
-        orient="records"
-    )[0]
+    # otflex_params = df_vol.drop(columns=["trial_index", "drug_name"]).to_dict(
+    #     orient="records"
+    # )[0]
     
-    otflex_params["next_plate_well"] = NEXT_PLATE_WELL
-    otflex_params["next_deepplate_well"] = NEXT_DEEPPLATE_WELL
-    otflex_params["replicates"] = REPLICATES
-
+    # otflex_params["next_plate_well"] = NEXT_PLATE_WELL
+    # otflex_params["next_deepplate_well"] = NEXT_DEEPPLATE_WELL
+    # otflex_params["replicates"] = REPLICATES
+    
+    # Take all samples in the batch, not just the first one [0]
+    otflex_params = df_vol.drop(columns=["trial_index", "drug_name"]).to_dict(orient="records")
+    
+    for i, sample in enumerate(otflex_params):
+        # Match the specific wells we saved for each trial in the list
+        sample["next_plate_well"] = trials_data[i]["well_slot"]
+        sample["next_deepplate_well"] = trials_data[i]["deep_well_slot"]
+        sample["replicates"] = REPLICATES
+        sample["rack_id_1000"] = tip_state["rack_id_1000"]
+        sample["well_1000"] = tip_state["well_1000"]
+        sample["well_50"] = tip_state["well_50"]
     # Update well position json right before running the robot
     with open(WELL_POSITIONS_FILE, "w") as f:
         json.dump(
@@ -516,14 +594,15 @@ for trial in range(n, total_trials):
     # otflex_params["tip1000_well"] = tip1000_well
     # otflex_params["tip50_well"] = tip50_well
 
-    otflex_params["rack_id_1000"] = tip_state["rack_id_1000"]
-    otflex_params["well_1000"] = tip_state["well_1000"]
-    otflex_params["well_50"] = tip_state["well_50"]
+    # otflex_params["rack_id_1000"] = tip_state["rack_id_1000"]
+    # otflex_params["well_1000"] = tip_state["well_1000"]
+    # otflex_params["well_50"] = tip_state["well_50"]
 
     print("\n--- TIP USAGE PREVIEW ---")
     print(f"1000uL Pipette starting at: Rack {otflex_params['rack_id_1000']}, Well {otflex_params['well_1000']}")
     print(f"50uL Pipette starting at: Well {otflex_params['well_50']}")
     print("--------------------------\n")
+
 
     run_otflex_iA(otflex_params)
 
@@ -566,10 +645,7 @@ for trial in range(n, total_trials):
         threshold=0.06,
     )
 
-    # find the absorbance value from df_absorbance that corresponds to trial._properties["well_slot"]
-    absorbance = df_absorbance.loc[
-        df_absorbance["well_slot"] == NEXT_PLATE_WELL, "absorbance"
-    ].values[0]
+    
 
     # #updating tips for next run
     # u1000 = 0
@@ -587,17 +663,38 @@ for trial in range(n, total_trials):
     # tip1000_well = well_names_list[tip1000_idx % 96]
     # tip50_well = well_names_list[tip50_idx % 96]
     
-    # MATH: Calculate how many tips each pipette used in this run
-    # High pipette used for volumes > 40uL and the final mix
-    surfactant_list = [f"s{i}" for i in range(1, 9)] + ["water"]
-    high_used = sum(1 for s in surfactant_list if float(otflex_params.get(s, 0)) > 40) + (SAMPLES_PER_ITERATION)  # includes pipette_high for surfactants used, water, making experiment
-    # Low pipette used for volumes <= 40uL and the drug transfer
-    low_used = sum(1 for s in surfactant_list if 0 < float(otflex_params.get(s, 0)) <= 40) + (SAMPLES_PER_ITERATION)
+
+    # 1. Reset batch counters for this iteration
+    high_used = 0
+    low_used = 0
+
+    # 2. Define components that require a tip in the deepwell preparation stage
+    # Drug (180uL) and Water (550uL) are both > 40uL, so they will use high tips.
+    Deepwell_component_list = [f"s{i}" for i in range(1, 9)] + ["water"] + ["drug"]
+    
+    # Store starting data for the viewer results file
+    start_tips = f"1000uL:R{tip_state['rack_id_1000']}-{tip_state['well_1000']}, 50uL:{tip_state['well_50']}"
+    start_well = trials_data[0]['well_slot']
+
+    for sample in otflex_params:
+        # Step A: 'make_drug_or_surfactant' stage
+        # Count tips for surfactants, 550uL water, and 180uL drug
+        high_used += sum(1 for s in Deepwell_component_list if float(sample.get(s, 0)) > 40)
+        low_used += sum(1 for s in Deepwell_component_list if 0 < float(sample.get(s, 0)) <= 40)
+        
+        # Step B: 'make_exp' stage
+        # Protocol uses 1 High tip and 1 Low tip to transfer mixtures to the final well plate
+        high_used += 1
+        low_used += 1
+
+    # 3. Batch Overhead: +1 to each to ensure the counter starts on a fresh tip next time
+    high_used += 1
+    low_used += 1
 
     all_wells = [f"{r}{c}" for c in range(1, 13) for r in "ABCDEFGH"]
 
     # Update 1000uL Counter (Handles 2 racks B1 and A1)
-    idx_1000 = all_wells.index(tip_state["well_1000"]) + high_used +1 
+    idx_1000 = all_wells.index(tip_state["well_1000"]) + high_used 
     if idx_1000 >= 96:
         tip_state["rack_id_1000"] = "1" # Move to tip1000_2
         tip_state["well_1000"] = all_wells[idx_1000 - 96]
@@ -605,17 +702,43 @@ for trial in range(n, total_trials):
         tip_state["well_1000"] = all_wells[idx_1000]
 
     # Update 50uL Counter (1 rack at B2)
-    idx_50 = all_wells.index(tip_state["well_50"]) + low_used +1
+    idx_50 = all_wells.index(tip_state["well_50"]) + low_used 
     tip_state["well_50"] = all_wells[idx_50 % 96] # Loops back to A1 if full
 
     # Save to JSON file so the next iteration starts correctly
     with open(TIP_STATE_FILE, "w") as f:
         json.dump(tip_state, f)
+    
+    # absorbance = df_absorbance.loc[ df_absorbance["well_slot"] == NEXT_PLATE_WELL, "absorbance"].values[0]
 
-    ax_client.complete_trial(
-        trial_index, {"obj_surf_conc": obj_surf_conc, "absorbance": absorbance}
-    )
+    # # ax_client.complete_trial(
+    # #     trial_index, {"obj_surf_conc": obj_surf_conc, "absorbance": absorbance}
+    # # )
+    # for trial_index in trial_indices:
+    #     ax_client.complete_trial(
+    #         trial_index,
+    #         {
+    #             "obj_surf_conc": obj_surf_conc,
+    #             "absorbance": absorbance
+    #         }
+    #     )
 
+    for trial_index in trial_indices:
+        # Look up the specific well we assigned to THIS trial
+        this_well = ax_client.experiment.trials[trial_index]._properties["well_slot"]
+        
+        # Pull only the absorbance for that specific well from the result CSV
+        absorbance = df_absorbance.loc[df_absorbance["well_slot"] == this_well, "absorbance"].values[0]
+        
+        # Calculate surf_conc for this trial
+        trial_params = ax_client.experiment.trials[trial_index].arm.parameters
+        trial_surf_conc = sum(trial_params[s] for s in surf_names)
+
+        ax_client.complete_trial(
+            trial_index,
+            {"obj_surf_conc": trial_surf_conc, "absorbance": absorbance}
+        )
+        
     results = hf.build_results(n, df_absorbance, design_file_path=DESIGN_FILE_PATH)
     labeled_data = results.copy()
     
@@ -648,10 +771,16 @@ for trial in range(n, total_trials):
     # Sort for readability
     viewer_results_with_status = viewer_results_with_status.sort_values("trial_index")
 
-    # Save viewer-only CSV
+    # Add start/end metadata to the viewer results
+    viewer_results_with_status["start_tips"] = start_tips
+    viewer_results_with_status["end_tips"] = f"1000uL:R{tip_state['rack_id_1000']}-{tip_state['well_1000']}, 50uL:{tip_state['well_50']}"
+    viewer_results_with_status["batch_start_well"] = start_well
+    viewer_results_with_status["batch_end_well"] = NEXT_PLATE_WELL
+
+    # Save using n_iter for clear file history
     os.makedirs("results", exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    VIEWER_RESULTS_FILE = f"results/viewer_results{_SUFFIX}_i{n}_{ts}.csv"
+    VIEWER_RESULTS_FILE = f"results/viewer_results_i{n}_{ts}.csv"
     viewer_results_with_status.to_csv(VIEWER_RESULTS_FILE, index=False)
 
     # Print for live inspection
@@ -666,13 +795,11 @@ for trial in range(n, total_trials):
     del viewer_results_with_status
 
 
-    NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset= SAMPLES_PER_ITERATION * REPLICATES) #* TOTAL_DRUGS) take out total drugs because we won't do different drugs in one iteration 
-    NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset= 2 * SAMPLES_PER_ITERATION) # * TOTAL_DRUGS)
+    # NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset= TRIALS_PER_ITERATION * REPLICATES) #* TOTAL_DRUGS) take out total drugs because we won't do different drugs in one iteration 
+    # NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset= 2 * TRIALS_PER_ITERATION) # * TOTAL_DRUGS)
 
 
-print(
-    f"\nClosed-loop optimization for iteration {n} completed with {NUM_BATCHES} batches."
-)
+print(f"\nClosed-loop optimization completed. Ran from batch {start_n} to {n}.")
 
 #to run terminal
     #conda activate drug-surfactant
