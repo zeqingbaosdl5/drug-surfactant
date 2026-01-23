@@ -296,7 +296,6 @@ default_50 = tip_state.get('well_50', 'A1')
 user_50 = input(f"Enter 50uL Start Well [Press Enter for {default_50}]: ").strip().upper()
 tip_state["well_50"] = user_50 if user_50 else default_50
 
-# Save immediately
 with open(TIP_STATE_FILE, "w") as f:
     json.dump(tip_state, f)
 

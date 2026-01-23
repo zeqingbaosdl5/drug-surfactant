@@ -192,31 +192,39 @@ requirements = {"robotType": "Flex", "apiLevel": "2.23"}
 #             {"display_name": "8 trials", "value": 8}
 #         ]
 #     )
+
+# --- GLOBAL CONSTANTS ---
+# Defining these outside the function helps the robot analyzer read them correctly
+RACK_CHOICES = [
+    {"display_name": "Rack 1 (Slot B1)", "value": "0"},
+    {"display_name": "Rack 2 (Slot A1)", "value": "1"}
+]
+WELL_CHOICES = [
+    {"display_name": f"{r}{c}", "value": f"{r}{c}"}
+    for r in "ABCDEFGH" for c in range(1, 13)
+]
+
 def add_parameters(parameters: protocol_api.Parameters):
-    # --- CHANGE: Accept "batch_json" so we can send multiple trials at once ---
+    # 1. Batch Data (The dynamic list)
     parameters.add_str(
         variable_name="batch_json",
         display_name="Batch Data (JSON)",
         default="[]",
         description="List of trials to run in this batch"
     )
-    # -------------------------------------------------------------------------
 
+    # 2. Hardware Settings
     parameters.add_int(variable_name="iteration", display_name="Iteration", default=0, minimum=0, maximum=10000)
     parameters.add_int(variable_name="replicates", display_name="replicates", default=3, minimum=1, maximum=12)
     
-    # TIP TRACKING (Kept exactly as is)
-    rack_choices = [{"display_name": "Rack 1 (Slot B1)", "value": "0"}, {"display_name": "Rack 2 (Slot A1)", "value": "1"}]
-    well_choices = [{"display_name": w, "value": w} for w in [f"{r}{c}" for r in "ABCDEFGH" for c in range(1, 13)]]
+    # 3. Tip Tracking
+    parameters.add_str(variable_name="rack_id_1000", display_name="1000 Rack ID", choices=RACK_CHOICES, default="0")
+    parameters.add_str(variable_name="well_1000", display_name="1000 Start Well", choices=WELL_CHOICES, default="A1")
+    parameters.add_str(variable_name="well_50", display_name="50 Start Well", choices=WELL_CHOICES, default="A1")
     
-    parameters.add_str(variable_name="rack_id_1000", display_name="1000 Rack ID", choices=rack_choices, default="0")
-    parameters.add_str(variable_name="well_1000", display_name="1000 Start Well", choices=well_choices, default="A1")
-    parameters.add_str(variable_name="well_50", display_name="50 Start Well", choices=well_choices, default="A1")
-    
-    # Placeholders (To prevent display errors on the robot touchscreen)
-    parameters.add_str(variable_name="next_plate_well", display_name="Next Plate Well", choices=well_choices, default="A1")
-    parameters.add_str(variable_name="next_deepplate_well", display_name="Next Deepplate Well", choices=well_choices, default="A1")
-
+    # 4. Display Placeholders
+    parameters.add_str(variable_name="next_plate_well", display_name="Next Plate Well", choices=WELL_CHOICES, default="A1")
+    parameters.add_str(variable_name="next_deepplate_well", display_name="Next Deepplate Well", choices=WELL_CHOICES, default="A1")
 
 def run(protocol: protocol_api.ProtocolContext):
 
@@ -450,9 +458,7 @@ def run(protocol: protocol_api.ProtocolContext):
     #     },
     # ]
 
-    # ################################################################################################################################################
-
-# --- BATCH CHANGE: Load the list from the JSON parameter ---
+    # --- BATCH CHANGE: Load the list from the JSON parameter ---
     import json
     try:
         data = json.loads(protocol.params.batch_json)
@@ -461,6 +467,10 @@ def run(protocol: protocol_api.ProtocolContext):
     
     protocol.comment(f"Running Batch with {len(data)} samples.")
     # -----------------------------------------------------------
+
+
+    # ################################################################################################################################################
+
 
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
 
