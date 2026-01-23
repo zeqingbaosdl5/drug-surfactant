@@ -180,10 +180,17 @@ def add_parameters(parameters: protocol_api.Parameters):
         default="A1"
     )
     parameters.add_int(
-        variable_name="samples_per_batch",
-        display_name="Samples Per Batch",
+        variable_name="trials_per_iteration",
+        display_name="Trials Per Iteration",
         default=3,
-        choices=[1, 2, 3, 4, 6, 8]
+        choices=[
+            {"display_name": "1 trial", "value": 1},
+            {"display_name": "2 trials", "value": 2},
+            {"display_name": "3 trials", "value": 3},
+            {"display_name": "4 trials", "value": 4},
+            {"display_name": "6 trials", "value": 6},
+            {"display_name": "8 trials", "value": 8}
+        ]
     )
    
 

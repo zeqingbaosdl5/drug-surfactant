@@ -538,6 +538,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
             "rack_1000": tip_state["rack_id_1000"],
             "well_1000": tip_state["well_1000"],
             "well_50": tip_state["well_50"],
+            "replicates": REPLICATES,          # Add this here!
             **{k: ax_params[k] for k in surf_names},
             "surf_conc": row.get('surf_conc', 0.0),
             "obj_surf_conc": "" 
