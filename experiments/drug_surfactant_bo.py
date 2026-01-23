@@ -266,17 +266,41 @@ try:
 except (FileNotFoundError, json.JSONDecodeError):
     tip_state = {"rack_id_1000": "0", "well_1000": "A1", "well_50": "A1"}
 
-# Manual tip location check and override
-print(f"\nRemembered 1000uL: Rack {tip_state['rack_id_1000']}, Well {tip_state['well_1000']}")
-print(f"Remembered 50uL:   Well {tip_state['well_50']}")
+# # Manual tip location check and override
+# print(f"\nRemembered 1000uL: Rack {tip_state['rack_id_1000']}, Well {tip_state['well_1000']}")
+# print(f"Remembered 50uL:   Well {tip_state['well_50']}")
 
-user_1000_rack = input(f"Enter 1000uL Rack ID (Enter for {tip_state['rack_id_1000']}): ").strip()
-user_1000_well = input(f"Enter 1000uL Well (Enter for {tip_state['well_1000']}): ").strip().upper()
-user_50_well   = input(f"Enter 50uL Well (Enter for {tip_state['well_50']}): ").strip().upper()
+# user_1000_rack = input(f"Enter 1000uL Rack ID (Enter for {tip_state['rack_id_1000']}): ").strip()
+# user_1000_well = input(f"Enter 1000uL Well (Enter for {tip_state['well_1000']}): ").strip().upper()
+# user_50_well   = input(f"Enter 50uL Well (Enter for {tip_state['well_50']}): ").strip().upper()
 
-if user_1000_rack: tip_state["rack_id_1000"] = user_1000_rack
-if user_1000_well: tip_state["well_1000"] = user_1000_well
-if user_50_well:   tip_state["well_50"] = user_50_well
+# if user_1000_rack: tip_state["rack_id_1000"] = user_1000_rack
+# if user_1000_well: tip_state["well_1000"] = user_1000_well
+# if user_50_well:   tip_state["well_50"] = user_50_well
+
+# --- SMART TIP SETUP (Press Enter for Default) ---
+print("\n--- TIP SETUP ---")
+
+# 1. 1000uL Rack
+default_rack = tip_state.get('rack_id_1000', '0')
+user_rack = input(f"Enter 1000uL Rack ID (0=Slot B1, 1=Slot A1) [Press Enter for {default_rack}]: ").strip()
+tip_state["rack_id_1000"] = user_rack if user_rack else default_rack
+
+# 2. 1000uL Well
+default_1000 = tip_state.get('well_1000', 'A1')
+user_1000 = input(f"Enter 1000uL Start Well [Press Enter for {default_1000}]: ").strip().upper()
+tip_state["well_1000"] = user_1000 if user_1000 else default_1000
+
+# 3. 50uL Well
+default_50 = tip_state.get('well_50', 'A1')
+user_50 = input(f"Enter 50uL Start Well [Press Enter for {default_50}]: ").strip().upper()
+tip_state["well_50"] = user_50 if user_50 else default_50
+
+# Save immediately
+with open(TIP_STATE_FILE, "w") as f:
+    json.dump(tip_state, f)
+
+print(f"Confirmed Start: 1000uL @ Rack {tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}\n")
 
 # Number of closed-loop batches to run in this iteration
 NUM_BATCHES = 3 #change for amount of iterations you want to run

@@ -9,190 +9,213 @@ metadata = {
 requirements = {"robotType": "Flex", "apiLevel": "2.23"}
 
 #parameters are needed to tell the expected values to Optentons
+# def add_parameters(parameters: protocol_api.Parameters):
+#     parameters.add_float(
+#         display_name="drug",
+#         variable_name="drug",
+#         default=180.0,
+#         minimum=180.0,
+#         maximum=180.0,
+#     )
+#     parameters.add_float(
+#         display_name="s1",
+#         variable_name="s1",
+#         default=300.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="s2",
+#         variable_name="s2",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="s3",
+#         variable_name="s3",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="s4",
+#         variable_name="s4",
+#         default=300.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="s5",
+#         variable_name="s5",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="s6",
+#         variable_name="s6",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="s7",
+#         variable_name="s7",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="s8",
+#         variable_name="s8",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="dmso",
+#         variable_name="dmso",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=0.0,# 0 as we are using maxium drug concentration
+#     )
+#     parameters.add_float(
+#         display_name="water",
+#         variable_name="water",
+#         default=550.0,
+#         minimum=0.0,
+#         maximum=1200.0,
+#     )
+#     parameters.add_float(
+#         display_name="IBP",
+#         variable_name="IBP",
+#         default=180.0,
+#         minimum=180.0,
+#         maximum=180.0,
+#     )
+#     parameters.add_float(
+#         display_name="LOV",
+#         variable_name="LOV",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=180.0,
+#     )
+#     parameters.add_float(
+#         display_name="DCF",
+#         variable_name="DCF",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=180.0,
+#     )
+#     parameters.add_float(
+#         display_name="GLV",
+#         variable_name="GLV",
+#         default=0.0,
+#         minimum=0.0,
+#         maximum=180.0,
+#     )
+#     parameters.add_int(
+#         display_name="replicates",
+#         variable_name="replicates",
+#         default=3,
+#         minimum=1,
+#         maximum=12,
+#     )
+#     parameters.add_int(
+#     variable_name="iteration",
+#     display_name="Iteration",
+#     default=0,
+#     minimum=0,
+#     maximum=10000,
+#     )
+#     well_choices = [
+#         {"display_name": well, "value": well}
+#         for well in [f"{row}{col}" for row in "ABCDEFGH" for col in range(1, 13)]
+#     ]
+#     parameters.add_str(
+#         variable_name="next_plate_well",
+#         display_name="Next Plate Well",
+#         choices=well_choices,
+#         default="A1",
+#     )
+#     parameters.add_str(
+#         variable_name="next_deepplate_well",
+#         display_name="Next Deepplate Well",
+#         choices=well_choices,
+#         default="A1",
+#     )
+#     # parameters.add_str(
+#     #     variable_name="tip1000_well",
+#     #     display_name="Starting 1000uL Tip Well",
+#     #     choices=well_choices,
+#     #     default="A1",
+#     # )
+#     # parameters.add_str(
+#     #     variable_name="tip50_well",
+#     #     display_name="Starting 50uL Tip Well",
+#     #     choices=well_choices,
+#     #     default="A1",
+#     # )
+#     rack_choices = [
+#         {"display_name": "Rack 1 (Slot B1)", "value": "0"},
+#         {"display_name": "Rack 2 (Slot A1)", "value": "1"}
+#     ]
+#     parameters.add_str(
+#         variable_name="rack_id_1000", 
+#         display_name="1000 Rack ID", 
+#         choices=rack_choices, # Added choices
+#         default="0"
+#     )
+#     parameters.add_str(
+#         variable_name="well_1000", 
+#         display_name="1000 uL Start Well", 
+#         choices=well_choices, # Added choices
+#         default="A1"
+#     )
+#     parameters.add_str(
+#         variable_name="well_50", 
+#         display_name="50 uL Start Well", 
+#         choices=well_choices, # Added choices
+#         default="A1"
+#     )
+#     parameters.add_int(
+#         variable_name="trials_per_iteration",
+#         display_name="Trials Per Iteration",
+#         default=3,
+#         choices=[
+#             {"display_name": "1 trial", "value": 1},
+#             {"display_name": "2 trials", "value": 2},
+#             {"display_name": "3 trials", "value": 3},
+#             {"display_name": "4 trials", "value": 4},
+#             {"display_name": "6 trials", "value": 6},
+#             {"display_name": "8 trials", "value": 8}
+#         ]
+#     )
 def add_parameters(parameters: protocol_api.Parameters):
-    parameters.add_float(
-        display_name="drug",
-        variable_name="drug",
-        default=180.0,
-        minimum=180.0,
-        maximum=180.0,
-    )
-    parameters.add_float(
-        display_name="s1",
-        variable_name="s1",
-        default=300.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="s2",
-        variable_name="s2",
-        default=0.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="s3",
-        variable_name="s3",
-        default=0.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="s4",
-        variable_name="s4",
-        default=300.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="s5",
-        variable_name="s5",
-        default=0.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="s6",
-        variable_name="s6",
-        default=0.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="s7",
-        variable_name="s7",
-        default=0.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="s8",
-        variable_name="s8",
-        default=0.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="dmso",
-        variable_name="dmso",
-        default=0.0,
-        minimum=0.0,
-        maximum=0.0,# 0 as we are using maxium drug concentration
-    )
-    parameters.add_float(
-        display_name="water",
-        variable_name="water",
-        default=550.0,
-        minimum=0.0,
-        maximum=1200.0,
-    )
-    parameters.add_float(
-        display_name="IBP",
-        variable_name="IBP",
-        default=180.0,
-        minimum=180.0,
-        maximum=180.0,
-    )
-    parameters.add_float(
-        display_name="LOV",
-        variable_name="LOV",
-        default=0.0,
-        minimum=0.0,
-        maximum=180.0,
-    )
-    parameters.add_float(
-        display_name="DCF",
-        variable_name="DCF",
-        default=0.0,
-        minimum=0.0,
-        maximum=180.0,
-    )
-    parameters.add_float(
-        display_name="GLV",
-        variable_name="GLV",
-        default=0.0,
-        minimum=0.0,
-        maximum=180.0,
-    )
-    parameters.add_int(
-        display_name="replicates",
-        variable_name="replicates",
-        default=3,
-        minimum=1,
-        maximum=12,
-    )
-    parameters.add_int(
-    variable_name="iteration",
-    display_name="Iteration",
-    default=0,
-    minimum=0,
-    maximum=10000,
-    )
-    well_choices = [
-        {"display_name": well, "value": well}
-        for well in [f"{row}{col}" for row in "ABCDEFGH" for col in range(1, 13)]
-    ]
+    # --- CHANGE: Accept "batch_json" so we can send multiple trials at once ---
     parameters.add_str(
-        variable_name="next_plate_well",
-        display_name="Next Plate Well",
-        choices=well_choices,
-        default="A1",
+        variable_name="batch_json",
+        display_name="Batch Data (JSON)",
+        default="[]",
+        description="List of trials to run in this batch"
     )
-    parameters.add_str(
-        variable_name="next_deepplate_well",
-        display_name="Next Deepplate Well",
-        choices=well_choices,
-        default="A1",
-    )
-    # parameters.add_str(
-    #     variable_name="tip1000_well",
-    #     display_name="Starting 1000uL Tip Well",
-    #     choices=well_choices,
-    #     default="A1",
-    # )
-    # parameters.add_str(
-    #     variable_name="tip50_well",
-    #     display_name="Starting 50uL Tip Well",
-    #     choices=well_choices,
-    #     default="A1",
-    # )
-    rack_choices = [
-        {"display_name": "Rack 1 (Slot B1)", "value": "0"},
-        {"display_name": "Rack 2 (Slot A1)", "value": "1"}
-    ]
-    parameters.add_str(
-        variable_name="rack_id_1000", 
-        display_name="1000 Rack ID", 
-        choices=rack_choices, # Added choices
-        default="0"
-    )
-    parameters.add_str(
-        variable_name="well_1000", 
-        display_name="1000 uL Start Well", 
-        choices=well_choices, # Added choices
-        default="A1"
-    )
-    parameters.add_str(
-        variable_name="well_50", 
-        display_name="50 uL Start Well", 
-        choices=well_choices, # Added choices
-        default="A1"
-    )
-    parameters.add_int(
-        variable_name="trials_per_iteration",
-        display_name="Trials Per Iteration",
-        default=3,
-        choices=[
-            {"display_name": "1 trial", "value": 1},
-            {"display_name": "2 trials", "value": 2},
-            {"display_name": "3 trials", "value": 3},
-            {"display_name": "4 trials", "value": 4},
-            {"display_name": "6 trials", "value": 6},
-            {"display_name": "8 trials", "value": 8}
-        ]
-    )
-   
+    # -------------------------------------------------------------------------
+
+    parameters.add_int(variable_name="iteration", display_name="Iteration", default=0, minimum=0, maximum=10000)
+    parameters.add_int(variable_name="replicates", display_name="replicates", default=3, minimum=1, maximum=12)
+    
+    # TIP TRACKING (Kept exactly as is)
+    rack_choices = [{"display_name": "Rack 1 (Slot B1)", "value": "0"}, {"display_name": "Rack 2 (Slot A1)", "value": "1"}]
+    well_choices = [{"display_name": w, "value": w} for w in [f"{r}{c}" for r in "ABCDEFGH" for c in range(1, 13)]]
+    
+    parameters.add_str(variable_name="rack_id_1000", display_name="1000 Rack ID", choices=rack_choices, default="0")
+    parameters.add_str(variable_name="well_1000", display_name="1000 Start Well", choices=well_choices, default="A1")
+    parameters.add_str(variable_name="well_50", display_name="50 Start Well", choices=well_choices, default="A1")
+    
+    # Placeholders (To prevent display errors on the robot touchscreen)
+    parameters.add_str(variable_name="next_plate_well", display_name="Next Plate Well", choices=well_choices, default="A1")
+    parameters.add_str(variable_name="next_deepplate_well", display_name="Next Deepplate Well", choices=well_choices, default="A1")
 
 
 def run(protocol: protocol_api.ProtocolContext):
@@ -403,31 +426,41 @@ def run(protocol: protocol_api.ProtocolContext):
 
 
     # to be rewritten according to the exp design
-    ################################################################################################################################################
-    data = [
-        {
-            "": "0",
-            "trial_index": "0",
-            "drug_name": "IBP",
-            "drug": str(protocol.params.drug),
-            "s1": str(protocol.params.s1),
-            "s2": str(protocol.params.s2),
-            "s3": str(protocol.params.s3),
-            "s4": str(protocol.params.s4),
-            "s5": str(protocol.params.s5),
-            "s6": str(protocol.params.s6),
-            "s7": str(protocol.params.s7),
-            "s8": str(protocol.params.s8),
-            "dmso": str(protocol.params.dmso),
-            "water": str(protocol.params.water),
-            "IBP": str(protocol.params.IBP),
-            "LOV": str(protocol.params.LOV),
-            "DCF": str(protocol.params.DCF),
-            "GLV": str(protocol.params.GLV),
-        },
-    ]
+    # ################################################################################################################################################
+    # data = [
+    #     {
+    #         "": "0",
+    #         "trial_index": "0",
+    #         "drug_name": "IBP",
+    #         "drug": str(protocol.params.drug),
+    #         "s1": str(protocol.params.s1),
+    #         "s2": str(protocol.params.s2),
+    #         "s3": str(protocol.params.s3),
+    #         "s4": str(protocol.params.s4),
+    #         "s5": str(protocol.params.s5),
+    #         "s6": str(protocol.params.s6),
+    #         "s7": str(protocol.params.s7),
+    #         "s8": str(protocol.params.s8),
+    #         "dmso": str(protocol.params.dmso),
+    #         "water": str(protocol.params.water),
+    #         "IBP": str(protocol.params.IBP),
+    #         "LOV": str(protocol.params.LOV),
+    #         "DCF": str(protocol.params.DCF),
+    #         "GLV": str(protocol.params.GLV),
+    #     },
+    # ]
 
-    ################################################################################################################################################
+    # ################################################################################################################################################
+
+# --- BATCH CHANGE: Load the list from the JSON parameter ---
+    import json
+    try:
+        data = json.loads(protocol.params.batch_json)
+    except:
+        data = [] # Fallback for safety
+    
+    protocol.comment(f"Running Batch with {len(data)} samples.")
+    # -----------------------------------------------------------
 
     def make_drug_or_surfactant(a_list, next_deepplate_well, row_of_data):
 
