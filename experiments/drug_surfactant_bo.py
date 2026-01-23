@@ -290,7 +290,7 @@ surf_names = [f"s{i}" for i in range(1, 9)]
 start_n = n 
 for n in range(start_n, start_n + NUM_BATCHES):
     drug = drug_choices[n % len(drug_choices)]
-    print(f"\n=== Starting Batch Iteration {n}/{NUM_BATCHES} for drug: {drug} ===")
+    print(f"\n=== Starting Batch Iteration {n}/{NUM_BATCHES-1} for drug: {drug} ===")
 
     # 1) Generate recommendations
     
