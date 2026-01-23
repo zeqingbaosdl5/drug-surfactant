@@ -610,7 +610,10 @@ for n in range(start_n, start_n + NUM_BATCHES):
     print("--------------------------\n")
 
 
-    run_otflex_iA(otflex_params)
+    # This ensures each of the 3 trials runs with its own specific volumes and wells
+    for trial_data in otflex_params:
+        print(f"--- Running Robot: Trial at Well {trial_data['next_plate_well']} ---")
+        run_otflex_iA(trial_data)
 
     # raw_data_file = RAW_DATA_FILE_PATH + "i" + str(n) + ".csv"
 
