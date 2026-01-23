@@ -242,7 +242,15 @@ def design_to_vol(
             "drug_name": df_design["drug_name"],
         })
 
-        for s in s_cols:
+        # for s in s_cols:
+        #     df_vol[s] = df_design[s].astype(float)
+
+        # Create the list of surfactant column names explicitly to avoid string columns
+        surfactant_names = [f's{i}' for i in range(1, 9)] 
+
+        for s in surfactant_names:
+            # Safely convert to float; if 'C5' is found, it will throw a clearer error 
+            # or you can use pd.to_numeric(df_design[s], errors='coerce') to be safer.
             df_vol[s] = df_design[s].astype(float)
 
         for d in drug_cols:
