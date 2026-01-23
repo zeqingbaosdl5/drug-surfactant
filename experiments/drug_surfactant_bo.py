@@ -535,7 +535,12 @@ for n in range(start_n, start_n + NUM_BATCHES):
             "drug_name": drug,
             "well_slot": NEXT_PLATE_WELL,
             "deep_well_slot": NEXT_DEEPPLATE_WELL,
+            "rack_1000": tip_state["rack_id_1000"], # Use the tip_state you captured
+            "well_1000": tip_state["well_1000"],
+            "well_50": tip_state["well_50"],
             **{k: ax_params[k] for k in surf_names},
+            "surf_conc": row.get('surf_conc', 0.0), # Add this to keep columns aligned
+            "obj_surf_conc": ""
         })
         
         print(f"Trial {trial_index} assigned to Plate: {NEXT_PLATE_WELL}, Deep: {NEXT_DEEPPLATE_WELL}")

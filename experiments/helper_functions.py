@@ -249,9 +249,9 @@ def design_to_vol(
         surfactant_names = [f's{i}' for i in range(1, 9)] 
 
         for s in surfactant_names:
-            # Safely convert to float; if 'C5' is found, it will throw a clearer error 
-            # or you can use pd.to_numeric(df_design[s], errors='coerce') to be safer.
-            df_vol[s] = df_design[s].astype(float)
+            if s in df_design.columns:
+                # Use pd.to_numeric to safely skip any accidental strings
+                df_vol[s] = pd.to_numeric(df_design[s], errors='coerce').fillna(0.0)
 
         for d in drug_cols:
             df_vol[d] = df_vol[d] = 0.0
