@@ -613,19 +613,23 @@ for n in range(start_n, start_n + NUM_BATCHES):
 
     import time
 
-    for trial_data in otflex_params:
-        # Ensure the robot knows the batch size for this specific trial
+    for i, trial_data in enumerate(otflex_params):
+        # 1. Add the missing batch parameter
         trial_data["trials_per_iteration"] = TRIALS_PER_ITERATION
         
-        print(f"--- Launching Robot: Trial {trial_data['trial_index']} at Well {trial_data['next_plate_well']} ---")
+        # 2. Use 'i' instead of the missing 'trial_index' key
+        well = trial_data.get('next_plate_well', 'Unknown')
+        print(f"--- Launching Robot: Trial {i} at Well {well} ---")
         
-        # This is the function that talks to opentrons_http_client.py
+        # 3. Execute robot run
         run_otflex_iA(trial_data)
         
-        # 5-second buffer to prevent the 'RunNotFoundError' communication glitch
+        # 4. 5-second buffer for server stability
         print("Trial submitted! Waiting 5 seconds for robot server to cycle...")
         time.sleep(5)
-        
+
+
+
     # raw_data_file = RAW_DATA_FILE_PATH + "i" + str(n) + ".csv"
 
     # df_absorbance = hf.process_absorbance(
@@ -690,7 +694,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
 
     # 2. Define components that require a tip in the deepwell preparation stage
     # Drug (180uL) and Water (550uL) are both > 40uL, so they will use high tips.
-    Deepwell_component_list = [f"s{i}" for i in range(1, 9)] + ["water"] + ["drug"]
+    Deepwell_component_list = [f"s{i}" for i in range(1, 9)] + ["water"] + [drug]
     
     # Store starting data for the viewer results file
     start_tips = f"1000uL:R{tip_state['rack_id_1000']}-{tip_state['well_1000']}, 50uL:{tip_state['well_50']}"

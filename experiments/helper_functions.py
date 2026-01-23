@@ -205,93 +205,54 @@ def design_to_vol(
     drug_total_volume=drug_total_volume,
     surfactant_stock_conc=surfactant_stock_conc,
     surfactant_total_volume=surfactant_total_volume,
-):  # in mg/mL or mL
-
-    #df_design = pd.read_csv(design_file_path + "i" + str(iteration) + ".csv")
+):  
     full_path = f"{design_file_path}i{iteration}.csv"
 
-    # sanity check - optional but helps
     if not os.path.exists(full_path):
         raise FileNotFoundError(f"CSV not found at {full_path}")
-   
-    # Explicitly list the keys you used in trials_data.append to keep them aligned
+    
     headers = [
-        "trial_index",
-        "drug_name",
-        "well_slot",
-        "deep_well_slot",
-        "rack_1000",
-        "well_1000",
-        "well_50",
-        "replicates",
+        "trial_index", "drug_name", "well_slot", "deep_well_slot",
+        "rack_1000", "well_1000", "well_50", "replicates",
         "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8",
-        "surf_conc",
-        "obj_surf_conc"
+        "surf_conc", "obj_surf_conc"
     ]
     
-    # Load design file using the headers as a "stencil"
-    df_design = pd.read_csv(design_file_path + "i" + str(iteration) + ".csv", names=headers, skiprows=1)
+    df_design = pd.read_csv(full_path, names=headers, skiprows=1)
 
     s_cols = [f"s{i}" for i in range(1, number_of_surfactants + 1)]
+    
+    # FLEXIBLE: Keep all options here so the script handles any drug safely
     drug_cols = ["IBP", "LOV", "DCF", "GLV"]
 
-
-
-
-    print("Reading design file:", design_file_path + "i" + str(iteration) + ".csv")
-    print("Columns found:", df_design.columns.tolist())
-    print("First rows:", df_design.head())
-
-    # New format: s1..sN and drug volumes are already in µL.
-    # if all(col in df_design.columns for col in s_cols + drug_cols):
-    #     df_vol = pd.DataFrame(
-    #         {
-    #             "trial_index": df_design["trial_index"],
-    #             "drug_name": df_design.get("drug_name", None),
-    #         }
-    #     )
     if all(col in df_design.columns for col in s_cols) and "drug_name" in df_design.columns:
         df_vol = pd.DataFrame({
             "trial_index": df_design["trial_index"],
             "drug_name": df_design["drug_name"],
         })
 
-        # for s in s_cols:
-        #     df_vol[s] = df_design[s].astype(float)
-
-        # Create the list of surfactant column names explicitly to avoid string columns
-        surf_cols = [f"s{i}" for i in range(1, 9)]
-
-        for s in surf_cols:
-            # Use pd.to_numeric to safely skip strings like 'C5' if the columns shift
-            # This 'coerce' turns strings into NaN, and fillna(0.0) makes them usable numbers
+        for s in s_cols:
             df_vol[s] = pd.to_numeric(df_design[s], errors='coerce').fillna(0.0)
 
+        # Reset all drug columns to 0
         for d in drug_cols:
             df_vol[d] = 0.0
             
+        # Set ONLY the chosen drug to 180.0
         for idx, row in df_design.iterrows():
             chosen_drug = row['drug_name']
             if chosen_drug in drug_cols:
-                # Directly setting to 180.0 to satisfy the robot's strict constraints
                 df_vol.at[idx, chosen_drug] = 180.0
+
+        # Calculate DMSO/Water with ROUNDING (Critical for robot stability)
+        df_vol["dmso"] = round((drug_total_volume*1000) - df_vol[drug_cols].sum(axis=1), 2)
+        df_vol["water"] = round((surfactant_total_volume*1000) - df_vol[s_cols].sum(axis=1), 2)
         
-
-
-        # dmso and water (µL) as remainder
-        df_vol["dmso"] = (drug_total_volume*1000) - df_vol[drug_cols].sum(axis=1)
-        df_vol["water"] = (surfactant_total_volume*1000) - df_vol[s_cols].sum(axis=1)
     else:
-        # Old format: surf_1/surf_2 choice + *_conc columns
-        df_vol = conc_to_vol(
-            df_design,
-            drug_stock_conc,
-            drug_total_volume,
-            surfactant_stock_conc,
-            surfactant_total_volume,
-        )
-        df_vol_drug = add_drug_columns(df_vol)
-        return df_design, df_vol_drug
+        # Fallback for old code
+        df_vol = conc_to_vol(df_design, drug_stock_conc, drug_total_volume, surfactant_stock_conc, surfactant_total_volume)
+        df_vol = add_drug_columns(df_vol)
+        return df_design, df_vol
 
     return df_design, df_vol
 
