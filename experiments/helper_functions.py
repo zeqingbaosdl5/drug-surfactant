@@ -273,8 +273,8 @@ def design_to_vol(
         for idx, row in df_design.iterrows():
             chosen_drug = row['drug_name']
             if chosen_drug in drug_cols:
-                # This safely pulls the volume for the specific drug assigned to this trial
-                df_vol.at[idx, chosen_drug] = float(row.get(chosen_drug, 0.0))
+                # Directly setting to 180.0 to satisfy the robot's strict constraints
+                df_vol.at[idx, chosen_drug] = 180.0
         
 
 
