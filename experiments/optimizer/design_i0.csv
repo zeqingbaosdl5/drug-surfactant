@@ -1,4 +1,4 @@
-trial_index,drug_name,well_slot,deep_well_slot,rack_1000,well_1000,well_50,s1,s2,s3,s4,s5,s6,s7,s8,surf_conc,obj_surf_conc
-0,IBP,C5,C5,0,A1,A1,0.0,0.0,715.0,0.0,0.0,0.0,0.0,90.0,805.0,
-1,IBP,C8,C7,0,A1,A1,0.0,0.0,205.0,0.0,815.0,0.0,0.0,0.0,1020.0,
-2,IBP,C11,C9,0,A1,A1,0.0,0.0,0.0,0.0,690.0,0.0,80.0,0.0,770.0,
+trial_index,drug_name,well_slot,deep_well_slot,rack_1000,well_1000,well_50,replicates,s1,s2,s3,s4,s5,s6,s7,s8,surf_conc,obj_surf_conc
+0,IBP,D1,D1,0,A1,A1,3,0.0,0.0,715.0,0.0,0.0,0.0,0.0,90.0,805.0,
+1,IBP,D4,D3,0,A1,A1,3,0.0,0.0,205.0,0.0,815.0,0.0,0.0,0.0,1020.0,
+2,IBP,D7,D5,0,A1,A1,3,0.0,0.0,0.0,0.0,690.0,0.0,80.0,0.0,770.0,
