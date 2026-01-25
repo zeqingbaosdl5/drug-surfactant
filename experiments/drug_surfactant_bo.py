@@ -10,7 +10,7 @@ from datetime import datetime
 
 # --- SETUP PATHS ---
 REPO_DIR = os.path.dirname(__file__)
-sys.path.append(os.path.join(REPO_DIR, "experiments"))
+sys.path.append(REPO_DIR)
 
 # --- CONFIG ---
 SMOKE_TEST = str(os.getenv("SMOKE_TEST", "")).strip().lower() in {"1", "true"}
@@ -31,12 +31,10 @@ from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrateg
 if SMOKE_TEST:
     print("⚠️  RUNNING IN SMOKE TEST MODE (No Robot Connection) ⚠️")
     
-    # 1. Mock Execution (Does nothing, just returns a fake ID)
     def run_otflex_iA(protocol_file_path):
         print(f"[SMOKE] Pretending to upload & run: {os.path.basename(protocol_file_path)}")
         return "dummy_run_id_123"
 
-    # 2. Mock Run Details (Claims the run finished and produced a file)
     def get_run_details(base_url, run_id):
         return {
             "data": {
@@ -46,12 +44,10 @@ if SMOKE_TEST:
             }
         }
 
-    # 3. Mock Download (Actually creates a fake CSV so your code runs)
     def download_data_file(base_url, file_id, save_path):
         print(f"[SMOKE] Generating dummy random data -> {save_path}")
         import random
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        
         # Write a fake 8x12 Plate CSV
         rows = [chr(ord("A") + i) for i in range(8)]
         cols = [str(i) for i in range(1, 13)]
@@ -60,7 +56,6 @@ if SMOKE_TEST:
             for row in rows:
                 values = []
                 for _ in cols:
-                    # Randomly generate "success" (<0.06) or "fail" (>0.06)
                     if random.random() < 0.9:
                         val = random.uniform(0.04, 0.059)
                     else:
@@ -69,8 +64,7 @@ if SMOKE_TEST:
                 f.write(f"{row}," + ",".join(values) + "\n")
 
 else:
-    print("Running with REAL ROBOT execution.")
-    # Import the real functions only if NOT smoke testing
+    print("✅ Running with REAL ROBOT execution.")
     from opentrons_http_otflex_iA_mwe import run_otflex_iA
     from opentrons_http_client import get_run_details, download_data_file
 
@@ -95,7 +89,6 @@ def determine_current_iteration():
 
 n = determine_current_iteration()
 
-# Restore Optimizer State
 try:
     completed_snapshot_files = [
         os.path.join(SNAPSHOT_DIR, f) for f in os.listdir(SNAPSHOT_DIR) if f.endswith("_completed.json")
@@ -126,7 +119,6 @@ else:
             { "name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
         ],
         objectives={
-            # Minimizing TOTAL VOLUME (uL)
             "obj_total_vol": ObjectiveProperties(minimize=True),
         },
         parameter_constraints=[
@@ -148,7 +140,6 @@ except (FileNotFoundError, json.JSONDecodeError):
     prev_plate = hf.get_next_well("A1", offset=n)
     prev_deep = hf.get_next_well("A1", offset=n)
 
-# Skip input if smoke testing
 if not SMOKE_TEST:
     print(f"Last saved: Plate {prev_plate}, Deep {prev_deep}")
     plate_input = input(f"Enter starting plate well (Enter for {prev_plate}): ").strip()
@@ -163,9 +154,10 @@ if plate_input or deep_input:
     with open(WELL_POSITIONS_FILE, "w") as f:
         json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
 
-# --- TIP STATE ---
+# --- TIP STATE (SMOKETEST AWARE) ---
 REPLICATES = 3
-TIP_STATE_FILE = "tip_positions.json"
+TIP_STATE_FILE = f"tip_positions{_SUFFIX}.json"
+
 try:
     with open(TIP_STATE_FILE, "r") as f:
         tip_state = json.load(f)
@@ -182,7 +174,7 @@ if not SMOKE_TEST:
     if u_50: tip_state["well_50"] = u_50
     with open(TIP_STATE_FILE, "w") as f: json.dump(tip_state, f)
 
-print(f"Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}")
+print(f"Batch Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}")
 
 # --- MAIN LOOP ---
 NUM_BATCHES = 3 
@@ -212,7 +204,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
 
     print(f"Updated constraints for {drug}: s1+...+s8 <= {max(best_total_vol - 2, 1)} uL")
 
-    # 2. Candidate Generation (N-Choose-K)
+    # 2. Candidate Generation
     fixed_drug_ul = hf.drug_total_volume * 1000
     resolution = 5.0  
     upper_lim = min(float(max(best_total_vol - 2, 1)), hf.surfactant_total_volume * 1000)
@@ -279,6 +271,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
         trials_data.append({
             "trial_index": tid, "drug_name": drug,
             "well_slot": NEXT_PLATE_WELL, "deep_well_slot": NEXT_DEEPPLATE_WELL,
+            # We save the Batch Start metadata here, but we will NOT put it in the robot rows
             "rack_1000": tip_state["rack_id_1000"], "well_1000": tip_state["well_1000"], "well_50": tip_state["well_50"],
             "replicates": REPLICATES,
             **{k: params[k] for k in surf_names},
@@ -302,19 +295,19 @@ for n in range(start_n, start_n + NUM_BATCHES):
             "next_plate_well": trials_data[i]["well_slot"],
             "next_deepplate_well": trials_data[i]["deep_well_slot"],
             "replicates": REPLICATES,
-            "rack_id_1000": tip_state["rack_id_1000"],
-            "well_1000": tip_state["well_1000"],
-            "well_50": tip_state["well_50"]
+            # NOTE: We are intentionally NOT adding well_1000 here to avoid confusion.
+            # The robot uses the global batch start tip.
         })
 
     with open(WELL_POSITIONS_FILE, "w") as f:
         json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
 
-    # --- 6. GENERATE PROTOCOL FILE (Dynamic) ---
+    # --- 6. GENERATE PROTOCOL FILE ---
     import json
-    template_path = os.path.join(REPO_DIR, "experiments", "protocol_template.py")
+    template_path = os.path.join(REPO_DIR, "protocol_template.py")
     with open(template_path, "r") as f: template_str = f.read()
 
+    # We use the Tip State from the beginning of the batch to set the robot's starting point
     protocol_content = template_str.format(
         ITERATION=n,
         RACK_ID_1000=str(tip_state["rack_id_1000"]), 
@@ -322,21 +315,20 @@ for n in range(start_n, start_n + NUM_BATCHES):
         WELL_50=tip_state["well_50"],
         START_PLATE_WELL=otflex_params[0]["next_plate_well"],
         START_DEEP_WELL=otflex_params[0]["next_deepplate_well"],
+        REPLICATES=REPLICATES,
         DATA_JSON=json.dumps(otflex_params, indent=4)
     )
 
-    proto_path = os.path.join(REPO_DIR, "protocols", f"otflex_i{n}.py")
+    proto_path = os.path.join(REPO_DIR, "protocols", f"otflex{_SUFFIX}_i{n}.py")
     os.makedirs(os.path.dirname(proto_path), exist_ok=True)
     with open(proto_path, "w") as f: f.write(protocol_content)
     print(f"Generated Protocol: {proto_path}")
 
-    # --- 7. UPLOAD & RUN (Auto Download) ---
+    # --- 7. EXECUTE & DOWNLOAD ---
     print(f"Launching Batch {n}...")
     run_id = run_otflex_iA(proto_path)
-    
     if not SMOKE_TEST: time.sleep(5) 
 
-    # Download Data logic
     clean_raw_path = f"raw_data/raw_absorbance{_SUFFIX}_i{n}.csv"
     os.makedirs("raw_data", exist_ok=True)
     
@@ -348,62 +340,64 @@ for n in range(start_n, start_n + NUM_BATCHES):
         download_data_file(BASE_URL, out_ids[0], clean_raw_path)
         print(f"Saved to: {clean_raw_path}")
     else:
-        # If smoke test mocks correctly, this won't happen.
         print("[WARN] No output file ID found!")
 
-    # 8. Process Data
+    # 8. Process Data & Update Tips
     df_absorbance = hf.process_absorbance(clean_raw_path, replicates=REPLICATES, threshold=0.06)
-
-    # 9. Update Tips
+    
+    # CALCULATE TIP USAGE FOR NEXT BATCH
     comp_list = [f"s{i}" for i in range(1, 9)] + ["water"] + [drug]
     high, low = 0, 0
     for sample in otflex_params:
+        # Deep Well: 1 tip per non-zero component
         high += sum(1 for s in comp_list if float(sample.get(s, 0)) > 40)
         low += sum(1 for s in comp_list if 0 < float(sample.get(s, 0)) <= 40)
-        high += 1; low += 1
+        # Exp Plate: 1 High, 1 Low per trial
+        high += 1 
+        low += 1 
     
-    high += 1; low += 1 # Overhead
-    
+    # Advance counters
     all_wells = [f"{r}{c}" for c in range(1, 13) for r in "ABCDEFGH"]
+    
     idx_1000 = all_wells.index(tip_state["well_1000"]) + high 
     if idx_1000 >= 96:
-        tip_state["rack_id_1000"] = "1" 
+        # Toggle rack if we overflow 96 tips
+        current_rack = int(tip_state["rack_id_1000"])
+        tip_state["rack_id_1000"] = str(1 - current_rack) # 0->1 or 1->0
         tip_state["well_1000"] = all_wells[idx_1000 - 96]
     else:
         tip_state["well_1000"] = all_wells[idx_1000]
-    
+        
     idx_50 = all_wells.index(tip_state["well_50"]) + low
     tip_state["well_50"] = all_wells[idx_50 % 96]
     
     with open(TIP_STATE_FILE, "w") as f: json.dump(tip_state, f)
 
-    # 10. Complete Trials
+    # 9. Complete Trials & Save Results
+    failed_wells = set(df_absorbance.loc[df_absorbance["success"] == 0, "well_slot"])
+    for idx, t in ax_client.experiment.trials.items():
+        if t._properties.get("well_slot") in failed_wells: t.mark_abandoned(unsafe=True)
+
     for tid in trial_indices:
+        if ax_client.experiment.trials[tid].status.name == "ABANDONED": continue
         well = ax_client.experiment.trials[tid]._properties["well_slot"]
-        # Safe lookup in case smoke test generated random data not perfectly aligned?
-        # The smoke test generates A1..H12, so lookup should work if wells are standard.
         try:
             abs_val = df_absorbance.loc[df_absorbance["well_slot"] == well, "absorbance"].values[0]
         except IndexError:
-            # Fallback if well not found (e.g. well out of bounds in smoke test)
             abs_val = 0.99 
-        
         t_params = ax_client.experiment.trials[tid].arm.parameters
         ax_client.complete_trial(tid, {"obj_total_vol": sum(t_params[s] for s in surf_names), "absorbance": abs_val})
 
-    # Save & View
-    results = hf.build_results(n, df_absorbance, design_file_path=DESIGN_FILE_PATH)
-    failed = set(df_absorbance.loc[df_absorbance["success"] == 0, "well_slot"])
-    for idx, t in ax_client.experiment.trials.items():
-        if t._properties.get("well_slot") in failed: t.mark_abandoned(unsafe=True)
-    
     ax_client.save_to_json_file(OPTIMIZER_FILE_PATH + str(n) + "_loaded.json")
     
+    # 10. Viewer Result
+    results = hf.build_results(n, df_absorbance, design_file_path=DESIGN_FILE_PATH)
     df_stat = hf.ax_trial_status_dataframe(ax_client)
     view = results.merge(df_stat, on="trial_index", how="left").sort_values("trial_index")
     view["batch_start_well"] = trials_data[0]['well_slot']
     
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    os.makedirs("results", exist_ok=True)
     view.to_csv(f"results/viewer_results{_SUFFIX}_i{n}_{ts}.csv", index=False)
     print(view.tail(5))
 

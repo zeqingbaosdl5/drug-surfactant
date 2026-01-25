@@ -14,7 +14,6 @@ requirements = {{"robotType": "Flex", "apiLevel": "2.23"}}
 def run(protocol: protocol_api.ProtocolContext):
 
     # --- INJECTED DATA ---
-    # The Python script pastes the list of dictionaries here
     data = {DATA_JSON}
 
     protocol.comment(f"Starting Batch Run with {{len(data)}} samples.")
@@ -29,21 +28,19 @@ def run(protocol: protocol_api.ProtocolContext):
 
     hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
     hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
-    
-    # Absorbance Reader
     pr_mod = protocol.load_module(module_name="absorbanceReaderV1", location="C3")
 
     pipette_low = protocol.load_instrument(instrument_name="flex_1channel_50", mount="right", tip_racks=[tip50])
     pipette_high = protocol.load_instrument(instrument_name="flex_1channel_1000", mount="left", tip_racks=[tip1000_1, tip1000_2])
 
     # --- TIP TRACKING INJECTION ---
-    # We select the correct rack based on the tracker file from the Mac
+    # This sets the STARTING point for the entire batch.
+    # The robot automatically increments to the next tip after every usage.
     rack_id_1000 = "{RACK_ID_1000}" 
     start_well_1000 = "{WELL_1000}"
     
     tipracks_1000 = {{"0": tip1000_1, "1": tip1000_2}}
     
-    # Set starting tips
     pipette_high.starting_tip = tipracks_1000[rack_id_1000].wells_by_name()[start_well_1000]
     
     start_well_50 = "{WELL_50}"
@@ -69,8 +66,6 @@ def run(protocol: protocol_api.ProtocolContext):
     water = surfactant_drug_dmso_stock_2['A1']
     
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='D1')
-    
-    # Dynamic Starting Wells
     next_plate_well = '{START_PLATE_WELL}'
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
@@ -132,7 +127,6 @@ def run(protocol: protocol_api.ProtocolContext):
         protocol.move_labware(labware=labware_to_read, new_location=pr_mod, use_gripper=True)
         pr_mod.close_lid()
         
-        # Take reading and export with DYNAMIC name
         pr_mod.read()
         pr_mod.read(export_filename=f"raw_absorbance_i{ITERATION}")
         
@@ -198,6 +192,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
     # --- EXECUTION ROUTINE ---
 
+    # PHASE 1: MAKE ALL DEEP WELL SOLUTIONS
     protocol.comment("Preparing drug and surfactant mixtures in deep well plate.")
     well_pairs = []
     
@@ -208,6 +203,7 @@ def run(protocol: protocol_api.ProtocolContext):
         current_drug_well, next_deepplate_well = make_drug_or_surfactant(drug_list, next_deepplate_well, row_of_data)
         well_pairs.append((current_drug_well, current_surfactant_well))  
 
+    # PHASE 2: MIX (SHAKE)
     protocol.comment("Shaking deep well plate to mix components.")
     plate_on_hs(labware_to_shake=deepplate, new_location='D2', speed=1000, time=0.25)
     
@@ -220,6 +216,7 @@ def run(protocol: protocol_api.ProtocolContext):
     )
     hs_mod.close_labware_latch()
 
+    # PHASE 3: TRANSFER ALL TO EXPERIMENTAL PLATE
     protocol.comment("Pipetting mixtures to experimental plate.")
     for i in range(len(data)):
         row_of_data = data[i]

@@ -17,11 +17,6 @@ normalize_drug_properties_dict = {
     "GLV": {"full_name": "Griseofulvin", "normalized_properties": {"Drug_MW": 0.3528, "Drug_LogP": 0.2810, "Drug_TPSA": 0.0711}, "drug_stock_conc": 25},
 }
 
-def conc_to_vol_helper(conc, total_volume, stock_conc):
-    vol = (conc * total_volume) / stock_conc
-    return vol 
-
-# --- FIXED MATH FUNCTION ---
 def design_to_vol(iteration, design_file_path, drug_stock_conc=drug_stock_conc, drug_total_volume=drug_total_volume, surfactant_stock_conc=surfactant_stock_conc, surfactant_total_volume=surfactant_total_volume):  
     full_path = f"{design_file_path}i{iteration}.csv"
     if not os.path.exists(full_path):
@@ -41,10 +36,8 @@ def design_to_vol(iteration, design_file_path, drug_stock_conc=drug_stock_conc, 
     s_cols = [f"s{i}" for i in range(1, number_of_surfactants + 1)]
     drug_cols = ["IBP", "LOV", "DCF", "GLV"]
 
-    # Direct Volume Pass-through
     df_vol = pd.DataFrame({"trial_index": df_design["trial_index"], "drug_name": df_design["drug_name"]})
     
-    # Just copy the numbers, they are already volumes (uL)
     for s in s_cols:
         df_vol[s] = pd.to_numeric(df_design[s], errors='coerce').fillna(0.0)
     
