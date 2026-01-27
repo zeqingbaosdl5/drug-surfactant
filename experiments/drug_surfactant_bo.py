@@ -155,7 +155,7 @@ if plate_input or deep_input:
         json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
 
 # --- TIP STATE ---
-REPLICATES = 3
+REPLICATES = 1
 TIP_STATE_FILE = f"tip_positions{_SUFFIX}.json"
 
 try:
@@ -178,7 +178,7 @@ print(f"Batch Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well
 
 # --- MAIN LOOP ---
 NUM_BATCHES = 3 
-TRIALS_PER_ITERATION = 3  
+TRIALS_PER_ITERATION = 2  
 drug_choices = ["IBP"] 
 surf_names = [f"s{i}" for i in range(1, 9)]
 

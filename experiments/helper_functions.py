@@ -49,7 +49,7 @@ def design_to_vol(iteration, design_file_path, drug_stock_conc=drug_stock_conc, 
     
     return df_design, df_vol
 
-# --- FIXED LOGIC: Location-Aware Processing ---
+# --- FIXED LOGIC: Handles Duplicates and Location ---
 def process_absorbance(raw_data_file_path, trials_data, replicates=3, threshold=0.06):
     """
     Reads the absorbance CSV and extracts values for the specific wells used in this batch.
@@ -58,6 +58,15 @@ def process_absorbance(raw_data_file_path, trials_data, replicates=3, threshold=
     # Load 8x12 CSV (Rows A-H, Cols 1-12)
     try:
         df = pd.read_csv(raw_data_file_path, index_col=0)
+        
+        # --- FIX 1: Remove Duplicate Rows ---
+        # Keeps the first 'A', drops the second empty 'A'
+        df = df[~df.index.duplicated(keep='first')]
+        
+        # --- FIX 2: Ensure Columns are Strings ---
+        # Ensures that column "1" is treated as string "1", not integer 1
+        df.columns = df.columns.astype(str)
+
     except Exception as e:
         print(f"[ERR] Could not read raw data: {e}")
         return pd.DataFrame()
@@ -82,8 +91,13 @@ def process_absorbance(raw_data_file_path, trials_data, replicates=3, threshold=
             col = str(w[1:])  # "10"
             try:
                 # Opentrons CSV usually has columns "1", "2"... as strings
-                val = float(df.at[row, col])
-                vals.append(val)
+                val = df.at[row, col]
+                
+                # Extra Safety: If it STILL returns a series (unlikely now), take the first one
+                if isinstance(val, pd.Series):
+                    val = val.iloc[0]
+                    
+                vals.append(float(val))
             except KeyError:
                 print(f"[WARN] Well {w} not found in raw data file.")
                 vals.append(0.0) # Default to 0 if missing
@@ -107,7 +121,6 @@ def build_results(iteration, df_absorbance, design_file_path):
     df_design = pd.read_csv(f"{design_file_path}i{iteration}.csv")
     
     # Merge design with results on 'well_slot' to ensure alignment
-    # Note: df_design has 'well_slot', df_absorbance has 'well_slot'
     results = pd.merge(df_design, df_absorbance, on="well_slot", how="left")
     
     # 1. Actual Volume

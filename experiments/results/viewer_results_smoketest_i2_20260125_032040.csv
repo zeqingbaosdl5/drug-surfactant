@@ -1,4 +1,0 @@
-trial_index,drug_name,well_slot,deep_well_slot,rack_1000,well_1000,well_50,replicates,s1,s2,s3,s4,s5,s6,s7,s8,total_vol,success,absorbance,vol_actual,vol_with_penalty,status,plate_num,batch_start_well
-6,IBP,B7,B1,0,G4,G1,3,0.0,80.0,155.0,0.0,0.0,0.0,0.0,0.0,235.0,0,0.06633333333333334,235.0,1200.0,ABANDONED,1,B7
-7,IBP,B10,B3,0,G4,G1,3,15.0,0.0,0.0,0.0,280.0,0.0,0.0,0.0,295.0,1,0.04700000000000001,295.0,295.0,COMPLETED,1,B7
-8,IBP,C1,B5,0,G4,G1,3,0.0,0.0,0.0,0.0,115.0,0.0,145.0,0.0,260.0,1,0.05533333333333334,260.0,260.0,COMPLETED,1,B7
