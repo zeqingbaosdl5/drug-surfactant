@@ -12,6 +12,11 @@ from opentrons_http_client import (
 
 BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
 
+LABWARE_DEFINITIONS = [
+    os.path.join(os.path.dirname(__file__), "allenlab_8_wellplate_20000ul.json"),
+    os.path.join(os.path.dirname(__file__), "corning_96_wellplate_360ul_flat_new.json")
+]
+
 def run_otflex_iA(protocol_file_path: str):
     """
     Uploads the generated protocol file, runs it, and returns the Run ID.
@@ -19,7 +24,7 @@ def run_otflex_iA(protocol_file_path: str):
     print(f"Uploading {os.path.basename(protocol_file_path)}...")
     
     # 1. Upload
-    upload_response = upload_protocol(BASE_URL, protocol_file_path)
+    upload_response = upload_protocol(BASE_URL, protocol_file_path, labware_paths=LABWARE_DEFINITIONS)
     protocol_id = upload_response['data']['id']
     print(f"Protocol Uploaded: {protocol_id}")
 

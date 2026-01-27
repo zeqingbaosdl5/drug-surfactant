@@ -141,6 +141,8 @@ def run(protocol: protocol_api.ProtocolContext):
         for pipette in [pipette_low, pipette_high]:
             pipette.well_bottom_clearance.dispense = 25
             pipette.well_bottom_clearance.aspirate = 2      
+       
+        hs_mod.close_labware_latch()
 
         for n, item in enumerate(a_list):
             vol = float(row_of_data.get(item, 0))
@@ -150,7 +152,6 @@ def run(protocol: protocol_api.ProtocolContext):
                 pipette_high.flow_rate.dispense = 50
                 air_gap_vol = 60 if pipette == pipette_high else 10
                 
-                hs_mod.close_labware_latch()
                 pipette.transfer(vol, sources[item], deepplate[next_deepplate_well], new_tip='never', air_gap=air_gap_vol)
                 pipette.blow_out(deepplate[next_deepplate_well].bottom(z=25))
                 pipette.touch_tip(deepplate[next_deepplate_well], v_offset=15)
