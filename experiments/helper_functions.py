@@ -22,16 +22,11 @@ def design_to_vol(iteration, design_file_path, drug_stock_conc=drug_stock_conc, 
     if not os.path.exists(full_path):
         raise FileNotFoundError(f"CSV not found at {full_path}")
     
-    headers = [
-        "trial_index", "drug_name", "well_slot", "deep_well_slot",
-        "rack_1000", "well_1000", "well_50", "replicates",
-        "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8",
-        "total_vol", "obj_total_vol" 
-    ]
+    # Read CSV (handle variable columns if needed)
     try:
-        df_design = pd.read_csv(full_path, names=headers, skiprows=1)
-    except:
         df_design = pd.read_csv(full_path)
+    except:
+        return None, None
 
     s_cols = [f"s{i}" for i in range(1, number_of_surfactants + 1)]
     drug_cols = ["IBP", "LOV", "DCF", "GLV"]
@@ -54,44 +49,85 @@ def design_to_vol(iteration, design_file_path, drug_stock_conc=drug_stock_conc, 
     
     return df_design, df_vol
 
-def process_absorbance(raw_data_file_path, replicates=3, threshold=0.06):
-    df = pd.read_csv(raw_data_file_path, nrows=8, index_col=0)
-    arr = df.to_numpy().flatten(order="C")
-    arr = arr[~np.isnan(arr)]
-    n_chunks = len(arr) // replicates
+# --- FIXED LOGIC: Location-Aware Processing ---
+def process_absorbance(raw_data_file_path, trials_data, replicates=3, threshold=0.06):
+    """
+    Reads the absorbance CSV and extracts values for the specific wells used in this batch.
+    trials_data: List of dicts containing 'well_slot' (the start well for each trial).
+    """
+    # Load 8x12 CSV (Rows A-H, Cols 1-12)
+    try:
+        df = pd.read_csv(raw_data_file_path, index_col=0)
+    except Exception as e:
+        print(f"[ERR] Could not read raw data: {e}")
+        return pd.DataFrame()
+
     summary = []
-    rows = list(df.index)
-    cols = list(df.columns)
-    for i in range(n_chunks):
-        block = arr[i * replicates : (i + 1) * replicates]
-        binary_block = (block < threshold).astype(int)
-        success = int(binary_block.all())
-        absorbance = float(np.mean(block))
-        flat_idx = i * replicates
-        row_idx = flat_idx // len(cols)
-        col_idx = flat_idx % len(cols)
-        well_slot = f"{rows[row_idx]}{cols[col_idx]}"
-        summary.append({"well_slot": well_slot, "success": success, "absorbance": absorbance})
+    
+    for trial in trials_data:
+        start_well = trial['well_slot']
+        
+        # Identify the 3 replicate wells
+        # Example: start_well="A10" -> wells=["A10", "A11", "A12"]
+        target_wells = []
+        curr = start_well
+        for _ in range(replicates):
+            target_wells.append(curr)
+            curr = get_next_well(curr)
+            
+        # Extract values from dataframe
+        vals = []
+        for w in target_wells:
+            row = w[0]        # "A"
+            col = str(w[1:])  # "10"
+            try:
+                # Opentrons CSV usually has columns "1", "2"... as strings
+                val = float(df.at[row, col])
+                vals.append(val)
+            except KeyError:
+                print(f"[WARN] Well {w} not found in raw data file.")
+                vals.append(0.0) # Default to 0 if missing
+
+        # Determine Success
+        # Success = 1 if ALL replicates are clear (< threshold)
+        # Success = 0 if ANY replicate is cloudy (> threshold)
+        is_clear = all(v < threshold for v in vals)
+        success = 1 if is_clear else 0
+        avg_abs = float(np.mean(vals))
+        
+        summary.append({
+            "well_slot": start_well,
+            "success": success,
+            "absorbance": avg_abs
+        })
+        
     return pd.DataFrame(summary)
 
 def build_results(iteration, df_absorbance, design_file_path):
-    headers = [
-        "trial_index", "drug_name", "well_slot", "deep_well_slot",
-        "rack_1000", "well_1000", "well_50", "replicates",
-        "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8",
-        "total_vol", "obj_total_vol"
-    ]
-    df_design = pd.read_csv(design_file_path + "i" + str(iteration) + ".csv", names=headers, skiprows=1)
-    results = df_design.copy()
-    results["success"] = df_absorbance["success"]
-    results["obj_total_vol"] = np.where(results["success"] == 1, results["total_vol"], surfactant_total_volume * 1000)
+    df_design = pd.read_csv(f"{design_file_path}i{iteration}.csv")
+    
+    # Merge design with results on 'well_slot' to ensure alignment
+    # Note: df_design has 'well_slot', df_absorbance has 'well_slot'
+    results = pd.merge(df_design, df_absorbance, on="well_slot", how="left")
+    
+    # 1. Actual Volume
+    results["vol_actual"] = results["total_vol"]
+    
+    # 2. Penalized Volume (The "Objective" the AI sees)
+    # If Success: Use actual volume.
+    # If Fail (success=0): Use 1200 (Max Penalty).
+    results["vol_with_penalty"] = np.where(results["success"] == 1, results["total_vol"], surfactant_total_volume * 1000)
+    
+    # Clean up old columns if they exist
+    if "obj_total_vol" in results.columns:
+        results.drop(columns=["obj_total_vol"], inplace=True)
+        
     return results
 
 def add_drug_names(df):
     if "drug" in df.columns:
         df["drug_name"] = df["drug"]
         df["drug_full"] = df["drug"].map({abbr: props["full_name"] for abbr, props in normalize_drug_properties_dict.items()})
-        return df
     return df
 
 def get_next_well(starting_well, offset=1):
@@ -103,7 +139,7 @@ def get_next_well(starting_well, offset=1):
     start_index = (ord(row_letter) - ord("A")) * 12 + (col_num - 1)
     next_index = start_index + offset
     if next_index >= 96:
-        raise ValueError("Wellplate exhausted: replace plate before continuing.")
+        raise ValueError("Wellplate exhausted.")
     next_row = chr(ord("A") + (next_index // 12))
     next_col = (next_index % 12) + 1
     return f"{next_row}{next_col}"
@@ -111,5 +147,9 @@ def get_next_well(starting_well, offset=1):
 def ax_trial_status_dataframe(ax_client):
     rows = []
     for idx, trial in ax_client.experiment.trials.items():
-        rows.append({"trial_index": idx, "status": trial.status.name, "well_slot": trial._properties.get("well_slot"), "plate_num": trial._properties.get("plate_num")})
+        rows.append({
+            "trial_index": idx, 
+            "status": trial.status.name, 
+            "plate_num": trial._properties.get("plate_num")
+        })
     return pd.DataFrame(rows)

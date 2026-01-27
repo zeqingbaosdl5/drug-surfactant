@@ -154,7 +154,7 @@ if plate_input or deep_input:
     with open(WELL_POSITIONS_FILE, "w") as f:
         json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
 
-# --- TIP STATE (SMOKETEST AWARE) ---
+# --- TIP STATE ---
 REPLICATES = 3
 TIP_STATE_FILE = f"tip_positions{_SUFFIX}.json"
 
@@ -271,7 +271,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
         trials_data.append({
             "trial_index": tid, "drug_name": drug,
             "well_slot": NEXT_PLATE_WELL, "deep_well_slot": NEXT_DEEPPLATE_WELL,
-            # We save the Batch Start metadata here, but we will NOT put it in the robot rows
+            # We record Batch Start Tips here (used for generating protocol)
             "rack_1000": tip_state["rack_id_1000"], "well_1000": tip_state["well_1000"], "well_50": tip_state["well_50"],
             "replicates": REPLICATES,
             **{k: params[k] for k in surf_names},
@@ -286,7 +286,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
     ax_client.save_to_json_file(OPTIMIZER_FILE_PATH + str(n) + ".json")
     df_design.to_csv(DESIGN_FILE_PATH + "i" + str(n) + ".csv", index=False)
     
-    # 5. Volume Calculation
+    # 5. Volume Calculation & TIP TRACKING
     _, df_vol = hf.design_to_vol(n, design_file_path=DESIGN_FILE_PATH)
     otflex_params = df_vol.drop(columns=["trial_index", "drug_name"]).to_dict(orient="records")
     
@@ -295,19 +295,16 @@ for n in range(start_n, start_n + NUM_BATCHES):
             "next_plate_well": trials_data[i]["well_slot"],
             "next_deepplate_well": trials_data[i]["deep_well_slot"],
             "replicates": REPLICATES,
-            # NOTE: We are intentionally NOT adding well_1000 here to avoid confusion.
-            # The robot uses the global batch start tip.
         })
 
     with open(WELL_POSITIONS_FILE, "w") as f:
         json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
 
-    # --- 6. GENERATE PROTOCOL FILE ---
+    # --- 6. GENERATE PROTOCOL ---
     import json
     template_path = os.path.join(REPO_DIR, "protocol_template.py")
     with open(template_path, "r") as f: template_str = f.read()
 
-    # We use the Tip State from the beginning of the batch to set the robot's starting point
     protocol_content = template_str.format(
         ITERATION=n,
         RACK_ID_1000=str(tip_state["rack_id_1000"]), 
@@ -343,27 +340,21 @@ for n in range(start_n, start_n + NUM_BATCHES):
         print("[WARN] No output file ID found!")
 
     # 8. Process Data & Update Tips
-    df_absorbance = hf.process_absorbance(clean_raw_path, replicates=REPLICATES, threshold=0.06)
+    # --- UPDATED: Passing trials_data so it knows which wells to check! ---
+    df_absorbance = hf.process_absorbance(clean_raw_path, trials_data, replicates=REPLICATES, threshold=0.06)
     
-    # CALCULATE TIP USAGE FOR NEXT BATCH
     comp_list = [f"s{i}" for i in range(1, 9)] + ["water"] + [drug]
     high, low = 0, 0
     for sample in otflex_params:
-        # Deep Well: 1 tip per non-zero component
         high += sum(1 for s in comp_list if float(sample.get(s, 0)) > 40)
         low += sum(1 for s in comp_list if 0 < float(sample.get(s, 0)) <= 40)
-        # Exp Plate: 1 High, 1 Low per trial
-        high += 1 
-        low += 1 
+        high += 1; low += 1
     
-    # Advance counters
     all_wells = [f"{r}{c}" for c in range(1, 13) for r in "ABCDEFGH"]
     
     idx_1000 = all_wells.index(tip_state["well_1000"]) + high 
     if idx_1000 >= 96:
-        # Toggle rack if we overflow 96 tips
-        current_rack = int(tip_state["rack_id_1000"])
-        tip_state["rack_id_1000"] = str(1 - current_rack) # 0->1 or 1->0
+        tip_state["rack_id_1000"] = str(1 - int(tip_state["rack_id_1000"]))
         tip_state["well_1000"] = all_wells[idx_1000 - 96]
     else:
         tip_state["well_1000"] = all_wells[idx_1000]
@@ -373,7 +364,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
     
     with open(TIP_STATE_FILE, "w") as f: json.dump(tip_state, f)
 
-    # 9. Complete Trials & Save Results
+    # 9. Complete Trials
     failed_wells = set(df_absorbance.loc[df_absorbance["success"] == 0, "well_slot"])
     for idx, t in ax_client.experiment.trials.items():
         if t._properties.get("well_slot") in failed_wells: t.mark_abandoned(unsafe=True)
@@ -393,7 +384,13 @@ for n in range(start_n, start_n + NUM_BATCHES):
     # 10. Viewer Result
     results = hf.build_results(n, df_absorbance, design_file_path=DESIGN_FILE_PATH)
     df_stat = hf.ax_trial_status_dataframe(ax_client)
-    view = results.merge(df_stat, on="trial_index", how="left").sort_values("trial_index")
+    
+    view = results.merge(
+        df_stat[["trial_index", "status", "plate_num"]], 
+        on="trial_index", 
+        how="left"
+    ).sort_values("trial_index")
+    
     view["batch_start_well"] = trials_data[0]['well_slot']
     
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
