@@ -30,9 +30,9 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 425.0,
-        "next_plate_well": "E1",
-        "next_deepplate_well": "E1",
-        "replicates": 1
+        "next_plate_well": "E9",
+        "next_deepplate_well": "F1",
+        "replicates": 2
     },
     {
         "s1": 0.0,
@@ -49,9 +49,9 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 395.0,
-        "next_plate_well": "E2",
-        "next_deepplate_well": "E3",
-        "replicates": 1
+        "next_plate_well": "E11",
+        "next_deepplate_well": "F3",
+        "replicates": 2
     }
 ]
 
@@ -76,13 +76,13 @@ def run(protocol: protocol_api.ProtocolContext):
     # This sets the STARTING point for the entire batch.
     # The robot automatically increments to the next tip after every usage.
     rack_id_1000 = "0" 
-    start_well_1000 = "A3"
+    start_well_1000 = "H1"
     
     tipracks_1000 = {"0": tip1000_1, "1": tip1000_2}
     
     pipette_high.starting_tip = tipracks_1000[rack_id_1000].wells_by_name()[start_well_1000]
     
-    start_well_50 = "D4"
+    start_well_50 = "A1"
     pipette_low.starting_tip = tip50.wells_by_name()[start_well_50]
 
 
@@ -105,10 +105,10 @@ def run(protocol: protocol_api.ProtocolContext):
     water = surfactant_drug_dmso_stock_2['A1']
     
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='D1')
-    next_plate_well = 'E1'
+    next_plate_well = 'E9'
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
-    next_deepplate_well = 'E1'
+    next_deepplate_well = 'F1'
 
     trash = protocol.load_trash_bin(location="A3")
 
@@ -207,7 +207,7 @@ def run(protocol: protocol_api.ProtocolContext):
             pipette.well_bottom_clearance.aspirate = 2    
         
         replicate_wells = []
-        for _ in range(1): 
+        for _ in range(2): 
             replicate_wells.append(next_plate_well)
             next_plate_well = next_well(next_plate_well)
 
