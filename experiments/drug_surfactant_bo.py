@@ -77,8 +77,20 @@ DESIGN_FILE_PATH = f"optimizer/design{_SUFFIX}_"
 SNAPSHOT_DIR = f"optimizer/snapshots{_SUFFIX}/"
 
 # --- AX INITIALIZATION ---
+# Assuming you did 12 random trials manually in your Python code
 gs = GenerationStrategy(
-    steps=[GenerationStep(model=Models.SAASBO, num_trials=-1, model_kwargs={})]
+    steps=[
+        GenerationStep(
+            model=Models.SAASBO,
+            num_trials=3,  # Run SAASBO for trials #12, #13, #14
+            model_kwargs={}
+        ),
+        GenerationStep(
+            model=Models.BOTORCH_MODULAR,
+            num_trials=-1, # Switch to BoTorch at trial #15
+            model_kwargs={}
+        )
+    ]
 )
 os.makedirs(SNAPSHOT_DIR, exist_ok=True)
 
@@ -105,14 +117,14 @@ else:
     ax_client.create_experiment(
         name="drug_surfactant",
         parameters=[
-            { "name": "s1", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
-            { "name": "s2", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
-            { "name": "s3", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
-            { "name": "s4", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
-            { "name": "s5", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
-            { "name": "s6", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
-            { "name": "s7", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
-            { "name": "s8", "type": "range", "bounds": [0.0, 1200.0], "value_type": "float" },
+            { "name": "s1", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
+            { "name": "s2", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
+            { "name": "s3", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
+            { "name": "s4", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
+            { "name": "s5", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
+            { "name": "s6", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
+            { "name": "s7", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
+            { "name": "s8", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
             { "name": "drug", "type": "choice", "values": ["IBP", "LOV", "DCF", "GLV"], "value_type": "str" },
             { "name": "Drug_MW", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
             { "name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
@@ -155,7 +167,6 @@ if plate_input or deep_input:
         json.dump({"plate": NEXT_PLATE_WELL, "deepplate": NEXT_DEEPPLATE_WELL}, f)
 
 # --- TIP STATE ---
-REPLICATES = 1
 TIP_STATE_FILE = f"tip_positions{_SUFFIX}.json"
 
 try:
@@ -178,7 +189,8 @@ print(f"Batch Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well
 
 # --- MAIN LOOP ---
 NUM_BATCHES = 3 
-TRIALS_PER_ITERATION = 2  
+TRIALS_PER_ITERATION = 2 
+REPLICATES = 2
 drug_choices = ["IBP"] 
 surf_names = [f"s{i}" for i in range(1, 9)]
 
@@ -206,7 +218,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
 
     # 2. Candidate Generation
     fixed_drug_ul = hf.drug_total_volume * 1000
-    resolution = 5.0  
+    resolution = 5.0  #Volume will be generated as an interval of 5 uL
     upper_lim = min(float(max(best_total_vol - 2, 1)), hf.surfactant_total_volume * 1000)
     if upper_lim < 2 * resolution: resolution = max(1.0, upper_lim / 2.0)
 
@@ -238,7 +250,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
             candidate_df = candidate_df[~candidate_df[needed].apply(tuple, axis=1).isin(tried)]
 
     # 3. Model Prediction
-    if n + 1 <= (4 if SMOKE_TEST else 12):
+    if n + 1 <= (4 if SMOKE_TEST else TRIALS_PER_ITERATION): #only iteration 0 is randomly generated
         sample_indices = np.random.default_rng(n).choice(len(candidate_df), size=TRIALS_PER_ITERATION, replace=False)
         chosen_rows = candidate_df.iloc[sample_indices]
     else:
@@ -383,19 +395,55 @@ for n in range(start_n, start_n + NUM_BATCHES):
     
     # 10. Viewer Result
     results = hf.build_results(n, df_absorbance, design_file_path=DESIGN_FILE_PATH)
+    
+    # Get status (COMPLETED/RUNNING)
     df_stat = hf.ax_trial_status_dataframe(ax_client)
     
+    # Merge and Sort
     view = results.merge(
         df_stat[["trial_index", "status", "plate_num"]], 
         on="trial_index", 
         how="left"
     ).sort_values("trial_index")
+
+    # --- CUSTOM METRICS ---
+
+    # 1. Add "Previous Best" (The record to beat)
+    view["prior_best_vol"] = best_total_vol
+
+    # 2. Format Absorbance (4 decimal places)
+    if "absorbance" in view.columns:
+        view["absorbance"] = view["absorbance"].round(4)
+
+    # 3. Add 'is_new_record' flag
+    # Logic: Successful (Abs <= 0.06) AND Volume < Previous Best
+    view["is_new_record"] = (
+        (view["absorbance"] <= 0.06) & 
+        (view["total_vol"] < best_total_vol)
+    )
+
+    # --- COLUMN ORDERING ---
+    # Define the parameters in this order
+    desired_cols = [
+        "trial_index", "drug_name", 
+        "well_slot", "deep_well_slot", 
+        "rack_1000", "well_1000", "well_50", 
+        "replicates", 
+        "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", 
+        "total_vol", "success", "absorbance",
+        "prior_best_vol", "is_new_record", "status"
+    ]
     
-    view["batch_start_well"] = trials_data[0]['well_slot']
-    
+    # Filter to only existing columns to prevent errors if one is missing
+    final_cols = [c for c in desired_cols if c in view.columns]
+    view = view[final_cols]
+
+    # Save to CSV
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs("results", exist_ok=True)
     view.to_csv(f"results/viewer_results{_SUFFIX}_i{n}_{ts}.csv", index=False)
-    print(view.tail(5))
+    
+    # Print the "Highlights" to console
+    print(view[["trial_index", "absorbance", "total_vol", "prior_best_vol", "is_new_record"]].tail(5))
 
 print(f"\nOptimization Loop {start_n} -> {n} Complete.")
