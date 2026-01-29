@@ -17,12 +17,16 @@ PROJECT_ROOT = os.path.dirname(REPO_DIR)
 # --- CONFIG ---
 SMOKE_TEST = str(os.getenv("SMOKE_TEST", "")).strip().lower() in {"1", "true"}
 BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
-absorbance_threshold = 0.06
+absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD", 0.06))
 
 # --- EXPERIMENT FOLDER SELECTION ---
 if not SMOKE_TEST:
     print(f"📂 Project Root: {PROJECT_ROOT}")
-    folder_input = input("Enter experiment folder name (e.g., 20261129_test): ").strip()
+    # GUI Support: Check environment variable first
+    folder_input = os.getenv("EXP_FOLDER_NAME", "").strip()
+    if not folder_input:
+        folder_input = input("Enter experiment folder name (e.g., 20261129_test): ").strip()
+    
     if not folder_input:
         raise ValueError("❌ Error: Experiment folder name is required.")
     
@@ -175,8 +179,16 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 if not SMOKE_TEST:
     print(f"Last saved: Plate {prev_plate}, Deep {prev_deep}")
-    plate_input = input(f"Enter starting plate well (Enter for {prev_plate}): ").strip()
-    deep_input = input(f"Enter starting deep plate well (Enter for {prev_deep}): ").strip()
+    
+    # GUI Support for Plate
+    plate_input = os.getenv("START_PLATE_WELL", "").strip()
+    if not plate_input:
+        plate_input = input(f"Enter starting plate well (Enter for {prev_plate}): ").strip()
+    
+    # GUI Support for Deep Plate
+    deep_input = os.getenv("START_DEEP_WELL", "").strip()
+    if not deep_input:
+        deep_input = input(f"Enter starting deep plate well (Enter for {prev_deep}): ").strip()
 else:
     plate_input, deep_input = "", ""
 
@@ -198,9 +210,19 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 if not SMOKE_TEST:
     print("\n--- TIP SETUP ---")
-    u_rack = input(f"Enter 1000uL Rack ID (0/1) [Enter for {tip_state.get('rack_id_1000','0')}]: ").strip()
-    u_1000 = input(f"Enter 1000uL Well [Enter for {tip_state.get('well_1000','A1')}]: ").strip().upper()
-    u_50 = input(f"Enter 50uL Well [Enter for {tip_state.get('well_50','A1')}]: ").strip().upper()
+    # GUI Support
+    u_rack = os.getenv("TIP_RACK_ID", "").strip()
+    if not u_rack:
+        u_rack = input(f"Enter 1000uL Rack ID (0/1) [Enter for {tip_state.get('rack_id_1000','0')}]: ").strip()
+    
+    u_1000 = os.getenv("TIP_WELL_1000", "").strip()
+    if not u_1000:
+        u_1000 = input(f"Enter 1000uL Well [Enter for {tip_state.get('well_1000','A1')}]: ").strip().upper()
+    
+    u_50 = os.getenv("TIP_WELL_50", "").strip()
+    if not u_50:
+        u_50 = input(f"Enter 50uL Well [Enter for {tip_state.get('well_50','A1')}]: ").strip().upper()
+
     if u_rack: tip_state["rack_id_1000"] = u_rack
     if u_1000: tip_state["well_1000"] = u_1000
     if u_50: tip_state["well_50"] = u_50
@@ -209,11 +231,14 @@ if not SMOKE_TEST:
 print(f"Batch Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}")
 
 # --- MAIN LOOP ---
-NUM_BATCHES = 5 
-TRIALS_PER_ITERATION = 3
-REPLICATES = 2
-surfactant_volume_reduction = 20
-drug_choices = ["IBP"] 
+NUM_BATCHES = int(os.getenv("NUM_BATCHES", 5))
+TRIALS_PER_ITERATION = int(os.getenv("TRIALS_PER_ITERATION", 2))
+REPLICATES = int(os.getenv("REPLICATES", 2))
+surfactant_volume_reduction = float(os.getenv("SURFACTANT_VOL_REDUCTION", 20))
+
+drug_choices_str = os.getenv("DRUG_CHOICES", "IBP")
+drug_choices = [d.strip() for d in drug_choices_str.split(",") if d.strip()]
+
 surf_names = [f"s{i}" for i in range(1, 9)]
 
 start_n = n 
@@ -497,3 +522,4 @@ print(f"\nOptimization Loop {start_n} -> {n} Complete.")
 
 # smoke test: SMOKE_TEST=1 python governing_files/drug_surfactant_bo.py
 # real experiments: python governing_files/drug_surfactant_bo.py
+# python launcher_ui.py

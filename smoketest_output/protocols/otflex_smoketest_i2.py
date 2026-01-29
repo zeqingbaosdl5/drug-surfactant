@@ -17,8 +17,8 @@ def run(protocol: protocol_api.ProtocolContext):
     data = [
     {
         "s1": 0.0,
-        "s2": 30.0,
-        "s3": 55.0,
+        "s2": 45.0,
+        "s3": 25.0,
         "s4": 0.0,
         "s5": 0.0,
         "s6": 0.0,
@@ -29,28 +29,9 @@ def run(protocol: protocol_api.ProtocolContext):
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1115.0,
-        "next_plate_well": "B1",
-        "next_deepplate_well": "B1",
-        "replicates": 2
-    },
-    {
-        "s1": 5.0,
-        "s2": 0.0,
-        "s3": 0.0,
-        "s4": 0.0,
-        "s5": 145.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 1050.0,
-        "next_plate_well": "B3",
-        "next_deepplate_well": "B3",
+        "water": 1130.0,
+        "next_plate_well": "A9",
+        "next_deepplate_well": "A9",
         "replicates": 2
     },
     {
@@ -58,18 +39,18 @@ def run(protocol: protocol_api.ProtocolContext):
         "s2": 0.0,
         "s3": 0.0,
         "s4": 0.0,
-        "s5": 40.0,
+        "s5": 60.0,
         "s6": 0.0,
-        "s7": 100.0,
+        "s7": 140.0,
         "s8": 0.0,
         "IBP": 180.0,
         "LOV": 0.0,
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1060.0,
-        "next_plate_well": "B5",
-        "next_deepplate_well": "B5",
+        "water": 1000.0,
+        "next_plate_well": "A11",
+        "next_deepplate_well": "A11",
         "replicates": 2
     }
 ]
@@ -95,13 +76,13 @@ def run(protocol: protocol_api.ProtocolContext):
     # This sets the STARTING point for the entire batch.
     # The robot automatically increments to the next tip after every usage.
     rack_id_1000 = "0" 
-    start_well_1000 = "F4"
+    start_well_1000 = "E3"
     
     tipracks_1000 = {"0": tip1000_1, "1": tip1000_2}
     
     pipette_high.starting_tip = tipracks_1000[rack_id_1000].wells_by_name()[start_well_1000]
     
-    start_well_50 = "H1"
+    start_well_50 = "E1"
     pipette_low.starting_tip = tip50.wells_by_name()[start_well_50]
 
 
@@ -124,10 +105,10 @@ def run(protocol: protocol_api.ProtocolContext):
     water = surfactant_drug_dmso_stock_2['A1']
     
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='D1')
-    next_plate_well = 'B1'
+    next_plate_well = 'A9'
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
-    next_deepplate_well = 'B1'
+    next_deepplate_well = 'A9'
 
     trash = protocol.load_trash_bin(location="A3")
 
