@@ -17,7 +17,7 @@ PROJECT_ROOT = os.path.dirname(REPO_DIR)
 # --- CONFIG ---
 SMOKE_TEST = str(os.getenv("SMOKE_TEST", "")).strip().lower() in {"1", "true"}
 BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
-absorbance_threshold = 0.06
+absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD", "0.06"))
 
 # --- EXPERIMENT FOLDER SELECTION ---
 if not SMOKE_TEST:
@@ -77,7 +77,7 @@ if SMOKE_TEST:
             for row in rows:
                 values = []
                 for _ in cols:
-                    if random.random() < 0.9:
+                    if random.random() < 0.4:
                         val = random.uniform(absorbance_threshold*0.5, absorbance_threshold*0.99)
                     else:
                         val = random.uniform(absorbance_threshold, absorbance_threshold*2)
@@ -98,7 +98,6 @@ DESIGN_FILE_PATH = os.path.join(EXP_PATH, f"optimizer/design{_SUFFIX}_")
 SNAPSHOT_DIR = os.path.join(EXP_PATH, f"optimizer/snapshots{_SUFFIX}/")
 
 # --- AX INITIALIZATION ---
-# Assuming you did 12 random trials manually in your Python code
 gs = GenerationStrategy(
     steps=[
         GenerationStep(
@@ -108,7 +107,7 @@ gs = GenerationStrategy(
         ),
         GenerationStep(
             model=Models.BOTORCH_MODULAR,
-            num_trials=-1, # Switch to BoTorch at trial #15
+            num_trials=-1, 
             model_kwargs={}
         )
     ]
@@ -206,20 +205,23 @@ if not SMOKE_TEST:
     if u_50: tip_state["well_50"] = u_50
     with open(TIP_STATE_FILE, "w") as f: json.dump(tip_state, f)
 
-print(f"Batch Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}")
+print(f"Iteration Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}")
 
 # --- MAIN LOOP ---
-NUM_BATCHES = 5 
-TRIALS_PER_ITERATION = 3
-REPLICATES = 2
-surfactant_volume_reduction = 20
-drug_choices = ["IBP"] 
+NUM_Iterations = int(os.getenv("NUM_Iterations", "5"))
+TRIALS_PER_ITERATION = int(os.getenv("TRIALS_PER_ITERATION", "2"))
+REPLICATES = int(os.getenv("REPLICATES", "2"))
+surfactant_volume_reduction = float(os.getenv("SURFACTANT_VOL_REDUCTION", "20"))
+drug_choices_str = os.getenv("DRUG_CHOICES", "IBP")
+drug_choices = [d.strip() for d in drug_choices_str.split(",")]
+absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD", "0.06"))
+num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS", "3"))
 surf_names = [f"s{i}" for i in range(1, 9)]
 
 start_n = n 
-for n in range(start_n, start_n + NUM_BATCHES):
+for n in range(start_n, start_n + NUM_Iterations):
     drug = drug_choices[n % len(drug_choices)]
-    print(f"\n=== Starting Batch Iteration {n} for drug: {drug} ===")
+    print(f"\n=== Starting Iteration {n} for drug: {drug} ===")
 
     # 1. Update Constraints
     data_so_far = ax_client.get_trials_data_frame()
@@ -272,7 +274,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
             candidate_df = candidate_df[~candidate_df[needed].apply(tuple, axis=1).isin(tried)]
 
     # 3. Model Prediction
-    if n + 1 <= (4 if SMOKE_TEST else TRIALS_PER_ITERATION): #only iteration 0 is randomly generated
+    if n + 1 <= (num_random_trials): #only iteration 0 is randomly generated
         sample_indices = np.random.default_rng(n).choice(len(candidate_df), size=TRIALS_PER_ITERATION, replace=False)
         chosen_rows = candidate_df.iloc[sample_indices]
     else:
@@ -326,7 +328,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
         trials_data.append({
             "trial_index": tid, "drug_name": drug,
             "well_slot": NEXT_PLATE_WELL, "deep_well_slot": NEXT_DEEPPLATE_WELL,
-            # We record Batch Start Tips here (used for generating protocol)
+            # We record iteration Start Tips here (used for generating protocol)
             "rack_1000": tip_state["rack_id_1000"], "well_1000": tip_state["well_1000"], "well_50": tip_state["well_50"],
             "replicates": REPLICATES,
             **{k: params[k] for k in surf_names},
@@ -377,7 +379,7 @@ for n in range(start_n, start_n + NUM_BATCHES):
     print(f"Generated Protocol: {proto_path}")
 
     # --- 7. EXECUTE & DOWNLOAD ---
-    print(f"Launching Batch {n}...")
+    print(f"Launching Iteration {n}...")
     run_id = run_otflex_iA(proto_path)
     if not SMOKE_TEST: time.sleep(5) 
 
