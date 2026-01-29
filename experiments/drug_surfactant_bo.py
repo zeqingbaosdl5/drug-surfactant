@@ -82,7 +82,7 @@ gs = GenerationStrategy(
     steps=[
         GenerationStep(
             model=Models.SAASBO,
-            num_trials=3,  # Run SAASBO for trials #12, #13, #14
+            num_trials=3,  # Run SAASBO for trials 
             model_kwargs={}
         ),
         GenerationStep(
