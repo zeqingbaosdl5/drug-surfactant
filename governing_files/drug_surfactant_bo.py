@@ -179,8 +179,19 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 if not SMOKE_TEST:
     print(f"Last saved: Plate {prev_plate}, Deep {prev_deep}")
-    plate_input = input(f"Enter starting plate well (Enter for {prev_plate}): ").strip()
-    deep_input = input(f"Enter starting deep plate well (Enter for {prev_deep}): ").strip()
+    
+    # Try getting from Env (UI) first, else prompt
+    plate_input = os.getenv("START_PLATE_WELL")
+    if plate_input is None:
+        plate_input = input(f"Enter starting plate well (Enter for {prev_plate}): ").strip()
+    else:
+        plate_input = plate_input.strip()
+
+    deep_input = os.getenv("START_DEEP_WELL")
+    if deep_input is None:
+        deep_input = input(f"Enter starting deep plate well (Enter for {prev_deep}): ").strip()
+    else:
+        deep_input = deep_input.strip()
 else:
     plate_input, deep_input = "", ""
 
@@ -202,9 +213,26 @@ except (FileNotFoundError, json.JSONDecodeError):
 
 if not SMOKE_TEST:
     print("\n--- TIP SETUP ---")
-    u_rack = input(f"Enter 1000uL Rack ID (0/1) [Enter for {tip_state.get('rack_id_1000','0')}]: ").strip()
-    u_1000 = input(f"Enter 1000uL Well [Enter for {tip_state.get('well_1000','A1')}]: ").strip().upper()
-    u_50 = input(f"Enter 50uL Well [Enter for {tip_state.get('well_50','A1')}]: ").strip().upper()
+    
+    # Check Env vars (UI) first, else prompt
+    u_rack = os.getenv("TIP_RACK_ID")
+    if u_rack is None:
+        u_rack = input(f"Enter 1000uL Rack ID (0/1) [Enter for {tip_state.get('rack_id_1000','0')}]: ").strip()
+    else:
+        u_rack = u_rack.strip()
+
+    u_1000 = os.getenv("TIP_WELL_1000")
+    if u_1000 is None:
+        u_1000 = input(f"Enter 1000uL Well [Enter for {tip_state.get('well_1000','A1')}]: ").strip().upper()
+    else:
+        u_1000 = u_1000.strip().upper()
+        
+    u_50 = os.getenv("TIP_WELL_50")
+    if u_50 is None:
+        u_50 = input(f"Enter 50uL Well [Enter for {tip_state.get('well_50','A1')}]: ").strip().upper()
+    else:
+        u_50 = u_50.strip().upper()
+
     if u_rack: tip_state["rack_id_1000"] = u_rack
     if u_1000: tip_state["well_1000"] = u_1000
     if u_50: tip_state["well_50"] = u_50
