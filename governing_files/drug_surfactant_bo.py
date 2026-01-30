@@ -161,7 +161,7 @@ else:
         parameter_constraints=[
             f"s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 <= {hf.surfactant_total_volume * 1000}",
         ],
-        outcome_constraints=[f"absorbance <= {absorbance_threshold}"],
+        #outcome_constraints=[f"absorbance <= {absorbance_threshold}"],
     )
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     ax_client.save_to_json_file(os.path.join(SNAPSHOT_DIR, f"{0}_{ts}_pending.json"))
@@ -479,16 +479,35 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     # for idx, t in ax_client.experiment.trials.items():
     #     if t._properties.get("well_slot") in failed_wells: t.mark_abandoned(unsafe=True)
 
+    # 9. Complete Trials
+    print("\n--- Completing Trials & Applying Punishment Model ---")
+
     for tid in trial_indices:
-        # if ax_client.experiment.trials[tid].status.name == "ABANDONED": continue
         well = ax_client.experiment.trials[tid]._properties["well_slot"]
         try:
             abs_val = df_absorbance.loc[df_absorbance["well_slot"] == well, "absorbance"].values[0]
             if pd.isna(abs_val): abs_val = 1.0 # default fail
         except IndexError:
             abs_val = 1.0 
+        
         t_params = ax_client.experiment.trials[tid].arm.parameters
-        ax_client.complete_trial(tid, {"obj_total_vol": sum(t_params[s] for s in surf_names), "absorbance": abs_val})
+        
+        # --- PUNISHMENT MODEL ---
+        original_vol = sum(t_params[s] for s in surf_names)
+        
+        if abs_val > absorbance_threshold:
+            # Failed: Apply punishment
+            reported_vol = original_vol * 100.0
+            status_msg = "FAILED"
+        else:
+            # Passed: Use actual volume
+            reported_vol = original_vol
+            status_msg = "SUCCESS!"
+
+        # Log for Smoke Test / Console visibility
+        print(f"Trial {tid} [{status_msg}]: Abs {abs_val:.4f} | Vol: {original_vol:.1f} -> Reported: {reported_vol:.1f}")
+
+        ax_client.complete_trial(tid, {"obj_total_vol": reported_vol, "absorbance": abs_val})
 
     ax_client.save_to_json_file(OPTIMIZER_FILE_PATH + str(n) + "_loaded.json")
     
@@ -510,30 +529,43 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     # 1. Add "Previous Best" (The record to beat)
     view["prior_best_vol"] = best_total_vol
 
-    # 2. Format Absorbance (4 decimal places)
+    # 2. Format Absorbance
     if "absorbance" in view.columns:
         view["absorbance"] = view["absorbance"].round(4)
 
-    # 3. Add 'is_new_record' flag
-    # Logic: Successful (Abs <= absorbance_threshold) AND Volume < Previous Best
+    # 3. Calculate Original vs Reported Volume for Viewer
+    # Ensure surfactant columns are float
+    surf_cols = [f"s{i}" for i in range(1, 9)]
+    for c in surf_cols: view[c] = view[c].astype(float)
+    
+    view["original_total_vol"] = view[surf_cols].sum(axis=1)
+    
+    # Re-apply punishment logic strictly for the CSV view
+    view["reported_vol"] = view.apply(
+        lambda x: x["original_total_vol"] * 100.0 if x["absorbance"] > absorbance_threshold else x["original_total_vol"], 
+        axis=1
+    )
+
+    # 4. Add 'is_new_record' flag
+    # Logic: Successful (Abs <= threshold) AND Original Volume < Previous Best
     view["is_new_record"] = (
         (view["absorbance"] <= absorbance_threshold) & 
-        (view["total_vol"] < best_total_vol)
+        (view["original_total_vol"] < best_total_vol)
     )
 
     # --- COLUMN ORDERING ---
-    # Define the parameters in this order
     desired_cols = [
         "trial_index", "drug_name", 
         "well_slot", "deep_well_slot", 
         "rack_1000", "well_1000", "well_50", 
         "replicates", 
         "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", 
-        "total_vol", "success", "absorbance",
+        "original_total_vol", "reported_vol",  
+        "success", "absorbance",
         "prior_best_vol", "is_new_record", "status"
     ]
     
-    # Filter to only existing columns to prevent errors if one is missing
+    # Filter to only existing columns
     final_cols = [c for c in desired_cols if c in view.columns]
     view = view[final_cols]
 
@@ -543,8 +575,9 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     os.makedirs(results_dir, exist_ok=True)
     view.to_csv(os.path.join(results_dir, f"viewer_results{_SUFFIX}_i{n}_{ts}.csv"), index=False)
     
-    # Print the "Highlights" to console
-    print(view[["trial_index", "absorbance", "total_vol", "prior_best_vol", "is_new_record"]].tail(5))
+    # Print Highlights
+    print("\n--- Iteration Highlights ---")
+    print(view[["trial_index", "absorbance", "original_total_vol", "reported_vol", "is_new_record"]].tail(TRIALS_PER_ITERATION))
 
 print(f"\nOptimization Loop {start_n} -> {n} Complete.")
 
