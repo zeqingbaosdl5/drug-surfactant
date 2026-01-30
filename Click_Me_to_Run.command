@@ -30,5 +30,5 @@ if [ $FOUND_CONDA -eq 0 ]; then
     fi
 fi
 
-conda activate drug_surfactant
+conda activate drug-surfactant
 python governing_files/launcher_ui.py

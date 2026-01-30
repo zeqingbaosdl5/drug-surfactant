@@ -22,7 +22,12 @@ absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD", "0.06"))
 # --- EXPERIMENT FOLDER SELECTION ---
 if not SMOKE_TEST:
     print(f"📂 Project Root: {PROJECT_ROOT}")
-    folder_input = input("Enter experiment folder name (e.g., 20261129_test): ").strip()
+    
+    # Try to get from environment first (e.g. from UI), fallback to manual input
+    folder_input = os.getenv("EXP_FOLDER_NAME", "").strip()
+    if not folder_input:
+        folder_input = input("Enter experiment folder name (e.g., 20261129_test): ").strip()
+
     if not folder_input:
         raise ValueError("❌ Error: Experiment folder name is required.")
     
