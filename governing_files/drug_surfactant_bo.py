@@ -287,7 +287,8 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
 
     best_total_vol = hf.surfactant_total_volume * 1000
     if not data_so_far.empty:
-        drug_data = data_so_far[(data_so_far["drug"] == drug) & (data_so_far["absorbance"] <= absorbance_threshold)]
+        #drug_data = data_so_far[(data_so_far["drug"] == drug) & (data_so_far["absorbance"] <= absorbance_threshold)]
+        drug_data = data_so_far[data_so_far["drug"] == drug]
         if not drug_data.empty:
             best_total_vol = drug_data["obj_total_vol"].min()
 
