@@ -105,11 +105,11 @@ SNAPSHOT_DIR = os.path.join(EXP_PATH, f"optimizer/snapshots{_SUFFIX}/")
 # --- AX INITIALIZATION ---
 gs = GenerationStrategy(
     steps=[
-        GenerationStep(
-            model=Models.SAASBO,
-            num_trials=1000,  
-            model_kwargs={}
-        ),
+        # GenerationStep(
+        #     model=Models.SAASBO,
+        #     num_trials=1000,  
+        #     model_kwargs={}
+        # ),
         GenerationStep(
             model=Models.BOTORCH_MODULAR,
             num_trials=-1, 
@@ -250,6 +250,7 @@ drug_choices = [d.strip() for d in drug_choices_str.split(",")]
 absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS"))
 surf_names = [f"s{i}" for i in range(1, 9)]
+PUNISHMENT_FACTOR = 10
 
 # --- LOG PARAMETERS ---
 import csv
@@ -287,7 +288,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
 
     best_total_vol = hf.surfactant_total_volume * 1000
     if not data_so_far.empty:
-        #drug_data = data_so_far[(data_so_far["drug"] == drug) & (data_so_far["absorbance"] <= absorbance_threshold)]
+        drug_data = data_so_far[(data_so_far["drug"] == drug) & (data_so_far["absorbance"] <= absorbance_threshold)]
         drug_data = data_so_far[data_so_far["drug"] == drug]
         if not drug_data.empty:
             best_total_vol = drug_data["obj_total_vol"].min()
@@ -498,12 +499,14 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         
         if abs_val > absorbance_threshold:
             # Failed: Apply punishment
-            reported_vol = original_vol * 100.0
+            reported_vol = original_vol * PUNISHMENT_FACTOR
             status_msg = "FAILED"
+            print(f"⚠️  Trial {tid} failed absorbance threshold ({abs_val:.4f} > {absorbance_threshold}). Applying punishment.")
         else:
             # Passed: Use actual volume
             reported_vol = original_vol
             status_msg = "SUCCESS!"
+            print(f"✅ Trial {tid} succeeded absorbance threshold ({abs_val:.4f} <= {absorbance_threshold}).")
 
         # Log for Smoke Test / Console visibility
         print(f"Trial {tid} [{status_msg}]: Abs {abs_val:.4f} | Vol: {original_vol:.1f} -> Reported: {reported_vol:.1f}")
@@ -543,7 +546,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     
     # Re-apply punishment logic strictly for the CSV view
     view["reported_vol"] = view.apply(
-        lambda x: x["original_total_vol"] * 100.0 if x["absorbance"] > absorbance_threshold else x["original_total_vol"], 
+        lambda x: x["original_total_vol"] * PUNISHMENT_FACTOR if x["absorbance"] > absorbance_threshold else x["original_total_vol"], 
         axis=1
     )
 
