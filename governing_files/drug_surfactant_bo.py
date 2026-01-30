@@ -208,18 +208,38 @@ if not SMOKE_TEST:
 print(f"Iteration Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}")
 
 # --- MAIN LOOP ---
-NUM_Iterations = int(os.getenv("NUM_Iterations", "5"))
-TRIALS_PER_ITERATION = int(os.getenv("TRIALS_PER_ITERATION", "2"))
-REPLICATES = int(os.getenv("REPLICATES", "2"))
-surfactant_volume_reduction = float(os.getenv("SURFACTANT_VOL_REDUCTION", "20"))
-drug_choices_str = os.getenv("DRUG_CHOICES", "IBP")
+NUM_ITERATIONS = int(os.getenv("NUM_ITERATIONS"))
+TRIALS_PER_ITERATION = int(os.getenv("TRIALS_PER_ITERATION"))
+REPLICATES = int(os.getenv("REPLICATES"))
+surfactant_volume_reduction = float(os.getenv("SURFACTANT_VOL_REDUCTION"))
+drug_choices_str = os.getenv("DRUG_CHOICES")
 drug_choices = [d.strip() for d in drug_choices_str.split(",")]
-absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD", "0.06"))
-num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS", "3"))
+absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
+num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS"))
 surf_names = [f"s{i}" for i in range(1, 9)]
 
+# --- LOG PARAMETERS ---
+import csv
+param_log_csv = os.path.join(EXP_PATH, f"experiment_parameters{_SUFFIX}.csv")
+curr_params = {
+    "NUM_ITERATIONS": NUM_ITERATIONS,
+    "TRIALS_PER_ITERATION": TRIALS_PER_ITERATION,
+    "REPLICATES": REPLICATES,
+    "SURFACTANT_VOL_REDUCTION": surfactant_volume_reduction,
+    "DRUG_CHOICES": drug_choices_str,
+    "ABSORBANCE_THRESHOLD": absorbance_threshold,
+    "NUM_RANDOM_TRIALS": num_random_trials
+}
+with open(param_log_csv, "w", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerow(["Variable Name", "Value"])
+    for k, v in curr_params.items():
+        writer.writerow([k, v])
+
+
+
 start_n = n 
-for n in range(start_n, start_n + NUM_Iterations):
+for n in range(start_n, start_n + NUM_ITERATIONS):
     drug = drug_choices[n % len(drug_choices)]
     print(f"\n=== Starting Iteration {n} for drug: {drug} ===")
 
