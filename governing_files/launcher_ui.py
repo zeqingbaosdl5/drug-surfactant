@@ -34,7 +34,7 @@ class ModernLauncher(tk.Tk):
         
         # --- VARIABLES ---
         self.smoke_test_var = tk.BooleanVar(value=False)
-        self.exp_name_var = tk.StringVar(value="20261129_test")
+        self.exp_name_var = tk.StringVar(value="20261129")
         
         # Hardware Defaults
         self.plate_well_var = tk.StringVar()
