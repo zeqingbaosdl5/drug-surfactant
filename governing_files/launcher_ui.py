@@ -216,7 +216,7 @@ class ModernLauncher(tk.Tk):
 
             ("row", [
                 ("Abs. Thresh", self.absorbance_var),
-                ("Surf. Vol Red.", self.surf_vol_red_var),
+                ("Surf. Vol Red. (%)", self.surf_vol_red_var),
             ]),
 
             ("row", [

@@ -246,7 +246,7 @@ print(f"Iteration Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['
 NUM_ITERATIONS = int(os.getenv("NUM_ITERATIONS"))
 TRIALS_PER_ITERATION = int(os.getenv("TRIALS_PER_ITERATION"))
 REPLICATES = int(os.getenv("REPLICATES"))
-surfactant_volume_reduction = float(os.getenv("SURFACTANT_VOL_REDUCTION"))
+surfactant_volume_reduction_per = float(os.getenv("SURFACTANT_VOL_REDUCTION"))
 drug_choices_str = os.getenv("DRUG_CHOICES")
 drug_choices = [d.strip() for d in drug_choices_str.split(",")]
 absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
@@ -263,7 +263,7 @@ curr_params = {
     "NUM_ITERATIONS": NUM_ITERATIONS,
     "TRIALS_PER_ITERATION": TRIALS_PER_ITERATION,
     "REPLICATES": REPLICATES,
-    "SURFACTANT_VOL_REDUCTION": surfactant_volume_reduction,
+    "SURFACTANT_VOL_REDUCTION (%)": surfactant_volume_reduction_per,
     "DRUG_CHOICES": drug_choices_str,
     "ABSORBANCE_THRESHOLD": absorbance_threshold,
     "NUM_RANDOM_TRIALS": num_random_trials,
@@ -298,12 +298,16 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         data_so_far = hf.add_drug_names(data_so_far)
 
     best_total_vol = hf.surfactant_total_volume * 1000
+
+    
     if not data_so_far.empty:
         drug_data = data_so_far[(data_so_far["drug"] == drug) & (data_so_far["absorbance"] <= absorbance_threshold)]
-        drug_data = data_so_far[data_so_far["drug"] == drug]
+        drug_data = drug_data[drug_data["drug"] == drug]
         if not drug_data.empty:
             best_total_vol = drug_data["obj_total_vol"].min()
 
+
+    surfactant_volume_reduction = best_total_vol * ( surfactant_volume_reduction_per / 100.0)
     print(f"Updated constraints for {drug}: s1+...+s8 <= {max(best_total_vol - surfactant_volume_reduction, 1)} uL")
 
     # 2. Candidate Generation
