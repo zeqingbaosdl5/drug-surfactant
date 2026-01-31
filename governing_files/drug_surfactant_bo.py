@@ -126,19 +126,21 @@ def determine_current_iteration():
 
 n = determine_current_iteration()
 
-try:
-    completed_snapshot_files = [
-        os.path.join(SNAPSHOT_DIR, f) for f in os.listdir(SNAPSHOT_DIR) if f.endswith("_completed.json")
-    ]
-except FileNotFoundError:
-    completed_snapshot_files = []
+# FIX: Look for *_loaded.json files in the optimizer folder (saved by main loop)
+loaded_files_pattern = OPTIMIZER_FILE_PATH + "*_loaded.json"
+completed_snapshot_files = glob.glob(loaded_files_pattern)
 
 if completed_snapshot_files:
     latest = max(completed_snapshot_files, key=os.path.getmtime)
-    print(f"Restoring AxClient from: {latest}")
-    ax_client = AxClient.load_from_json_file(latest)
+    print(f"✅ Detected saved optimizer state: {os.path.basename(latest)}")
+    print(f"   Resuming from iteration i{n}")
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore") 
+        ax_client = AxClient.load_from_json_file(latest, verbose_logging=False)
 else:
-    ax_client = AxClient(generation_strategy=gs)
+    print("ℹ️  No saved optimizer state found. Starting fresh from i0.")
+    ax_client = AxClient(generation_strategy=gs, verbose_logging=False)
     ax_client.create_experiment(
         name="drug_surfactant",
         parameters=[
@@ -150,7 +152,7 @@ else:
             { "name": "s6", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
             { "name": "s7", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
             { "name": "s8", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
-            { "name": "drug", "type": "choice", "values": ["IBP", "LOV", "DCF", "GLV"], "value_type": "str" },
+            { "name": "drug", "type": "choice", "values": ["IBP", "LOV", "DCF", "GLV"], "value_type": "str" , "is_ordered": False, "sort_values": False},
             { "name": "Drug_MW", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
             { "name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
             { "name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
@@ -249,8 +251,10 @@ drug_choices_str = os.getenv("DRUG_CHOICES")
 drug_choices = [d.strip() for d in drug_choices_str.split(",")]
 absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS"))
+PUNISHMENT_FACTOR = int(os.getenv("PUNISHMENT_FACTOR"))
+
+
 surf_names = [f"s{i}" for i in range(1, 9)]
-PUNISHMENT_FACTOR = 10
 
 # --- LOG PARAMETERS ---
 import csv
@@ -262,7 +266,8 @@ curr_params = {
     "SURFACTANT_VOL_REDUCTION": surfactant_volume_reduction,
     "DRUG_CHOICES": drug_choices_str,
     "ABSORBANCE_THRESHOLD": absorbance_threshold,
-    "NUM_RANDOM_TRIALS": num_random_trials
+    "NUM_RANDOM_TRIALS": num_random_trials,
+    "PUNISHMENT_FACTOR": PUNISHMENT_FACTOR,
 }
 with open(param_log_csv, "w", newline="") as f:
     writer = csv.writer(f)
@@ -273,6 +278,12 @@ with open(param_log_csv, "w", newline="") as f:
 
 
 start_n = n 
+import logging
+logging.getLogger("ax.core.observation").setLevel(logging.CRITICAL)
+logging.getLogger("ax.core.trial").setLevel(logging.CRITICAL)
+logging.getLogger("ax.core.experiment").setLevel(logging.CRITICAL)
+logging.getLogger("ax.service.utils.report_utils").setLevel(logging.CRITICAL) # Add this line
+
 for n in range(start_n, start_n + NUM_ITERATIONS):
     drug = drug_choices[n % len(drug_choices)]
     print(f"\n=== Starting Iteration {n} for drug: {drug} ===")
@@ -329,18 +340,18 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
             candidate_df = candidate_df[~candidate_df[needed].apply(tuple, axis=1).isin(tried)]
 
     # 3. Model Prediction
-    if n + 1 <= (num_random_trials): #only iteration 0 is randomly generated
-        sample_indices = np.random.default_rng(n).choice(len(candidate_df), size=TRIALS_PER_ITERATION, replace=False)
+    if n == 0: #only iteration 0 is randomly generated
+        sample_indices = np.random.default_rng(n).choice(len(candidate_df), size=num_random_trials, replace=False)
         chosen_rows = candidate_df.iloc[sample_indices]
     else:
         # Define timer function to run in background
         def timer_counter(stop_event):
-            sec = 0
+            count = 0
             while not stop_event.is_set():
-                sys.stdout.write(f"\r⏳ Model computing... {sec}s")
+                sys.stdout.write(f"\r⏳ Model computing... {count} min")
                 sys.stdout.flush()
-                time.sleep(1)
-                sec += 1
+                time.sleep(60)
+                count += 1
             sys.stdout.write("\n")
 
         print("Fitting model...")
@@ -350,6 +361,11 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         start_time = time.time()
 
         try:
+            import logging
+            # Suppress Ax warnings/info about untracked metrics from all relevant modules
+            logging.getLogger("ax.core.observation").setLevel(logging.CRITICAL)
+            logging.getLogger("ax.core.trial").setLevel(logging.CRITICAL)
+            logging.getLogger("ax.core.experiment").setLevel(logging.CRITICAL)
             ax_client.fit_model()
             model = ax_client.generation_strategy.model
             acqf_vals = []
@@ -511,6 +527,11 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         # Log for Smoke Test / Console visibility
         print(f"Trial {tid} [{status_msg}]: Abs {abs_val:.4f} | Vol: {original_vol:.1f} -> Reported: {reported_vol:.1f}")
 
+
+        import logging
+        logging.getLogger("ax.core.observation").setLevel(logging.CRITICAL)
+        logging.getLogger("ax.core.trial").setLevel(logging.CRITICAL)
+        logging.getLogger("ax.core.experiment").setLevel(logging.CRITICAL)
         ax_client.complete_trial(tid, {"obj_total_vol": reported_vol, "absorbance": abs_val})
 
     ax_client.save_to_json_file(OPTIMIZER_FILE_PATH + str(n) + "_loaded.json")
@@ -581,7 +602,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     
     # Print Highlights
     print("\n--- Iteration Highlights ---")
-    print(view[["trial_index", "absorbance", "original_total_vol", "reported_vol", "is_new_record"]].tail(TRIALS_PER_ITERATION))
+    print(view[["trial_index", "absorbance", "original_total_vol", "reported_vol", "is_new_record"]].tail(num_random_trials if n==0 else TRIALS_PER_ITERATION))
 
 print(f"\nOptimization Loop {start_n} -> {n} Complete.")
 

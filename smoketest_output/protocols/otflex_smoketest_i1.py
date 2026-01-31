@@ -18,39 +18,39 @@ def run(protocol: protocol_api.ProtocolContext):
     {
         "s1": 0.0,
         "s2": 0.0,
-        "s3": 150.0,
-        "s4": 300.0,
-        "s5": 0.0,
+        "s3": 0.0,
+        "s4": 0.0,
+        "s5": 10.0,
         "s6": 0.0,
         "s7": 0.0,
-        "s8": 0.0,
+        "s8": 275.0,
         "IBP": 180.0,
         "LOV": 0.0,
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 750.0,
-        "next_plate_well": "A5",
-        "next_deepplate_well": "A5",
+        "water": 915.0,
+        "next_plate_well": "C1",
+        "next_deepplate_well": "C1",
         "replicates": 2
     },
     {
         "s1": 0.0,
         "s2": 0.0,
-        "s3": 200.0,
+        "s3": 0.0,
         "s4": 0.0,
-        "s5": 870.0,
+        "s5": 10.0,
         "s6": 0.0,
         "s7": 0.0,
-        "s8": 0.0,
+        "s8": 280.0,
         "IBP": 180.0,
         "LOV": 0.0,
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 130.0,
-        "next_plate_well": "A7",
-        "next_deepplate_well": "A7",
+        "water": 910.0,
+        "next_plate_well": "C3",
+        "next_deepplate_well": "C3",
         "replicates": 2
     }
 ]
@@ -76,13 +76,13 @@ def run(protocol: protocol_api.ProtocolContext):
     # This sets the STARTING point for the entire batch.
     # The robot automatically increments to the next tip after every usage.
     rack_id_1000 = "0" 
-    start_well_1000 = "C2"
+    start_well_1000 = "D8"
     
     tipracks_1000 = {"0": tip1000_1, "1": tip1000_2}
     
     pipette_high.starting_tip = tipracks_1000[rack_id_1000].wells_by_name()[start_well_1000]
     
-    start_well_50 = "C1"
+    start_well_50 = "F2"
     pipette_low.starting_tip = tip50.wells_by_name()[start_well_50]
 
 
@@ -105,10 +105,10 @@ def run(protocol: protocol_api.ProtocolContext):
     water = surfactant_drug_dmso_stock_2['A1']
     
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='D1')
-    next_plate_well = 'A5'
+    next_plate_well = 'C1'
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
-    next_deepplate_well = 'A5'
+    next_deepplate_well = 'C1'
 
     trash = protocol.load_trash_bin(location="A3")
 

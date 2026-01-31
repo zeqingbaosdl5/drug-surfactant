@@ -51,6 +51,7 @@ class ModernLauncher(tk.Tk):
         self.drug_choices_var = tk.StringVar(value="IBP")
         self.absorbance_var = tk.StringVar(value="0.06")
         self.num_random_trials_var = tk.StringVar(value="3")
+        self.punishment_factor_var = tk.StringVar(value="10")
 
         self.running_process = None
         self.log_queue = queue.Queue()
@@ -97,10 +98,40 @@ class ModernLauncher(tk.Tk):
         # --- HEADER ---
         header_frame = tk.Frame(self, bg=BG_COLOR, height=60)
         header_frame.pack(fill="x", padx=20, pady=(20, 10))
-        tk.Label(header_frame, text="🧬 AC SDL5 Nanomedicine Optimizer", bg=BG_COLOR, fg=ACCENT_COLOR, font=("Segoe UI", 20, "bold")).pack(side="left")
+
+        # --- CENTERED TITLE ---
+        # Using a separate frame to center content without interfering with other widgets
+        title_container = tk.Frame(header_frame, bg=BG_COLOR)
+        title_container.pack(side="top", fill="x") # Or pack(expand=True) depending on desired behavior relative to other widgets if any
+
+        # Load specific logo
+        self.logo_image = None
+        try:
+            logo_path = os.path.join(REPO_DIR, "images/AC_logo.png")
+            if os.path.exists(logo_path):
+                raw_img = tk.PhotoImage(file=logo_path)
+                # Resize if > 60px height
+                h = raw_img.height() 
+                scale = h // 60
+                self.logo_image = raw_img.subsample(scale) if scale > 1 else raw_img
+        except Exception as e:
+            print(f"Could not load logo: {e}")
+
+        if self.logo_image:
+            lbl = tk.Label(title_container, text=" Acceleration Consortium SDL5 Nanomedicine Optimizer", image=self.logo_image, 
+                           compound="left", bg=BG_COLOR, fg=ACCENT_COLOR, font=("Segoe UI", 30, "bold"))
+        else:
+            lbl = tk.Label(title_container, text="🧬 AC SDL5 Nanomedicine Optimizer", 
+                           bg=BG_COLOR, fg=ACCENT_COLOR, font=("Segoe UI", 20, "bold"))
+        
+        lbl.pack(side="top", anchor="center") # Center in the container
         
         status_frame = tk.Frame(header_frame, bg=BG_COLOR)
-        status_frame.pack(side="right")
+        # Note: status_frame was previously pack(side="right"), but centering the title might require adjusting layout if they need to coexist.
+        # Assuming title should be centered above everything or centered in the whole width.
+        # If status needs to be on the right used to imply title was strictly left. 
+        # Making title centered usually means status indicators move below or to corners cleanly.
+        status_frame.pack(side="right", pady=5)
         self.status_lbl = tk.Label(status_frame, text="READY", bg=BG_COLOR, fg=SUCCESS_COLOR, font=("Segoe UI", 12, "bold"))
         self.status_lbl.pack()
 
@@ -190,6 +221,7 @@ class ModernLauncher(tk.Tk):
 
             ("row", [
                 ("Drugs", self.drug_choices_var),
+                ("Punishment Factor", self.punishment_factor_var),
             ]),
 
         ])
@@ -291,6 +323,7 @@ class ModernLauncher(tk.Tk):
         env["DRUG_CHOICES"] = self.drug_choices_var.get().strip()
         env["ABSORBANCE_THRESHOLD"] = self.absorbance_var.get().strip()
         env["NUM_RANDOM_TRIALS"] = self.num_random_trials_var.get().strip()
+        env["PUNISHMENT_FACTOR"] = self.punishment_factor_var.get().strip()
         
         # Configure UI State
         self.launch_btn.config(state="disabled")
