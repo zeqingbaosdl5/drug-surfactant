@@ -252,6 +252,7 @@ drug_choices = [d.strip() for d in drug_choices_str.split(",")]
 absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS"))
 PUNISHMENT_FACTOR = int(os.getenv("PUNISHMENT_FACTOR"))
+DELAY_BEFORE_ANALYSIS = int(os.getenv("DELAY_BEFORE_ANALYSIS"))
 
 
 surf_names = [f"s{i}" for i in range(1, 9)]
@@ -437,6 +438,10 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     template_path = os.path.join(REPO_DIR, "protocol_template.py")
     with open(template_path, "r") as f: template_str = f.read()
 
+    robot_settings = {
+        "delay": DELAY_BEFORE_ANALYSIS,
+    }
+
     protocol_content = template_str.format(
         ITERATION=n,
         RACK_ID_1000=str(tip_state["rack_id_1000"]), 
@@ -445,7 +450,9 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         START_PLATE_WELL=otflex_params[0]["next_plate_well"],
         START_DEEP_WELL=otflex_params[0]["next_deepplate_well"],
         REPLICATES=REPLICATES,
-        DATA_JSON=json.dumps(otflex_params, indent=4)
+#        DATA_JSON=json.dumps(otflex_params, indent=4)
+        DATA_JSON=json.dumps({"robot settings": robot_settings, **{"data": otflex_params}}, indent=4)
+
     )
 
     proto_path = os.path.join(EXP_PATH, "protocols", f"otflex{_SUFFIX}_i{n}.py")

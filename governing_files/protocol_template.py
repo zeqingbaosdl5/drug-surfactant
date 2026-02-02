@@ -14,7 +14,11 @@ requirements = {{"robotType": "Flex", "apiLevel": "2.23"}}
 def run(protocol: protocol_api.ProtocolContext):
 
     # --- INJECTED DATA ---
-    data = {DATA_JSON}
+#    data = {DATA_JSON}
+
+    robot_settings = {DATA_JSON}.get("robot settings", {})
+    data = [entry for entry in {DATA_JSON} if entry != robot_settings]
+
 
     protocol.comment(f"Starting Batch Run with {{len(data)}} samples.")
 
@@ -227,6 +231,10 @@ def run(protocol: protocol_api.ProtocolContext):
     protocol.comment("Shaking experimental plate before measurement.")
     plate_on_hs_to_reader(labware_to_shake=plate, time=1, speed=1000)
     
+    print("Delaying before analysis for {} minutes.".format(robot_settings["delay"] * 60))
+    protocol.delay(seconds=robot_settings["delay"] * 60)
+
+
     protocol.comment("Measuring absorbance.")
     plate_on_pr(labware_to_read=plate, new_location="D1")
     

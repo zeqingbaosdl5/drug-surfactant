@@ -52,6 +52,7 @@ class ModernLauncher(tk.Tk):
         self.absorbance_var = tk.StringVar(value="0.06")
         self.num_random_trials_var = tk.StringVar(value="3")
         self.punishment_factor_var = tk.StringVar(value="10")
+        self.delay_before_analysis_var = tk.StringVar(value="5")
 
         self.running_process = None
         self.log_queue = queue.Queue()
@@ -223,6 +224,10 @@ class ModernLauncher(tk.Tk):
                 ("Drugs", self.drug_choices_var),
                 ("Punishment Factor", self.punishment_factor_var),
             ]),
+
+            ("row", [
+                ("Delay Before Analysis (min)", self.delay_before_analysis_var),
+            ]),            
 
         ])
 
