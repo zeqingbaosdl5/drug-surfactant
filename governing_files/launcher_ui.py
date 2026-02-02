@@ -118,11 +118,8 @@ class ModernLauncher(tk.Tk):
             print(f"Could not load logo: {e}")
 
         if self.logo_image:
-            lbl = tk.Label(title_container, text=" Acceleration Consortium SDL5 Nanomedicine Optimizer", image=self.logo_image, 
+            lbl = tk.Label(title_container, text=" Acceleration Consortium SDL5 Nanoformulation Optimizer", image=self.logo_image, 
                            compound="left", bg=BG_COLOR, fg=ACCENT_COLOR, font=("Segoe UI", 30, "bold"))
-        else:
-            lbl = tk.Label(title_container, text="🧬 AC SDL5 Nanomedicine Optimizer", 
-                           bg=BG_COLOR, fg=ACCENT_COLOR, font=("Segoe UI", 20, "bold"))
         
         lbl.pack(side="top", anchor="center") # Center in the container
         
