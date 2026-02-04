@@ -252,6 +252,7 @@ drug_choices = [d.strip() for d in drug_choices_str.split(",")]
 absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS"))
 PUNISHMENT_FACTOR = int(os.getenv("PUNISHMENT_FACTOR"))
+DELAY_TIME = os.getenv("DELAY_TIME", "5")
 
 
 surf_names = [f"s{i}" for i in range(1, 9)]
@@ -268,6 +269,7 @@ curr_params = {
     "ABSORBANCE_THRESHOLD": absorbance_threshold,
     "NUM_RANDOM_TRIALS": num_random_trials,
     "PUNISHMENT_FACTOR": PUNISHMENT_FACTOR,
+    "DELAY_TIME": DELAY_TIME,
 }
 with open(param_log_csv, "w", newline="") as f:
     writer = csv.writer(f)
@@ -445,7 +447,8 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         START_PLATE_WELL=otflex_params[0]["next_plate_well"],
         START_DEEP_WELL=otflex_params[0]["next_deepplate_well"],
         REPLICATES=REPLICATES,
-        DATA_JSON=json.dumps(otflex_params, indent=4)
+        DATA_JSON=json.dumps(otflex_params, indent=4),
+        DELAY_TIME=DELAY_TIME
     )
 
     proto_path = os.path.join(EXP_PATH, "protocols", f"otflex{_SUFFIX}_i{n}.py")

@@ -52,6 +52,7 @@ class ModernLauncher(tk.Tk):
         self.absorbance_var = tk.StringVar(value="0.06")
         self.num_random_trials_var = tk.StringVar(value="3")
         self.punishment_factor_var = tk.StringVar(value="10")
+        self.delay_time_var = tk.StringVar(value="0") #minutes
 
         self.running_process = None
         self.log_queue = queue.Queue()
@@ -221,6 +222,10 @@ class ModernLauncher(tk.Tk):
                 ("Punishment Factor", self.punishment_factor_var),
             ]),
 
+            ("row", [
+                ("Incubation Delay (min)", self.delay_time_var)
+            ]),      
+
         ])
 
         # Right Frame: Console
@@ -321,6 +326,7 @@ class ModernLauncher(tk.Tk):
         env["ABSORBANCE_THRESHOLD"] = self.absorbance_var.get().strip()
         env["NUM_RANDOM_TRIALS"] = self.num_random_trials_var.get().strip()
         env["PUNISHMENT_FACTOR"] = self.punishment_factor_var.get().strip()
+        env["DELAY_TIME"] = self.delay_time_var.get().strip()
         
         # Configure UI State
         self.launch_btn.config(state="disabled")
