@@ -153,9 +153,9 @@ else:
             { "name": "s7", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
             { "name": "s8", "type": "range", "bounds": [0.0, hf.surfactant_total_volume * 1000], "value_type": "float" },
             { "name": "drug", "type": "choice", "values": ["IBP", "LOV", "DCF", "GLV"], "value_type": "str" , "is_ordered": False, "sort_values": False},
-            { "name": "Drug_MW", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
-            { "name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
-            { "name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
+            #{ "name": "Drug_MW", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
+            #{ "name": "Drug_LogP", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
+            #{ "name": "Drug_TPSA", "type": "range", "bounds": [0.0, 1.0], "value_type": "float" },
         ],
         objectives={
             "obj_total_vol": ObjectiveProperties(minimize=True),
@@ -336,7 +336,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
             for k,v in props.items(): df[k] = float(v)
             candidate_rows.append(df)
     
-    candidate_df = pd.concat(candidate_rows, ignore_index=True) if candidate_rows else pd.DataFrame(columns=surf_names + ["drug", "Drug_MW", "Drug_LogP", "Drug_TPSA"])
+    candidate_df = pd.concat(candidate_rows, ignore_index=True) if candidate_rows else pd.DataFrame(columns=surf_names + ["drug"])#, "Drug_MW", "Drug_LogP", "Drug_TPSA"])
     print(f"Generated {len(candidate_df)} candidates.")
 
     if not data_so_far.empty:

@@ -10,11 +10,12 @@ drug_total_volume = 0.18
 surfactant_total_volume = 1.2  
 number_of_surfactants = 8 
 
+# AI will ignore the drug parameters (it is only included in the results csv)
 normalize_drug_properties_dict = {
-    "IBP": {"full_name": "Ibuprofen", "normalized_properties": {"Drug_MW": 0.2063, "Drug_LogP": 0.3073, "Drug_TPSA": 0.0373}, "drug_stock_conc": 25},
-    "DCF": {"full_name": "Diclofenac", "normalized_properties": {"Drug_MW": 0.2962, "Drug_LogP": 0.4364, "Drug_TPSA": 0.0493}, "drug_stock_conc": 25},
-    "LOV": {"full_name": "Lovastatin", "normalized_properties": {"Drug_MW": 0.4045, "Drug_LogP": 0.4196, "Drug_TPSA": 0.0728}, "drug_stock_conc": 25},
-    "GLV": {"full_name": "Griseofulvin", "normalized_properties": {"Drug_MW": 0.3528, "Drug_LogP": 0.2810, "Drug_TPSA": 0.0711}, "drug_stock_conc": 25},
+    "IBP": {"full_name": "Ibuprofen", "normalized_properties": {"drug_stock_conc": 25}}, #{"Drug_MW": 0.2063, "Drug_LogP": 0.3073, "Drug_TPSA": 0.0373}, "drug_stock_conc": 25},
+    "DCF": {"full_name": "Diclofenac", "normalized_properties": {"drug_stock_conc": 25}}, #{"Drug_MW": 0.2962, "Drug_LogP": 0.4364, "Drug_TPSA": 0.0493}, "drug_stock_conc": 25},
+    "LOV": {"full_name": "Lovastatin", "normalized_properties": {"drug_stock_conc": 25}}, #{"Drug_MW": 0.4045, "Drug_LogP": 0.4196, "Drug_TPSA": 0.0728}, "drug_stock_conc": 25},
+    "GLV": {"full_name": "Griseofulvin", "normalized_properties": {"drug_stock_conc": 25}}, #{"Drug_MW": 0.3528, "Drug_LogP": 0.2810, "Drug_TPSA": 0.0711}, "drug_stock_conc": 25},
 }
 
 def design_to_vol(iteration, design_file_path, drug_stock_conc=drug_stock_conc, drug_total_volume=drug_total_volume, surfactant_stock_conc=surfactant_stock_conc, surfactant_total_volume=surfactant_total_volume):  

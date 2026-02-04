@@ -26,7 +26,7 @@ def run(protocol: protocol_api.ProtocolContext):
     
     tip50 = protocol.load_labware(load_name="opentrons_flex_96_filtertiprack_50ul", location="B2")
 
-    hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D3")
+    hs_mod = protocol.load_module(module_name="heaterShakerModuleV1", location="D1")
     hs_adapter = hs_mod.load_adapter("opentrons_universal_flat_adapter")
     pr_mod = protocol.load_module(module_name="absorbanceReaderV1", location="C3")
 
@@ -65,7 +65,7 @@ def run(protocol: protocol_api.ProtocolContext):
     glv = surfactant_drug_dmso_stock_2['B4']
     water = surfactant_drug_dmso_stock_2['A1']
     
-    plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='D1')
+    plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='D2')
     next_plate_well = '{START_PLATE_WELL}'
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
@@ -206,7 +206,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
     # PHASE 2: MIX (SHAKE)
     protocol.comment("Shaking deep well plate to mix components.")
-    plate_on_hs(labware_to_shake=deepplate, new_location='D2', speed=1000, time=1)
+    plate_on_hs(labware_to_shake=deepplate, new_location='A2', speed=1000, time=1)
     
     protocol.move_labware(
         labware=plate, 
@@ -231,7 +231,7 @@ def run(protocol: protocol_api.ProtocolContext):
     plate_on_hs_to_reader(labware_to_shake=plate, time=1, speed=1000)
     
     protocol.comment("Measuring absorbance.")
-    plate_on_pr(labware_to_read=plate, new_location="D1")
+    plate_on_pr(labware_to_read=plate, new_location="D2")
     
     protocol.move_labware(labware=deepplate, new_location=hs_adapter, use_gripper=True)
     pr_mod.close_lid()
