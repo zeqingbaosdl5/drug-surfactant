@@ -223,7 +223,7 @@ class ModernLauncher(tk.Tk):
             ]),
 
             ("row", [
-                ("Incubation Delay (min)", self.delay_time_var)
+                ("Delay Before Absorbance Measurement (min)", self.delay_time_var)
             ]),      
 
         ])
@@ -327,7 +327,7 @@ class ModernLauncher(tk.Tk):
         env["NUM_RANDOM_TRIALS"] = self.num_random_trials_var.get().strip()
         env["PUNISHMENT_FACTOR"] = self.punishment_factor_var.get().strip()
         env["DELAY_TIME"] = self.delay_time_var.get().strip()
-        
+
         # Configure UI State
         self.launch_btn.config(state="disabled")
         self.stop_btn.config(state="normal")
