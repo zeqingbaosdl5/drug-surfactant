@@ -17,7 +17,7 @@ PROJECT_ROOT = os.path.dirname(REPO_DIR)
 # --- CONFIG ---
 SMOKE_TEST = str(os.getenv("SMOKE_TEST", "")).strip().lower() in {"1", "true"}
 BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
-absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD", "0.06"))
+absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 
 # --- EXPERIMENT FOLDER SELECTION ---
 if not SMOKE_TEST:
@@ -71,22 +71,56 @@ if SMOKE_TEST:
         }
 
     def download_data_file(base_url, file_id, save_path):
-        print(f"[SMOKE] Generating dummy random data -> {save_path}")
-        import random
+        print(f"[SMOKE] Generating absorbance linked to s1-s8 -> {save_path}")
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
-        # Write a fake 8x12 Plate CSV
         rows = [chr(ord("A") + i) for i in range(8)]
         cols = [str(i) for i in range(1, 13)]
+        plate = np.full((8, 12), float(absorbance_threshold) * 1.2, dtype=float)
+
+        iteration = None
+        base = os.path.basename(save_path)
+        if "_i" in base and base.endswith(".csv"):
+            try:
+                iteration = int(base.split("_i")[-1].split(".csv")[0])
+            except ValueError:
+                iteration = None
+
+        design_path = None
+        if iteration is not None:
+            design_path = DESIGN_FILE_PATH + f"i{iteration}.csv"
+
+        if design_path and os.path.exists(design_path):
+            df_design = pd.read_csv(design_path)
+            s_cols = [f"s{i}" for i in range(1, 9)]
+
+            for _, row in df_design.iterrows():
+                s_vals = {c: float(row[c]) for c in s_cols}
+                total_vol = float(sum(s_vals.values()))
+                s1 = s_vals["s1"]; s2 = s_vals["s2"]; s3 = s_vals["s3"]; s4 = s_vals["s4"]
+                s5 = s_vals["s5"]; s6 = s_vals["s6"]; s7 = s_vals["s7"]; s8 = s_vals["s8"]
+                if s6 != 0:
+                    base_abs = 0.3 * s1 + 0.2 * s2 - 0.4 * s3 + (s4 * s5 - 100 * s6) + s8
+                else:
+                    base_abs = 0.3 * s1 + 0.2 * s2 - 0.4 * s3 + s8
+
+                seed = int((total_vol + base_abs) * 1000) % (2**32)
+                rng = np.random.default_rng(seed)
+
+                curr = row["well_slot"]
+                for _ in range(REPLICATES):
+                    row_letter = curr[0]
+                    col_num = int(curr[1:])
+                    r_idx = ord(row_letter) - ord("A")
+                    c_idx = col_num - 1
+                    val = float(base_abs + rng.normal(0, 0.002))
+                    val = max(0.0, min(0.2, val))
+                    plate[r_idx, c_idx] = val
+                    curr = hf.get_next_well(curr)
+
         with open(save_path, "w", newline="") as f:
             f.write("," + ",".join(cols) + "\n")
-            for row in rows:
-                values = []
-                for _ in cols:
-                    if random.random() < 0.4:
-                        val = random.uniform(absorbance_threshold*0.5, absorbance_threshold*0.99)
-                    else:
-                        val = random.uniform(absorbance_threshold, absorbance_threshold*2)
-                    values.append(f"{val:.3f}")
+            for i, row in enumerate(rows):
+                values = [f"{plate[i, j]:.3f}" for j in range(12)]
                 f.write(f"{row}," + ",".join(values) + "\n")
 
 else:
@@ -163,7 +197,7 @@ else:
         parameter_constraints=[
             f"s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 <= {hf.surfactant_total_volume * 1000}",
         ],
-        #outcome_constraints=[f"absorbance <= {absorbance_threshold}"],
+        outcome_constraints=[f"absorbance <= {absorbance_threshold}"],
     )
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     ax_client.save_to_json_file(os.path.join(SNAPSHOT_DIR, f"{0}_{ts}_pending.json"))
@@ -333,6 +367,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
             arr[:, j] = v2s
             df = pd.DataFrame(arr, columns=surf_names)
             df["drug"] = drug
+            df["pair"] = f"{i}-{j}"
             for k,v in props.items(): df[k] = float(v)
             candidate_rows.append(df)
     
@@ -379,8 +414,31 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
                 chunk = candidate_df.iloc[start:start+1000]
                 obs = [ObservationFeatures(r.to_dict()) for _, r in chunk.iterrows()]
                 acqf_vals.extend(model.evaluate_acquisition_function(obs))
-            best_idx = np.argsort(acqf_vals)[-TRIALS_PER_ITERATION:]
-            chosen_rows = candidate_df.iloc[best_idx]
+            # Group by pair and find best idx per pair
+            pair_best = {}
+            for pos, (idx, row) in enumerate(candidate_df.iterrows()):
+                pair = row["pair"]
+                acqf = acqf_vals[pos]
+                if pair not in pair_best or acqf > pair_best[pair][1]:
+                    pair_best[pair] = (idx, acqf)
+            # Get list of best idx per pair
+            best_per_pair = [idx for idx, _ in pair_best.values()]
+            # Sort by acqf descending
+            best_per_pair_sorted = sorted(best_per_pair, key=lambda idx: acqf_vals[idx], reverse=True)
+            # Select top TRIALS_PER_ITERATION with no overlapping surfactants
+            used_indices = set()
+            selected_indices = []
+            for idx in best_per_pair_sorted:
+                if len(selected_indices) >= TRIALS_PER_ITERATION:
+                    break
+                row = candidate_df.iloc[idx]
+                pair = row["pair"]
+                i, j = map(int, pair.split('-'))
+                if i not in used_indices and j not in used_indices:
+                    selected_indices.append(idx)
+                    used_indices.add(i)
+                    used_indices.add(j)
+            chosen_rows = candidate_df.iloc[selected_indices]
         finally:
             stop_timer.set()
             t_thread.join()
@@ -392,7 +450,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     trials_data = []
     
     for _, row in chosen_rows.iterrows():
-        params = row.to_dict()
+        params = {k: v for k, v in row.to_dict().items() if k != 'pair'}
         params.update(props)
         _, tid = ax_client.attach_trial(params)
         trial_indices.append(tid)
@@ -609,7 +667,8 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     
     # Print Highlights
     print("\n--- Iteration Highlights ---")
-    print(view[["trial_index", "absorbance", "original_total_vol", "reported_vol", "is_new_record"]].tail(num_random_trials if n==0 else TRIALS_PER_ITERATION))
+    highlight_cols = ["trial_index", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "absorbance", "original_total_vol", "reported_vol", "is_new_record"]
+    print(view[highlight_cols].tail(num_random_trials if n==0 else TRIALS_PER_ITERATION).to_string(index=False))
 
 print(f"\nOptimization Loop {start_n} -> {n} Complete.")
 
