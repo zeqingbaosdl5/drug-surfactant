@@ -380,6 +380,8 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
             tried = set(tuple(r) for r in data_so_far[needed].to_numpy())
             candidate_df = candidate_df[~candidate_df[needed].apply(tuple, axis=1).isin(tried)]
 
+    candidate_df = candidate_df.reset_index(drop=True)
+
     # 3. Model Prediction
     if n == 0: #only iteration 0 is randomly generated
         sample_indices = np.random.default_rng(n).choice(len(candidate_df), size=num_random_trials, replace=False)
