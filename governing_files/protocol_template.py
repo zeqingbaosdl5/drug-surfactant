@@ -63,7 +63,7 @@ def run(protocol: protocol_api.ProtocolContext):
     lov = surfactant_drug_dmso_stock_2['B2']
     dcf = surfactant_drug_dmso_stock_2['B3']
     glv = surfactant_drug_dmso_stock_2['B4']
-    water = surfactant_drug_dmso_stock_2['A1']
+    water = surfactant_drug_dmso_stock_2['{WATER_WELL}']
     
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='B2')
     next_plate_well = '{START_PLATE_WELL}'

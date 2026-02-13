@@ -276,6 +276,7 @@ if not SMOKE_TEST:
 
 print(f"Iteration Start Tips: 1000uL @ R{tip_state['rack_id_1000']}:{tip_state['well_1000']} | 50uL @ {tip_state['well_50']}")
 
+    
 # --- MAIN LOOP ---
 NUM_ITERATIONS = int(os.getenv("NUM_ITERATIONS"))
 TRIALS_PER_ITERATION = int(os.getenv("TRIALS_PER_ITERATION"))
@@ -451,7 +452,36 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     trial_indices = []
     trials_data = []
     
+    def well_to_idx(well):
+        return (ord(well[0].upper()) - ord('A')) * 12 + (int(well[1:]) - 1)
+
     for _, row in chosen_rows.iterrows():
+        
+        # --- SAFETY CHECK 1: PLATE ---
+        curr_plate_idx = well_to_idx(NEXT_PLATE_WELL)
+        if curr_plate_idx + REPLICATES > 96:
+            print("\n" + "!"*60)
+            print(f"⚠️  STANDARD PLATE FULL at Trial {len(trial_indices)+1}")
+            print(f"   Next required wells: {REPLICATES} (Current pos: {NEXT_PLATE_WELL})")
+            print("!"*60)
+            
+            input("\n👉 ACTION REQUIRED: Replace STANDARD PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1 and continue...")
+            NEXT_PLATE_WELL = "A1"
+            print("✅ Resuming Standard Plate at A1.")
+
+        # --- SAFETY CHECK 2: DEEP WELL PLATE ---
+        curr_deep_idx = well_to_idx(NEXT_DEEPPLATE_WELL)
+        if curr_deep_idx + 2 > 96:
+            print("\n" + "!"*60)
+            print(f"⚠️  DEEP WELL PLATE FULL at Trial {len(trial_indices)+1}")
+            print(f"   Next required wells: 2 (Current pos: {NEXT_DEEPPLATE_WELL})")
+            print("!"*60)
+            
+            input("\n👉 ACTION REQUIRED: Replace DEEP WELL PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1 and continue...")
+            NEXT_DEEPPLATE_WELL = "A1"
+            print("✅ Resuming Deep Well Plate at A1.")
+
+        # --- EXISTING LOGIC ---
         params = {k: v for k, v in row.to_dict().items() if k != 'pair'}
         params.update(props)
         _, tid = ax_client.attach_trial(params)
@@ -465,7 +495,6 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         trials_data.append({
             "trial_index": tid, "drug_name": drug,
             "well_slot": NEXT_PLATE_WELL, "deep_well_slot": NEXT_DEEPPLATE_WELL,
-            # We record iteration Start Tips here (used for generating protocol)
             "rack_1000": tip_state["rack_id_1000"], "well_1000": tip_state["well_1000"], "well_50": tip_state["well_50"],
             "replicates": REPLICATES,
             **{k: params[k] for k in surf_names},
@@ -499,6 +528,14 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     template_path = os.path.join(REPO_DIR, "protocol_template.py")
     with open(template_path, "r") as f: template_str = f.read()
 
+    # --- WATER LOGIC ---
+    # 0-4 -> A1, 5-9 -> A2, 10-14 -> A3, 15-19 -> A4, 20-24 -> A1...
+    water_wells = ['A1', 'A2', 'A3', 'A4']
+    water_idx = (n // 5) % 4  
+    current_water_well = water_wells[water_idx]
+
+    print(f"💧 Iteration {n}: Using Water Source {current_water_well}")
+
     protocol_content = template_str.format(
         ITERATION=n,
         RACK_ID_1000=str(tip_state["rack_id_1000"]), 
@@ -508,7 +545,8 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         START_DEEP_WELL=otflex_params[0]["next_deepplate_well"],
         REPLICATES=REPLICATES,
         DATA_JSON=json.dumps(otflex_params, indent=4),
-        DELAY_TIME=DELAY_TIME
+        DELAY_TIME=DELAY_TIME,
+        WATER_WELL=current_water_well  # <--- PASS THIS VALUE
     )
 
     proto_path = os.path.join(EXP_PATH, "protocols", f"otflex{_SUFFIX}_i{n}.py")
