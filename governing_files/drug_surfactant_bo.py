@@ -108,14 +108,25 @@ if SMOKE_TEST:
 
                 curr = row["well_slot"]
                 for _ in range(REPLICATES):
-                    row_letter = curr[0]
-                    col_num = int(curr[1:])
-                    r_idx = ord(row_letter) - ord("A")
-                    c_idx = col_num - 1
-                    val = float(base_abs + rng.normal(0, 0.002))
-                    val = max(0.0, min(0.2, val))
-                    plate[r_idx, c_idx] = val
-                    curr = hf.get_next_well(curr)
+                    try:
+                        # 1. Parse current well
+                        row_letter = curr[0]
+                        col_num = int(curr[1:])
+                        r_idx = ord(row_letter) - ord("A")
+                        c_idx = col_num - 1
+                        
+                        # 2. Check Bounds (0-7 rows, 0-11 cols)
+                        if 0 <= r_idx < 8 and 0 <= c_idx < 12:
+                            val = float(base_abs + rng.normal(0, 0.002))
+                            val = max(0.0, min(0.2, val))
+                            plate[r_idx, c_idx] = val
+                        
+                        # 3. Get Next Well (Catches 'Wellplate exhausted' error)
+                        curr = hf.get_next_well(curr)
+                        
+                    except (ValueError, IndexError):
+                        # Stop filling if plate ends or well is invalid
+                        break
 
         with open(save_path, "w", newline="") as f:
             f.write("," + ",".join(cols) + "\n")
