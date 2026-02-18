@@ -471,35 +471,65 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     # 4. Trial Registration
     trial_indices = []
     trials_data = []
-    
+    stop_after_this_run = False  # Flag to control clean exit
+
     def well_to_idx(well):
         return (ord(well[0].upper()) - ord('A')) * 12 + (int(well[1:]) - 1)
 
     for _, row in chosen_rows.iterrows():
         
-        # --- SAFETY CHECK 1: PLATE ---
+        # --- CHECK 1: DOES THE CURRENT TRIAL FIT? ---
+        # If adding this trial would push us past H12, we stop adding trials.
         curr_plate_idx = well_to_idx(NEXT_PLATE_WELL)
         if curr_plate_idx + REPLICATES > 96:
-            print("\n" + "!"*60)
-            print(f"⚠️  STANDARD PLATE FULL at Trial {len(trial_indices)+1}")
-            print(f"   Next required wells: {REPLICATES} (Current pos: {NEXT_PLATE_WELL})")
-            print("!"*60)
-            
-            input("\n👉 ACTION REQUIRED: Replace STANDARD PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1 and continue...")
-            NEXT_PLATE_WELL = "A1"
-            print("✅ Resuming Standard Plate at A1.")
+            print(f"⚠️  PLATE FULL: Cannot fit next trial at {NEXT_PLATE_WELL}. Stopping generation here.")
+            stop_after_this_run = True
+            break 
 
-        # --- SAFETY CHECK 2: DEEP WELL PLATE ---
-        curr_deep_idx = well_to_idx(NEXT_DEEPPLATE_WELL)
-        if curr_deep_idx + 2 > 96:
-            print("\n" + "!"*60)
-            print(f"⚠️  DEEP WELL PLATE FULL at Trial {len(trial_indices)+1}")
-            print(f"   Next required wells: 2 (Current pos: {NEXT_DEEPPLATE_WELL})")
-            print("!"*60)
-            
-            input("\n👉 ACTION REQUIRED: Replace DEEP WELL PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1 and continue...")
+        # --- ATTACH TRIAL (Use the wells) ---
+        params = {k: v for k, v in row.to_dict().items() if k != 'pair'}
+        params.update(props)
+        _, tid = ax_client.attach_trial(params)
+        trial_indices.append(tid)
+        
+        trial = ax_client.experiment.trials[tid]
+        trial._properties["well_slot"] = NEXT_PLATE_WELL
+        trial._properties["deep_well_slot"] = NEXT_DEEPPLATE_WELL
+        trial._properties["plate_num"] = 1
+
+        trials_data.append({
+            "trial_index": tid, "drug_name": drug,
+            "well_slot": NEXT_PLATE_WELL, "deep_well_slot": NEXT_DEEPPLATE_WELL,
+            "rack_1000": tip_state["rack_id_1000"], "well_1000": tip_state["well_1000"], "well_50": tip_state["well_50"],
+            "replicates": REPLICATES,
+            **{k: params[k] for k in surf_names},
+            "total_vol": sum(params[s] for s in surf_names),
+            "obj_total_vol": "" 
+        })
+
+        # --- CALC NEXT WELL & CHECK FOR END OF PLATE ---
+        try:
+            # Try to calculate the NEXT starting position
+            NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=REPLICATES)
+        except ValueError:
+            # ERROR MEANS WE JUST FINISHED H12.
+            # We allow the current loop to finish, but flag to stop after this iteration.
+            print(f"⚠️  NOTICE: Standard Plate is now FULL (Used up to H12).")
+            print(f"👉  System will STOP after this run to allow plate swap.")
+            NEXT_PLATE_WELL = "A1"
+            stop_after_this_run = True
+
+        # Same check for Deep Well Plate
+        try:
+            NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
+        except ValueError:
+            print(f"⚠️  NOTICE: Deep Well Plate is now FULL.")
             NEXT_DEEPPLATE_WELL = "A1"
-            print("✅ Resuming Deep Well Plate at A1.")
+            stop_after_this_run = True
+
+        # If we hit the end, break the loop so we don't try to add more trials
+        if stop_after_this_run:
+            break
 
         # --- EXISTING LOGIC ---
         params = {k: v for k, v in row.to_dict().items() if k != 'pair'}
