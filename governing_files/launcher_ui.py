@@ -34,7 +34,7 @@ class ModernLauncher(tk.Tk):
         
         # --- VARIABLES ---
         self.smoke_test_var = tk.BooleanVar(value=False)
-        self.exp_name_var = tk.StringVar(value="20261129")
+        self.exp_name_var = tk.StringVar(value="file_name")
         
         # Hardware Defaults
         self.plate_well_var = tk.StringVar()
@@ -44,15 +44,16 @@ class ModernLauncher(tk.Tk):
         self.tip_50_var = tk.StringVar(value="A1")
 
         # Param Defaults
-        self.num_iterations_var = tk.StringVar(value="5")
-        self.trials_per_iter_var = tk.StringVar(value="2")
+        self.num_iterations_var = tk.StringVar(value="20")
+        self.trials_per_iter_var = tk.StringVar(value="3")
         self.replicates_var = tk.StringVar(value="2")
-        self.surf_vol_red_var = tk.StringVar(value="20")
+        self.surf_vol_red_var = tk.StringVar(value="10")
         self.drug_choices_var = tk.StringVar(value="IBP")
         self.absorbance_var = tk.StringVar(value="0.06")
-        self.num_random_trials_var = tk.StringVar(value="3")
-        self.punishment_factor_var = tk.StringVar(value="10")
+        self.num_random_trials_var = tk.StringVar(value="9")
+        self.punishment_factor_var = tk.StringVar(value="1")
         self.delay_time_var = tk.StringVar(value="0") #minutes
+        self.greedy_var = tk.StringVar(value="medium")  # "high" | "medium" | "low"
 
         self.running_process = None
         self.log_queue = queue.Queue()
@@ -203,28 +204,23 @@ class ModernLauncher(tk.Tk):
         # 3. OPTIMIZATION PARAMS
         self.create_card(config_frame, "🧪 Optimization Parameters", [
             ("row", [
-                ("Iterations (optimization)", self.num_iterations_var),
+                ("Iterations", self.num_iterations_var),
                 ("Trials (random)", self.num_random_trials_var),
-            ]),
-
-            ("row", [
-                ("Trials per iteration", self.trials_per_iter_var),
-                ("Replicates per trial", self.replicates_var),
+                ("Trials/iter", self.trials_per_iter_var),
+                ("Replicates", self.replicates_var),
             ]),
 
             ("row", [
                 ("Abs. Thresh", self.absorbance_var),
                 ("Surf. Vol Red. (%)", self.surf_vol_red_var),
+                ("Punishment Factor", self.punishment_factor_var),
+                ("Delay (min)", self.delay_time_var),
             ]),
 
             ("row", [
                 ("Drugs", self.drug_choices_var),
-                ("Punishment Factor", self.punishment_factor_var),
+                ("Greedy Mode", self.greedy_var, ["high", "medium", "low"]),
             ]),
-
-            ("row", [
-                ("Delay Before Absorbance Measurement (min)", self.delay_time_var)
-            ]),      
 
         ])
 
@@ -265,12 +261,31 @@ class ModernLauncher(tk.Tk):
                 row_f = tk.Frame(card, bg=PANEL_COLOR)
                 row_f.pack(fill="x", pady=5)
                 widgets = item[1]
-                for i, (lbl, var) in enumerate(widgets):
+                for i, widget in enumerate(widgets):
+                    lbl, var = widget[0], widget[1]
+                    choices = widget[2] if len(widget) > 2 else None
                     f = tk.Frame(row_f, bg=PANEL_COLOR)
                     f.pack(side="left", fill="x", expand=True, padx=(0 if i==0 else 10, 0))
                     ttk.Label(f, text=lbl, style="Sub.TLabel").pack(anchor="w")
-                    ttk.Entry(f, textvariable=var, width=8).pack(fill="x")
+                    if choices:
+                        om = tk.OptionMenu(f, var, *choices)
+                        om.config(bg="#3c3c3c", fg="white", activebackground="#454545",
+                                  activeforeground="white", relief="flat", highlightthickness=0, font=font_main)
+                        om["menu"].config(bg="#3c3c3c", fg="white", font=font_main)
+                        om.pack(fill="x")
+                    else:
+                        ttk.Entry(f, textvariable=var, width=8).pack(fill="x")
                     
+            elif itype == "optionmenu":
+                f = tk.Frame(card, bg=PANEL_COLOR)
+                f.pack(fill="x", pady=5)
+                ttk.Label(f, text=item[1], style="Sub.TLabel").pack(anchor="w")
+                om = tk.OptionMenu(f, item[2], *item[3])
+                om.config(bg="#3c3c3c", fg="white", activebackground="#454545",
+                          activeforeground="white", relief="flat", highlightthickness=0, font=font_main)
+                om["menu"].config(bg="#3c3c3c", fg="white", font=font_main)
+                om.pack(fill="x")
+
             elif itype == "separator":
                 tk.Frame(card, height=1, bg="#444").pack(fill="x", pady=8)
 
@@ -327,6 +342,7 @@ class ModernLauncher(tk.Tk):
         env["NUM_RANDOM_TRIALS"] = self.num_random_trials_var.get().strip()
         env["PUNISHMENT_FACTOR"] = self.punishment_factor_var.get().strip()
         env["DELAY_TIME"] = self.delay_time_var.get().strip()
+        env["GREEDY"] = self.greedy_var.get().strip()
 
         # Configure UI State
         self.launch_btn.config(state="disabled")

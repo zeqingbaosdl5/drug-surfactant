@@ -298,7 +298,8 @@ drug_choices = [d.strip() for d in drug_choices_str.split(",")]
 absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS"))
 PUNISHMENT_FACTOR = int(os.getenv("PUNISHMENT_FACTOR"))
-DELAY_TIME = os.getenv("DELAY_TIME", "5")
+DELAY_TIME = os.getenv("DELAY_TIME")
+GREEDY = os.getenv("GREEDY")  # "high": no overlap | "medium": 1 overlap allowed | "low": score only
 
 
 surf_names = [f"s{i}" for i in range(1, 9)]
@@ -316,6 +317,7 @@ curr_params = {
     "NUM_RANDOM_TRIALS": num_random_trials,
     "PUNISHMENT_FACTOR": PUNISHMENT_FACTOR,
     "DELAY_TIME": DELAY_TIME,
+    "GREEDY_STRATEGY": GREEDY,
 }
 with open(param_log_csv, "w", newline="") as f:
     writer = csv.writer(f)
@@ -439,19 +441,26 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
             best_per_pair = [idx for idx, _ in pair_best.values()]
             # Sort by acqf descending
             best_per_pair_sorted = sorted(best_per_pair, key=lambda idx: acqf_vals[idx], reverse=True)
-            # Select top TRIALS_PER_ITERATION with no overlapping surfactants
-            used_indices = set()
+            # Select top TRIALS_PER_ITERATION based on GREEDY level
+            used_surfs = set()
             selected_indices = []
-            for idx in best_per_pair_sorted:
-                if len(selected_indices) >= TRIALS_PER_ITERATION:
-                    break
-                row = candidate_df.iloc[idx]
-                pair = row["pair"]
-                i, j = map(int, pair.split('-'))
-                if i not in used_indices and j not in used_indices:
-                    selected_indices.append(idx)
-                    used_indices.add(i)
-                    used_indices.add(j)
+            if GREEDY == "low":
+                selected_indices = sorted(range(len(acqf_vals)), key=lambda pos: acqf_vals[pos], reverse=True)[:TRIALS_PER_ITERATION]
+            else:
+                for idx in best_per_pair_sorted:
+                    if len(selected_indices) >= TRIALS_PER_ITERATION:
+                        break
+                    row = candidate_df.iloc[idx]
+                    i, j = map(int, row["pair"].split('-'))
+                    if GREEDY == "high":
+                        if i not in used_surfs and j not in used_surfs:
+                            selected_indices.append(idx)
+                            used_surfs.update([i, j])
+                    else:  # medium
+                        overlap = (i in used_surfs) + (j in used_surfs)
+                        if overlap <= 1:
+                            selected_indices.append(idx)
+                            used_surfs.update([i, j])
             chosen_rows = candidate_df.iloc[selected_indices]
         finally:
             stop_timer.set()
