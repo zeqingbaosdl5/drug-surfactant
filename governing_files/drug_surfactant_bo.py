@@ -521,8 +521,23 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
             "total_vol": sum(params[s] for s in surf_names),
             "obj_total_vol": "" 
         })
-        NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=REPLICATES)
-        NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
+        # NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=REPLICATES)
+        # NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
+        # --- UPDATE PLATE COUNTER (With Auto-Reset) ---
+        try:
+            NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=REPLICATES)
+        except ValueError:
+            print(f"⚠️  STANDARD PLATE EXHAUSTED (Used up to H12)")
+            input("\n👉 ACTION REQUIRED: Replace STANDARD PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1...")
+            NEXT_PLATE_WELL = "A1"
+
+        # --- UPDATE DEEP WELL COUNTER (With Auto-Reset) ---
+        try:
+            NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
+        except ValueError:
+            print(f"⚠️  DEEP WELL PLATE EXHAUSTED (Used up to H12)")
+            input("\n👉 ACTION REQUIRED: Replace DEEP WELL PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1...")
+            NEXT_DEEPPLATE_WELL = "A1"
 
     df_design = pd.DataFrame(trials_data)
     df_design["obj_total_vol"] = None
