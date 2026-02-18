@@ -532,43 +532,6 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
         if stop_after_this_run:
             break
 
-        # --- EXISTING LOGIC ---
-        params = {k: v for k, v in row.to_dict().items() if k != 'pair'}
-        params.update(props)
-        _, tid = ax_client.attach_trial(params)
-        trial_indices.append(tid)
-        
-        trial = ax_client.experiment.trials[tid]
-        trial._properties["well_slot"] = NEXT_PLATE_WELL
-        trial._properties["deep_well_slot"] = NEXT_DEEPPLATE_WELL
-        trial._properties["plate_num"] = 1
-
-        trials_data.append({
-            "trial_index": tid, "drug_name": drug,
-            "well_slot": NEXT_PLATE_WELL, "deep_well_slot": NEXT_DEEPPLATE_WELL,
-            "rack_1000": tip_state["rack_id_1000"], "well_1000": tip_state["well_1000"], "well_50": tip_state["well_50"],
-            "replicates": REPLICATES,
-            **{k: params[k] for k in surf_names},
-            "total_vol": sum(params[s] for s in surf_names),
-            "obj_total_vol": "" 
-        })
-        # NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=REPLICATES)
-        # NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
-        # --- UPDATE PLATE COUNTER (With Auto-Reset) ---
-        try:
-            NEXT_PLATE_WELL = hf.get_next_well(NEXT_PLATE_WELL, offset=REPLICATES)
-        except ValueError:
-            print(f"⚠️  STANDARD PLATE EXHAUSTED (Used up to H12)")
-            input("\n👉 ACTION REQUIRED: Replace STANDARD PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1...")
-            NEXT_PLATE_WELL = "A1"
-
-        # --- UPDATE DEEP WELL COUNTER (With Auto-Reset) ---
-        try:
-            NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
-        except ValueError:
-            print(f"⚠️  DEEP WELL PLATE EXHAUSTED (Used up to H12)")
-            input("\n👉 ACTION REQUIRED: Replace DEEP WELL PLATE with a fresh one.\n   Press [ENTER] to reset counter to A1...")
-            NEXT_DEEPPLATE_WELL = "A1"
 
     df_design = pd.DataFrame(trials_data)
     df_design["obj_total_vol"] = None
