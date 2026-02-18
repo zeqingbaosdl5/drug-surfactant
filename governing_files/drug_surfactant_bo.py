@@ -524,6 +524,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
             NEXT_DEEPPLATE_WELL = hf.get_next_well(NEXT_DEEPPLATE_WELL, offset=2)
         except ValueError:
             print(f"⚠️  NOTICE: Deep Well Plate is now FULL.")
+            print(f"👉  System will STOP after this run to allow deep plate swap.")
             NEXT_DEEPPLATE_WELL = "A1"
             stop_after_this_run = True
 
