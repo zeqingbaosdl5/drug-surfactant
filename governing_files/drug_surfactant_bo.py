@@ -299,7 +299,9 @@ absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 num_random_trials = int(os.getenv("NUM_RANDOM_TRIALS"))
 PUNISHMENT_FACTOR = int(os.getenv("PUNISHMENT_FACTOR"))
 DELAY_TIME = os.getenv("DELAY_TIME")
-GREEDY = os.getenv("GREEDY")  # "high": no overlap | "medium": 1 overlap allowed | "low": score only
+GREEDY_HIGH = int(os.getenv("GREEDY_HIGH"))   # iterations run as "high" greedy
+GREEDY_MEDIUM = int(os.getenv("GREEDY_MEDIUM")) # iterations run as "medium" greedy
+GREEDY_LOW = int(os.getenv("GREEDY_LOW"))      # iterations run as "low" greedy
 
 
 surf_names = [f"s{i}" for i in range(1, 9)]
@@ -317,7 +319,9 @@ curr_params = {
     "NUM_RANDOM_TRIALS": num_random_trials,
     "PUNISHMENT_FACTOR": PUNISHMENT_FACTOR,
     "DELAY_TIME": DELAY_TIME,
-    "GREEDY_STRATEGY": GREEDY,
+    "GREEDY_HIGH_ITERS": GREEDY_HIGH,
+    "GREEDY_MEDIUM_ITERS": GREEDY_MEDIUM,
+    "GREEDY_LOW_ITERS": GREEDY_LOW,
 }
 with open(param_log_csv, "w", newline="") as f:
     writer = csv.writer(f)
@@ -400,7 +404,18 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     if n == 0: #only iteration 0 is randomly generated
         sample_indices = np.random.default_rng(n).choice(len(candidate_df), size=num_random_trials, replace=False)
         chosen_rows = candidate_df.iloc[sample_indices]
+
+        print(f"Randomly selected {len(chosen_rows)} candidates for initial exploration.")
     else:
+        # Determine greedy level for this iteration
+        if n <= GREEDY_HIGH:
+            GREEDY = "high"
+        elif n <= GREEDY_HIGH + GREEDY_MEDIUM:
+            GREEDY = "medium"
+        else:
+            GREEDY = "low"
+
+        print(f"Using GREEDY level: {GREEDY} for candidate selection in this iteration.")
         # Define timer function to run in background
         def timer_counter(stop_event):
             count = 0

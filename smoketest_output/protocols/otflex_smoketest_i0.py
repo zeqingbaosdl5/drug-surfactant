@@ -396,8 +396,8 @@ def run(protocol: protocol_api.ProtocolContext):
         current_drug_well, current_surfactant_well = well_pairs[i]
         next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
-    protocol.comment(f"Protocol delayed for 0 minutes")
-    protocol.delay(minutes=float(0))
+    protocol.comment(f"Protocol delayed for 60 minutes")
+    protocol.delay(minutes=float(60))
     
     protocol.comment("Shaking experimental plate before measurement.")
     plate_on_hs_to_reader(labware_to_shake=plate, time=1, speed=1000)

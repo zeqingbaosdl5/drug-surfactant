@@ -44,7 +44,7 @@ class ModernLauncher(tk.Tk):
         self.tip_50_var = tk.StringVar(value="A1")
 
         # Param Defaults
-        self.num_iterations_var = tk.StringVar(value="20")
+        self.num_iterations_var = tk.StringVar(value="10")
         self.trials_per_iter_var = tk.StringVar(value="3")
         self.replicates_var = tk.StringVar(value="2")
         self.surf_vol_red_var = tk.StringVar(value="10")
@@ -52,8 +52,10 @@ class ModernLauncher(tk.Tk):
         self.absorbance_var = tk.StringVar(value="0.06")
         self.num_random_trials_var = tk.StringVar(value="9")
         self.punishment_factor_var = tk.StringVar(value="1")
-        self.delay_time_var = tk.StringVar(value="0") #minutes
-        self.greedy_var = tk.StringVar(value="medium")  # "high" | "medium" | "low"
+        self.delay_time_var = tk.StringVar(value="60") #minutes
+        self.greedy_high_var = tk.StringVar(value="4")
+        self.greedy_medium_var = tk.StringVar(value="4")
+        self.greedy_low_var = tk.StringVar(value="2")
 
         self.running_process = None
         self.log_queue = queue.Queue()
@@ -219,7 +221,9 @@ class ModernLauncher(tk.Tk):
 
             ("row", [
                 ("Drugs", self.drug_choices_var),
-                ("Greedy Mode", self.greedy_var, ["high", "medium", "low"]),
+                ("High Greedy Iters", self.greedy_high_var),
+                ("Med Greedy Iters", self.greedy_medium_var),
+                ("Low Greedy Iters", self.greedy_low_var),
             ]),
 
         ])
@@ -342,7 +346,9 @@ class ModernLauncher(tk.Tk):
         env["NUM_RANDOM_TRIALS"] = self.num_random_trials_var.get().strip()
         env["PUNISHMENT_FACTOR"] = self.punishment_factor_var.get().strip()
         env["DELAY_TIME"] = self.delay_time_var.get().strip()
-        env["GREEDY"] = self.greedy_var.get().strip()
+        env["GREEDY_HIGH"] = self.greedy_high_var.get().strip()
+        env["GREEDY_MEDIUM"] = self.greedy_medium_var.get().strip()
+        env["GREEDY_LOW"] = self.greedy_low_var.get().strip()
 
         # Configure UI State
         self.launch_btn.config(state="disabled")

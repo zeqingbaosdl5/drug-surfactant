@@ -1,3 +1,7 @@
+## [0.1.6] - 2026-02-19
+
+- Replaced single greedy dropdown with three separate iteration-count inputs (High, Medium, Low greedy iterations) in the launcher UI. The UI validates that their sum equals the total number of iterations. In `drug_surfactant_bo.py`, greedy level is now determined per-iteration: iteration 0 remains random; subsequent iterations run as "high" for the first H iters, "medium" for the next M, and "low" for the remaining L.
+
 ## [0.1.5] - 2026-02-09
 
 - Enhanced trial selection diversity: now selects pairs with no overlapping surfactants, ensuring each trial uses completely distinct surfactants.
