@@ -16,12 +16,12 @@ def run(protocol: protocol_api.ProtocolContext):
     # --- INJECTED DATA ---
     data = [
     {
-        "s1": 130.0,
+        "s1": 125.0,
         "s2": 0.0,
         "s3": 0.0,
-        "s4": 10.0,
+        "s4": 0.0,
         "s5": 0.0,
-        "s6": 0.0,
+        "s6": 130.0,
         "s7": 0.0,
         "s8": 0.0,
         "IBP": 180.0,
@@ -29,104 +29,47 @@ def run(protocol: protocol_api.ProtocolContext):
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1060.0,
-        "next_plate_well": "E1",
-        "next_deepplate_well": "E1",
+        "water": 945.0,
+        "next_plate_well": "H1",
+        "next_deepplate_well": "H1",
         "replicates": 2
     },
     {
-        "s1": 130.0,
-        "s2": 0.0,
-        "s3": 0.0,
-        "s4": 10.0,
-        "s5": 0.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 1060.0,
-        "next_plate_well": "E3",
-        "next_deepplate_well": "E3",
-        "replicates": 2
-    },
-    {
-        "s1": 130.0,
+        "s1": 140.0,
         "s2": 0.0,
         "s3": 0.0,
         "s4": 0.0,
         "s5": 0.0,
         "s6": 0.0,
-        "s7": 10.0,
-        "s8": 0.0,
+        "s7": 0.0,
+        "s8": 115.0,
         "IBP": 180.0,
         "LOV": 0.0,
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1060.0,
-        "next_plate_well": "E5",
-        "next_deepplate_well": "E5",
+        "water": 945.0,
+        "next_plate_well": "H3",
+        "next_deepplate_well": "H3",
         "replicates": 2
     },
     {
-        "s1": 130.0,
+        "s1": 120.0,
         "s2": 0.0,
         "s3": 0.0,
         "s4": 0.0,
         "s5": 0.0,
         "s6": 0.0,
-        "s7": 10.0,
+        "s7": 135.0,
         "s8": 0.0,
         "IBP": 180.0,
         "LOV": 0.0,
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1060.0,
-        "next_plate_well": "E7",
-        "next_deepplate_well": "E7",
-        "replicates": 2
-    },
-    {
-        "s1": 130.0,
-        "s2": 0.0,
-        "s3": 0.0,
-        "s4": 0.0,
-        "s5": 10.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 1060.0,
-        "next_plate_well": "E9",
-        "next_deepplate_well": "E9",
-        "replicates": 2
-    },
-    {
-        "s1": 130.0,
-        "s2": 0.0,
-        "s3": 0.0,
-        "s4": 0.0,
-        "s5": 10.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 1060.0,
-        "next_plate_well": "E11",
-        "next_deepplate_well": "E11",
+        "water": 945.0,
+        "next_plate_well": "H5",
+        "next_deepplate_well": "H5",
         "replicates": 2
     }
 ]
@@ -151,14 +94,14 @@ def run(protocol: protocol_api.ProtocolContext):
     # --- TIP TRACKING INJECTION ---
     # This sets the STARTING point for the entire batch.
     # The robot automatically increments to the next tip after every usage.
-    rack_id_1000 = "1" 
-    start_well_1000 = "G3"
+    rack_id_1000 = "0" 
+    start_well_1000 = "E8"
     
     tipracks_1000 = {"0": tip1000_1, "1": tip1000_2}
     
     pipette_high.starting_tip = tipracks_1000[rack_id_1000].wells_by_name()[start_well_1000]
     
-    start_well_50 = "C4"
+    start_well_50 = "E2"
     pipette_low.starting_tip = tip50.wells_by_name()[start_well_50]
 
 
@@ -181,10 +124,10 @@ def run(protocol: protocol_api.ProtocolContext):
     water = surfactant_drug_dmso_stock_2['A1']
     
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='B2')
-    next_plate_well = 'E1'
+    next_plate_well = 'H1'
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
-    next_deepplate_well = 'E1'
+    next_deepplate_well = 'H1'
 
     trash = protocol.load_trash_bin(location="A3")
 

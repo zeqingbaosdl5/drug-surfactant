@@ -30,27 +30,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 410.0,
-        "next_plate_well": "A1",
-        "next_deepplate_well": "A1",
-        "replicates": 2
-    },
-    {
-        "s1": 0.0,
-        "s2": 0.0,
-        "s3": 0.0,
-        "s4": 0.0,
-        "s5": 620.0,
-        "s6": 0.0,
-        "s7": 170.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 410.0,
-        "next_plate_well": "A3",
-        "next_deepplate_well": "A3",
+        "next_plate_well": "F1",
+        "next_deepplate_well": "F1",
         "replicates": 2
     },
     {
@@ -68,27 +49,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 165.0,
-        "next_plate_well": "A5",
-        "next_deepplate_well": "A5",
-        "replicates": 2
-    },
-    {
-        "s1": 0.0,
-        "s2": 0.0,
-        "s3": 640.0,
-        "s4": 0.0,
-        "s5": 0.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 395.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 165.0,
-        "next_plate_well": "A7",
-        "next_deepplate_well": "A7",
+        "next_plate_well": "F3",
+        "next_deepplate_well": "F3",
         "replicates": 2
     },
     {
@@ -106,27 +68,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 375.0,
-        "next_plate_well": "A9",
-        "next_deepplate_well": "A9",
-        "replicates": 2
-    },
-    {
-        "s1": 0.0,
-        "s2": 0.0,
-        "s3": 185.0,
-        "s4": 0.0,
-        "s5": 640.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 375.0,
-        "next_plate_well": "A11",
-        "next_deepplate_well": "A11",
+        "next_plate_well": "F5",
+        "next_deepplate_well": "F5",
         "replicates": 2
     },
     {
@@ -144,27 +87,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 440.0,
-        "next_plate_well": "B1",
-        "next_deepplate_well": "B1",
-        "replicates": 2
-    },
-    {
-        "s1": 0.0,
-        "s2": 415.0,
-        "s3": 0.0,
-        "s4": 345.0,
-        "s5": 0.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 440.0,
-        "next_plate_well": "B3",
-        "next_deepplate_well": "B3",
+        "next_plate_well": "F7",
+        "next_deepplate_well": "F7",
         "replicates": 2
     },
     {
@@ -182,27 +106,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 135.0,
-        "next_plate_well": "B5",
-        "next_deepplate_well": "B5",
-        "replicates": 2
-    },
-    {
-        "s1": 750.0,
-        "s2": 0.0,
-        "s3": 0.0,
-        "s4": 0.0,
-        "s5": 0.0,
-        "s6": 315.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 135.0,
-        "next_plate_well": "B7",
-        "next_deepplate_well": "B7",
+        "next_plate_well": "F9",
+        "next_deepplate_well": "F9",
         "replicates": 2
     },
     {
@@ -220,27 +125,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 420.0,
-        "next_plate_well": "B9",
-        "next_deepplate_well": "B9",
-        "replicates": 2
-    },
-    {
-        "s1": 0.0,
-        "s2": 360.0,
-        "s3": 420.0,
-        "s4": 0.0,
-        "s5": 0.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 420.0,
-        "next_plate_well": "B11",
-        "next_deepplate_well": "B11",
+        "next_plate_well": "F11",
+        "next_deepplate_well": "F11",
         "replicates": 2
     },
     {
@@ -258,27 +144,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 300.0,
-        "next_plate_well": "C1",
-        "next_deepplate_well": "C1",
-        "replicates": 2
-    },
-    {
-        "s1": 60.0,
-        "s2": 0.0,
-        "s3": 0.0,
-        "s4": 840.0,
-        "s5": 0.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 300.0,
-        "next_plate_well": "C3",
-        "next_deepplate_well": "C3",
+        "next_plate_well": "G1",
+        "next_deepplate_well": "G1",
         "replicates": 2
     },
     {
@@ -296,27 +163,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 615.0,
-        "next_plate_well": "C5",
-        "next_deepplate_well": "C5",
-        "replicates": 2
-    },
-    {
-        "s1": 85.0,
-        "s2": 0.0,
-        "s3": 500.0,
-        "s4": 0.0,
-        "s5": 0.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 615.0,
-        "next_plate_well": "C7",
-        "next_deepplate_well": "C7",
+        "next_plate_well": "G3",
+        "next_deepplate_well": "G3",
         "replicates": 2
     },
     {
@@ -334,27 +182,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "GLV": 0.0,
         "dmso": 0.0,
         "water": 475.0,
-        "next_plate_well": "C9",
-        "next_deepplate_well": "C9",
-        "replicates": 2
-    },
-    {
-        "s1": 290.0,
-        "s2": 435.0,
-        "s3": 0.0,
-        "s4": 0.0,
-        "s5": 0.0,
-        "s6": 0.0,
-        "s7": 0.0,
-        "s8": 0.0,
-        "IBP": 180.0,
-        "LOV": 0.0,
-        "DCF": 0.0,
-        "GLV": 0.0,
-        "dmso": 0.0,
-        "water": 475.0,
-        "next_plate_well": "C11",
-        "next_deepplate_well": "C11",
+        "next_plate_well": "G5",
+        "next_deepplate_well": "G5",
         "replicates": 2
     }
 ]
@@ -409,10 +238,10 @@ def run(protocol: protocol_api.ProtocolContext):
     water = surfactant_drug_dmso_stock_2['A1']
     
     plate = protocol.load_labware(load_name="corning_96_wellplate_360ul_flat_new", location='B2')
-    next_plate_well = 'A1'
+    next_plate_well = 'F1'
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
-    next_deepplate_well = 'A1'
+    next_deepplate_well = 'F1'
 
     trash = protocol.load_trash_bin(location="A3")
 
