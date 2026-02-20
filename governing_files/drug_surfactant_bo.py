@@ -575,7 +575,7 @@ for n in range(start_n, start_n + NUM_ITERATIONS):
     # --- WATER LOGIC ---
     # 0-4 -> A1, 5-9 -> A2, 10-14 -> A3, 15-19 -> A4, 20-24 -> A1...
     water_wells = ['A1', 'A2', 'A3', 'A4']
-    water_idx = (n // 5) % 4  
+    water_idx = (n // 4) % 4  
     current_water_well = water_wells[water_idx]
 
     print(f"💧 Iteration {n}: Using Water Source {current_water_well}")
