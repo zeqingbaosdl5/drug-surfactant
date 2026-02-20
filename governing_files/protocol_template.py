@@ -224,11 +224,12 @@ def run(protocol: protocol_api.ProtocolContext):
         current_drug_well, current_surfactant_well = well_pairs[i]
         next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
-    protocol.comment(f"Protocol delayed for {DELAY_TIME} minutes")
-    protocol.delay(minutes=float({DELAY_TIME}))
     
     protocol.comment("Shaking experimental plate before measurement.")
     plate_on_hs_to_reader(labware_to_shake=plate, time=1, speed=1000)
+
+    protocol.comment(f"Protocol delayed for {DELAY_TIME} minutes")
+    protocol.delay(minutes=float({DELAY_TIME}))
     
     protocol.comment("Measuring absorbance.")
     plate_on_pr(labware_to_read=plate, new_location="B2") 

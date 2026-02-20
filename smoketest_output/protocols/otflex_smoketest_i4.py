@@ -18,7 +18,7 @@ def run(protocol: protocol_api.ProtocolContext):
     {
         "s1": 0.0,
         "s2": 0.0,
-        "s3": 150.0,
+        "s3": 200.0,
         "s4": 5.0,
         "s5": 0.0,
         "s6": 0.0,
@@ -29,7 +29,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1045.0,
+        "water": 995.0,
         "next_plate_well": "D1",
         "next_deepplate_well": "D1",
         "replicates": 2
@@ -39,8 +39,8 @@ def run(protocol: protocol_api.ProtocolContext):
         "s2": 5.0,
         "s3": 0.0,
         "s4": 0.0,
-        "s5": 100.0,
-        "s6": 0.0,
+        "s5": 0.0,
+        "s6": 190.0,
         "s7": 0.0,
         "s8": 0.0,
         "IBP": 180.0,
@@ -48,7 +48,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1095.0,
+        "water": 1005.0,
         "next_plate_well": "D3",
         "next_deepplate_well": "D3",
         "replicates": 2
@@ -59,15 +59,15 @@ def run(protocol: protocol_api.ProtocolContext):
         "s3": 0.0,
         "s4": 0.0,
         "s5": 0.0,
-        "s6": 195.0,
+        "s6": 0.0,
         "s7": 0.0,
-        "s8": 0.0,
+        "s8": 5.0,
         "IBP": 180.0,
         "LOV": 0.0,
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1000.0,
+        "water": 1190.0,
         "next_plate_well": "D5",
         "next_deepplate_well": "D5",
         "replicates": 2
@@ -95,13 +95,13 @@ def run(protocol: protocol_api.ProtocolContext):
     # This sets the STARTING point for the entire batch.
     # The robot automatically increments to the next tip after every usage.
     rack_id_1000 = "0" 
-    start_well_1000 = "D11"
+    start_well_1000 = "F11"
     
     tipracks_1000 = {"0": tip1000_1, "1": tip1000_2}
     
     pipette_high.starting_tip = tipracks_1000[rack_id_1000].wells_by_name()[start_well_1000]
     
-    start_well_50 = "B4"
+    start_well_50 = "H3"
     pipette_low.starting_tip = tip50.wells_by_name()[start_well_50]
 
 

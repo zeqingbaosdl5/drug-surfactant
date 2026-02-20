@@ -18,10 +18,10 @@ def run(protocol: protocol_api.ProtocolContext):
     {
         "s1": 0.0,
         "s2": 0.0,
-        "s3": 70.0,
+        "s3": 0.0,
         "s4": 5.0,
         "s5": 0.0,
-        "s6": 0.0,
+        "s6": 90.0,
         "s7": 0.0,
         "s8": 0.0,
         "IBP": 180.0,
@@ -29,7 +29,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1125.0,
+        "water": 1105.0,
         "next_plate_well": "E1",
         "next_deepplate_well": "E1",
         "replicates": 2
@@ -37,10 +37,10 @@ def run(protocol: protocol_api.ProtocolContext):
     {
         "s1": 0.0,
         "s2": 5.0,
-        "s3": 70.0,
+        "s3": 0.0,
         "s4": 0.0,
         "s5": 0.0,
-        "s6": 0.0,
+        "s6": 90.0,
         "s7": 0.0,
         "s8": 0.0,
         "IBP": 180.0,
@@ -48,7 +48,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1125.0,
+        "water": 1105.0,
         "next_plate_well": "E3",
         "next_deepplate_well": "E3",
         "replicates": 2
@@ -56,10 +56,10 @@ def run(protocol: protocol_api.ProtocolContext):
     {
         "s1": 5.0,
         "s2": 0.0,
-        "s3": 70.0,
+        "s3": 0.0,
         "s4": 0.0,
         "s5": 0.0,
-        "s6": 0.0,
+        "s6": 90.0,
         "s7": 0.0,
         "s8": 0.0,
         "IBP": 180.0,
@@ -67,7 +67,7 @@ def run(protocol: protocol_api.ProtocolContext):
         "DCF": 0.0,
         "GLV": 0.0,
         "dmso": 0.0,
-        "water": 1125.0,
+        "water": 1105.0,
         "next_plate_well": "E5",
         "next_deepplate_well": "E5",
         "replicates": 2
@@ -95,13 +95,13 @@ def run(protocol: protocol_api.ProtocolContext):
     # This sets the STARTING point for the entire batch.
     # The robot automatically increments to the next tip after every usage.
     rack_id_1000 = "1" 
-    start_well_1000 = "D2"
+    start_well_1000 = "E2"
     
     tipracks_1000 = {"0": tip1000_1, "1": tip1000_2}
     
     pipette_high.starting_tip = tipracks_1000[rack_id_1000].wells_by_name()[start_well_1000]
     
-    start_well_50 = "F5"
+    start_well_50 = "E5"
     pipette_low.starting_tip = tip50.wells_by_name()[start_well_50]
 
 
