@@ -1,0 +1,4 @@
+trial_index,drug_name,well_slot,deep_well_slot,rack_1000,well_1000,well_50,replicates,s1,s2,s3,s4,s5,s6,s7,s8,total_vol,obj_total_vol
+30,DCF,F7,F7,0,C12,E5,2,150.0,0.0,5.0,0.0,0.0,0.0,0.0,0.0,155.0,
+31,DCF,F9,F9,0,C12,E5,2,135.0,0.0,0.0,0.0,0.0,0.0,0.0,5.0,140.0,
+32,DCF,F11,F11,0,C12,E5,2,135.0,0.0,0.0,0.0,5.0,0.0,0.0,0.0,140.0,
