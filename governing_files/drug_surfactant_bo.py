@@ -16,7 +16,11 @@ PROJECT_ROOT = os.path.dirname(REPO_DIR)
 
 # --- CONFIG ---
 SMOKE_TEST = str(os.getenv("SMOKE_TEST", "")).strip().lower() in {"1", "true"}
-BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
+
+# BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950") # For wifi connection
+BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://169.254.40.153:31950") # For ethernet connection
+
+
 absorbance_threshold = float(os.getenv("ABSORBANCE_THRESHOLD"))
 
 # --- EXPERIMENT FOLDER SELECTION ---

@@ -1,0 +1,4 @@
+trial_index,drug_name,well_slot,deep_well_slot,rack_1000,well_1000,well_50,replicates,s1,s2,s3,s4,s5,s6,s7,s8,original_total_vol,reported_vol,success,absorbance,prior_best_vol,is_new_record,status
+12,GLV,C7,C1,0,D8,F2,2,0.0,0.0,0.0,0.0,215.0,0.0,0.0,315.0,530.0,530.0,1,0.033,650.0,True,COMPLETED
+13,GLV,C9,C3,0,D8,F2,2,0.0,0.0,495.0,90.0,0.0,0.0,0.0,0.0,585.0,585.0,0,0.5635,650.0,False,COMPLETED
+14,GLV,C11,C5,0,D8,F2,2,0.0,0.0,0.0,0.0,0.0,60.0,250.0,0.0,310.0,310.0,0,0.1055,650.0,False,COMPLETED

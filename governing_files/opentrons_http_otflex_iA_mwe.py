@@ -10,7 +10,8 @@ from opentrons_http_client import (
     wait_for_analysis_completion
 )
 
-BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
+# BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950") # For wifi connection
+BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://169.254.40.153:31950") # For ethernet connection
 
 LABWARE_DEFINITIONS = [
     os.path.join(os.path.dirname(__file__), "allenlab_8_wellplate_20000ul.json"),

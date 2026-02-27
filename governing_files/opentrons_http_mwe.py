@@ -15,7 +15,8 @@ from opentrons_http_client import (
 import os
 
 # Opentrons HTTP API base URL (replace with your robot's IP)
-BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950")
+# BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://192.168.0.5:31950") # For wifi connection
+BASE_URL = os.getenv("OPENTRONS_BASE_URL", "http://169.254.40.153:31950") # For ethernet connection
 
 
 def run_absorbance_protocol(verbosity=2):
