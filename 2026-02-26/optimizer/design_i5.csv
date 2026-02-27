@@ -1,0 +1,4 @@
+trial_index,drug_name,well_slot,deep_well_slot,rack_1000,well_1000,well_50,replicates,s1,s2,s3,s4,s5,s6,s7,s8,total_vol,obj_total_vol
+21,GLV,B7,B7,0,E2,G1,2,0.0,0.0,0.0,0.0,0.0,0.0,5.0,150.0,155.0,
+22,GLV,B9,B9,0,E2,G1,2,0.0,0.0,5.0,0.0,0.0,0.0,0.0,150.0,155.0,
+23,GLV,B11,B11,0,E2,G1,2,0.0,5.0,0.0,0.0,0.0,0.0,0.0,150.0,155.0,
