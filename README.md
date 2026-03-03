@@ -37,6 +37,7 @@ smoketest_output/        # Output folder for smoke test (no-robot) runs
 2026-02-26/              # Case study on GLV
 data_analysis/
     data_analysis.ipynb  # Notebook for post-hoc analysis and visualization
+    data_analysis_helper.py # Helper functions for post-hoc analysis and visualization
 ```
 
 Each dated experiment folder contains:
@@ -68,7 +69,7 @@ YYYY-MM-DD/
 | Flex 96-filter tip racks (1000 µL ×2, 50 µL ×1) | Disposable tips |
 | Heater-Shaker Module V1 | Mixing formulations in the deep-well plate |
 | Absorbance Reader Module V1 | Measuring turbidity at 600 nm |
-| Allen Lab 8-well plate (20 mL) ×2 | Stock solutions: 8 surfactants + 4 drugs/DMSO/water |
+| 8-well plate (20 mL) ×2 | Stock solutions: 8 surfactants + 4 drugs/DMSO/water |
 | Corning 96-well flat plate (360 µL) ×2 | Experimental plate + deep-well plate on heater-shaker |
 | macOS host computer | Running BO, GUI, and robot communication |
 
