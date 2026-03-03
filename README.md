@@ -1,10 +1,11 @@
 # Drug-Surfactant Nanoformulation Optimizer
 
-An automated self-driving laboratory (SDL) for discovering surfactant mixtures that solubilize poorly water-soluble drugs using the minimum possible surfactant volume. A Bayesian optimization (BO) loop proposes formulations, an Opentrons Flex robot physically prepares them, and an Absorbance Reader Module measures drug solubilization — all without human intervention.
+An automated self-driving laboratory (SDL) for discovering surfactants that solubilize poorly water-soluble drugs using the minimum possible surfactant volume. A Bayesian optimization (BO) loop proposes formulations, an Opentrons Flex robot physically prepares them, and an Absorbance Reader Module measures drug solubilization — all without human intervention.
 
 ## Overview
 
-Poorly water-soluble drugs often require surfactant excipients to form stable nanoformulations. This system searches for the optimal two-surfactant combination and their volumes that keeps a drug dissolved (turbidity < 0.06 AU at 600 nm) while minimizing total surfactant use. Supported drugs: **Ibuprofen (IBP)**, **Lovastatin (LOV)**, **Diclofenac (DCF)**, and **Griseofulvin (GLV)**.
+Poorly water-soluble drugs often require surfactant excipients to form stable "solutions". This system searches for the optimal two-surfactant combination and their volumes that keeps a drug dissolved while minimizing total surfactant use. 
+Case study drugs: **Ibuprofen (IBP)**, **Lovastatin (LOV)**, **Diclofenac (DCF)**, and **Griseofulvin (GLV)**.
 
 Each iteration of the loop:
 1. Uses prior results to fit a Gaussian process surrogate (via [Ax](https://ax.dev/) / [BoTorch](https://botorch.org/))
@@ -30,10 +31,10 @@ Click_Me_to_Run.command  # macOS launcher (activates conda env, opens GUI)
 
 experiments_template/    # Template folder structure for new experiment dates
 smoketest_output/        # Output folder for smoke test (no-robot) runs
-2026-02-19/              # Example experiment run folder
-2026-02-20/
-2026-02-23/
-2026-02-26/
+2026-02-19/              # Case study on IBP
+2026-02-20/              # Case study on LOV
+2026-02-23/              # Case study on DCF
+2026-02-26/              # Case study on GLV
 data_analysis/
     data_analysis.ipynb  # Notebook for post-hoc analysis and visualization
 ```
@@ -87,13 +88,6 @@ Requires a conda environment named `drug-surfactant`. Key packages:
 | `requests` | HTTP communication with Opentrons Flex API |
 | `tkinter` | GUI launcher (standard library) |
 
-## Installation
-
-```bash
-conda create -n drug-surfactant python=3.11
-conda activate drug-surfactant
-pip install ax-platform botorch pandas requests
-```
 
 ## Usage
 
@@ -109,18 +103,6 @@ In the GUI:
 
 Live console output is streamed directly in the GUI window.
 
-### Command Line
-
-All parameters are passed as environment variables:
-
-```bash
-conda activate drug-surfactant
-export EXPERIMENT_FOLDER="2026-03-03"
-export NUM_ITERATIONS=10
-export TRIALS_PER_ITERATION=3
-# ... (see experiment_parameters.csv for the full list)
-python governing_files/drug_surfactant_bo.py
-```
 
 ## Key Parameters
 
