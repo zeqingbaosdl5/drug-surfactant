@@ -38,6 +38,9 @@ surfactant_dict = {
     's8':{"abbr": "SB3-12", "full_name": "Lauryl Sulfobetaine"},
 }
 
+# converting factor: 1200 total surfactants vs 270 trials
+factor = 1 / 1200 * 270
+
 def add_iteration_number(df, trials_per_iteration, num_random_trials):
     df = df.copy()
     df['iteration'] = 0
@@ -75,9 +78,15 @@ def data_summary():
         ax_client = AxClient.load_from_json_file(optimizer_path)
         df = ax_client.get_trials_data_frame()
 
+        for col in surfactant_dict.keys():
+            df[col] = df[col] * factor
+
         df = add_iteration_number(df, int(exp_params_dict['TRIALS_PER_ITERATION']), int(exp_params_dict['NUM_RANDOM_TRIALS']))
         df = add_success_column(df, float(exp_params_dict['ABSORBANCE_THRESHOLD']))
         df = replace_surfacant_names(df)
+        df['obj_total_vol'] = df['obj_total_vol'] * factor  # add this line
+
+        
 
 
         exp_dict[drug]['results'] = df
@@ -505,8 +514,8 @@ _SHAP_CMAP = LinearSegmentedColormap.from_list(
     N=512,
 )
 
-# Absolute concentration norm: 0 µL → blue, 400 µL → white, ≥800 µL → red
-_CONC_NORM = Normalize(vmin=0, vmax=800, clip=True)
+# Absolute concentration norm: 
+_CONC_NORM = Normalize(vmin=0, vmax=200, clip=True)
 
 _RC = {
     'font.family': 'DejaVu Sans', 'font.size': 11,
@@ -534,7 +543,7 @@ def _get_X_y(drug):
     done = raw[raw['trial_status'] == 'COMPLETED'].dropna(
         subset=SURF_PARAMS + [TARGET_COL]
     )
-    X        = done[SURF_PARAMS].astype(float).values
+    X        = done[SURF_PARAMS].astype(float).values * factor
     y        = done[TARGET_COL].values
     drug_val = done['drug'].iloc[0]
     return X, y, drug_val
@@ -544,7 +553,8 @@ def _make_predict_fn(model_bridge, drug_val):
     def predict_fn(X):
         obs = [
             ObservationFeatures(parameters={
-                **dict(zip(SURF_PARAMS, row.tolist())),
+                #**dict(zip(SURF_PARAMS, row.tolist())),
+                **dict(zip(SURF_PARAMS, (row / factor).tolist())),
                 'drug': drug_val,
             })
             for row in np.atleast_2d(X)
@@ -621,8 +631,8 @@ def _draw_shap_panel(fig, ax_bee, ax_cb, shap_values, X):
     sm.set_array([])
     cbar = fig.colorbar(sm, cax=ax_cb)
     cbar.set_label('Surfactant conc. (µL)', fontsize=10)
-    cbar.set_ticks([0, 400, 800])
-    cbar.set_ticklabels(['0', '400', '800'])
+    cbar.set_ticks([0, 100, 200])
+    cbar.set_ticklabels(['0', '100', '200'])
     cbar.ax.tick_params(labelsize=9, length=2.5, width=0.5, pad=4)
     cbar.outline.set_linewidth(0.5)
 
