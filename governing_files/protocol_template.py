@@ -48,7 +48,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
 
     # --- LABWARE SETUP ---
-    surfactant_stock_1 = protocol.load_labware(load_name="allenlab_8_wellplate_20000ul", location="C1")
+    surfactant_stock_1 = protocol.load_labware(load_name="allenlab_8_wellplate_20000ul", location="C1") 
     s1 = surfactant_stock_1['A1']
     s2 = surfactant_stock_1['A2']
     s3 = surfactant_stock_1['A3']
@@ -70,6 +70,7 @@ def run(protocol: protocol_api.ProtocolContext):
 
     deepplate = hs_adapter.load_labware("corning_96_wellplate_360ul_flat_new")
     next_deepplate_well = '{START_DEEP_WELL}'
+
 
     trash = protocol.load_trash_bin(location="A3")
 
@@ -185,7 +186,7 @@ def run(protocol: protocol_api.ProtocolContext):
             pipette_low.transfer(30, deepplate[current_drug_well], plate[well], new_tip='never', air_gap=10) 
             pipette_low.flow_rate.dispense = 25
             pipette_low.blow_out(plate[well])
-            pipette_low.touch_tip(plate[well], v_offset=-2)
+            pipette_low.touch_tip(plate[well], v_offset=-4)
         pipette_low.drop_tip()
         
         return next_plate_well
@@ -204,10 +205,10 @@ def run(protocol: protocol_api.ProtocolContext):
         current_drug_well, next_deepplate_well = make_drug_or_surfactant(drug_list, next_deepplate_well, row_of_data)
         well_pairs.append((current_drug_well, current_surfactant_well))  
 
-    # PHASE 2: MIX (SHAKE)
+    # PHASE 2: MIX (SHAKE and ADD STOCK LIDS)
     protocol.comment("Shaking deep well plate to mix components.")
     plate_on_hs(labware_to_shake=deepplate, new_location='D2', speed=1000, time=1)
-    
+
     protocol.move_labware(
         labware=plate, 
         new_location=hs_adapter, 
@@ -224,7 +225,7 @@ def run(protocol: protocol_api.ProtocolContext):
         current_drug_well, current_surfactant_well = well_pairs[i]
         next_plate_well = make_exp(current_drug_well, current_surfactant_well, next_plate_well)
 
-    
+
     protocol.comment("Shaking experimental plate before measurement.")
     plate_on_hs_to_reader(labware_to_shake=plate, time=1, speed=1000)
 
@@ -233,6 +234,7 @@ def run(protocol: protocol_api.ProtocolContext):
     
     protocol.comment("Measuring absorbance.")
     plate_on_pr(labware_to_read=plate, new_location="B2") 
-    
+   
+
     protocol.move_labware(labware=deepplate, new_location=hs_adapter, use_gripper=True)
     pr_mod.close_lid()
